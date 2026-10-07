@@ -1350,25 +1350,25 @@ export default function StaffCounterPage({ initialTab = "invoices" }: StaffCount
       </header>
 
       {/* 2. Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
-        {/* Counter Action Buttons & Tab Bar (MOVED TO TOP) */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-800 pb-4">
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-            {/* Queue Tokens Tab */}
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-4">
+        {/* Compact Top Navigation & Action Command Bar */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 rounded-2xl border border-slate-800 bg-[#0c1322] p-3 shadow-lg">
+          {/* Module Tabs */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
             <button
               type="button"
               onClick={() => {
                 setActiveTab("tokens");
                 if (typeof window !== "undefined") window.history.pushState({}, "", "/staff/tokens");
               }}
-              className={`rounded-xl px-4 py-2 text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 ${
+              className={`rounded-xl px-3.5 py-2 text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 ${
                 activeTab === "tokens"
-                  ? "bg-pink-500/20 text-pink-300 border border-pink-400/30"
-                  : "bg-slate-900 text-slate-400 hover:text-white"
+                  ? "bg-pink-500/20 text-pink-300 border border-pink-400/40 shadow-[0_0_12px_rgba(236,72,153,0.25)]"
+                  : "text-slate-400 hover:text-white hover:bg-slate-850"
               }`}
             >
               <Ticket size={13} className="text-pink-400" />
-              <span>🎟️ Queue Tokens</span>
+              <span>Queue Tokens</span>
               {queueStats.waitingCount > 0 && (
                 <span className="rounded-full bg-pink-500 text-slate-950 font-black px-1.5 py-0.2 text-[10px]">
                   {queueStats.waitingCount}
@@ -1382,60 +1382,67 @@ export default function StaffCounterPage({ initialTab = "invoices" }: StaffCount
                 setActiveTab("invoices");
                 if (typeof window !== "undefined") window.history.pushState({}, "", "/staff/invoices");
               }}
-              className={`rounded-xl px-4 py-2 text-xs font-bold transition whitespace-nowrap ${
+              className={`rounded-xl px-3.5 py-2 text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 ${
                 activeTab === "invoices"
-                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/30"
-                  : "bg-slate-900 text-slate-400 hover:text-white"
+                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 shadow-[0_0_12px_rgba(8,145,178,0.25)]"
+                  : "text-slate-400 hover:text-white hover:bg-slate-850"
               }`}
             >
-              🧾 Invoices & Bills ({transactions.length})
+              <Receipt size={13} className="text-cyan-400" />
+              <span>Invoices & Bills ({transactions.length})</span>
             </button>
+
             <button
               type="button"
               onClick={() => {
                 setActiveTab("requests");
                 if (typeof window !== "undefined") window.history.pushState({}, "", "/staff/requests");
               }}
-              className={`rounded-xl px-4 py-2 text-xs font-bold transition whitespace-nowrap ${
+              className={`rounded-xl px-3.5 py-2 text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 ${
                 activeTab === "requests"
-                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/30"
-                  : "bg-slate-900 text-slate-400 hover:text-white"
+                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 shadow-[0_0_12px_rgba(8,145,178,0.25)]"
+                  : "text-slate-400 hover:text-white hover:bg-slate-850"
               }`}
             >
-              📋 Citizen Requests ({requests.length})
+              <FileText size={13} className="text-cyan-400" />
+              <span>Citizen Requests ({requests.length})</span>
             </button>
+
             <button
               type="button"
               onClick={() => {
                 setActiveTab("khata");
                 if (typeof window !== "undefined") window.history.pushState({}, "", "/staff/khata");
               }}
-              className={`rounded-xl px-4 py-2 text-xs font-bold transition whitespace-nowrap ${
+              className={`rounded-xl px-3.5 py-2 text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 ${
                 activeTab === "khata"
-                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/30"
-                  : "bg-slate-900 text-slate-400 hover:text-white"
+                  ? "bg-amber-500/20 text-amber-300 border border-amber-400/40 shadow-[0_0_12px_rgba(245,158,11,0.25)]"
+                  : "text-slate-400 hover:text-white hover:bg-slate-850"
               }`}
             >
-              ⏳ Customer Dues ({khataList.length})
+              <Clock size={13} className="text-amber-400" />
+              <span>Customer Dues ({khataList.length})</span>
             </button>
+
             <button
               type="button"
               onClick={() => {
                 setActiveTab("drawer");
                 if (typeof window !== "undefined") window.history.pushState({}, "", "/staff/drawer");
               }}
-              className={`rounded-xl px-4 py-2 text-xs font-bold transition whitespace-nowrap ${
+              className={`rounded-xl px-3.5 py-2 text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 ${
                 activeTab === "drawer"
-                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/30"
-                  : "bg-slate-900 text-slate-400 hover:text-white"
+                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 shadow-[0_0_12px_rgba(16,185,129,0.25)]"
+                  : "text-slate-400 hover:text-white hover:bg-slate-850"
               }`}
             >
-              💵 Shift Drawer Tally
+              <Banknote size={13} className="text-emerald-400" />
+              <span>Shift Drawer Tally</span>
             </button>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Receptionist-only: Issue sequential queue tokens */}
+          {/* Quick Action Buttons */}
+          <div className="flex items-center gap-2 shrink-0">
             {isReceptionistOrAdmin && (
               <button
                 type="button"
@@ -1448,162 +1455,153 @@ export default function StaffCounterPage({ initialTab = "invoices" }: StaffCount
                   setTokNotes("");
                   setShowTokenModal(true);
                 }}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-pink-500/40 bg-pink-500/15 px-3.5 py-2 text-xs font-bold text-pink-300 hover:bg-pink-500/25 transition shadow-sm"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-pink-500/40 bg-pink-500/15 px-3 py-1.5 text-xs font-bold text-pink-300 hover:bg-pink-500/25 transition shadow-sm"
                 title="Issue sequential queue token for arriving citizen (First-Come, First-Served)"
               >
-                <Ticket size={14} />
-                <span>+ Issue Token (FCFS)</span>
+                <Ticket size={13} />
+                <span>+ Issue Token</span>
               </button>
             )}
 
-            {/* Receptionist-only: Register new citizen applications */}
             {isReceptionistOrAdmin && (
               <button
                 type="button"
                 onClick={() => setShowRequestModal(true)}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/80 px-3.5 py-2 text-xs font-bold text-slate-200 hover:border-cyan-400/40 hover:text-cyan-300 transition"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-1.5 text-xs font-bold text-slate-200 hover:border-cyan-400/40 hover:text-cyan-300 transition"
               >
-                <Plus size={14} />
-                <span>+ New Service Request</span>
+                <Plus size={13} />
+                <span>+ New Request</span>
               </button>
             )}
 
             <button
               type="button"
               onClick={openInvoiceModalDialog}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 px-4 py-2 text-xs font-bold text-slate-950 hover:brightness-110 transition shadow-md shadow-cyan-500/20"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan-400 to-teal-400 px-3.5 py-1.5 text-xs font-black text-slate-950 hover:brightness-110 transition shadow-md shadow-cyan-400/20"
             >
-              <Receipt size={15} />
-              <span>+ Add Invoice & Bill</span>
+              <Receipt size={14} />
+              <span>+ Add Invoice</span>
             </button>
           </div>
         </div>
 
-        {/* Shift Feed Attribution Banner */}
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-cyan-500/30 bg-gradient-to-r from-cyan-950/40 via-slate-900/70 to-[#0c1322] px-4 py-3 shadow-md">
-          <div className="flex items-center gap-2.5">
-            <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse" />
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-bold text-slate-200">
-                Personal Shift Feed: <span className="text-cyan-300 font-black">{session?.employeeName}</span> ({session?.role})
-              </span>
-              <span className="rounded-md bg-cyan-500/10 border border-cyan-500/20 px-2 py-0.5 text-[10px] font-bold text-cyan-400">
-                Isolated Cash Drawer
-              </span>
-            </div>
-          </div>
-          <div className="text-[11px] text-slate-400 font-medium">
-            Showing only invoices entered by you today • Other counter staff have their own isolated tally
-          </div>
-        </div>
-
-        {/* Shift Cash & Turnover Summary Bar */}
-        <div className="grid gap-3 sm:grid-cols-4">
-          <div className="rounded-2xl border border-slate-800 bg-[#0c1322] p-4 shadow-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Today's Invoices</span>
-              <Receipt size={16} className="text-cyan-400" />
-            </div>
-            <div className="mt-2 text-2xl font-black text-white">{shiftSummary.billCount}</div>
-            <div className="mt-1 text-[11px] text-slate-400">Total bills issued</div>
-          </div>
-
-          <div className="rounded-2xl border border-emerald-500/20 bg-emerald-950/20 p-4 shadow-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-emerald-300 uppercase tracking-wider">Cash In Drawer</span>
-              <Banknote size={16} className="text-emerald-400" />
-            </div>
-            <div className="mt-2 text-2xl font-black text-emerald-300">₹ {shiftSummary.totalCash.toFixed(2)}</div>
-            <div className="mt-1 text-[11px] text-emerald-400/80">Physical cash to reconcile</div>
-          </div>
-
-          <div className="rounded-2xl border border-cyan-500/20 bg-cyan-950/20 p-4 shadow-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-cyan-300 uppercase tracking-wider">UPI / Online</span>
-              <Smartphone size={16} className="text-cyan-400" />
-            </div>
-            <div className="mt-2 text-2xl font-black text-cyan-300">₹ {shiftSummary.totalUpi.toFixed(2)}</div>
-            <div className="mt-1 text-[11px] text-cyan-400/80">Bank & scanner receipts</div>
-          </div>
-
-          <div className="rounded-2xl border border-slate-800 bg-[#0c1322] p-4 shadow-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Sales</span>
-              <TrendingUp size={16} className="text-teal-400" />
-            </div>
-            <div className="mt-2 text-2xl font-black text-white">₹ {shiftSummary.totalTurnover.toFixed(2)}</div>
-            <div className="mt-1 text-[11px] text-slate-400">Shift counter revenue</div>
-          </div>
-        </div>
-
-        {/* Portal Advance & Bank Wallets Section */}
-        <div className="rounded-2xl border border-slate-800 bg-[#0c1322] p-4 shadow-sm space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5">
-            <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-cyan-400/30 bg-cyan-400/10 text-cyan-300">
-                <Wallet size={15} />
+        {/* 1-Screen Consolidated Command Bar: 4 Wallets (Left) + 4 Shift KPIs (Right) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+          {/* Left: 4 Portal Wallets (5 cols) */}
+          <div className="lg:col-span-5 rounded-2xl border border-slate-800 bg-[#0c1322] p-3.5 shadow-md flex flex-col justify-between">
+            <div className="flex items-center justify-between border-b border-slate-800/80 pb-2 mb-2.5">
+              <div className="flex items-center gap-2">
+                <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-cyan-400/10 text-cyan-400 border border-cyan-400/20">
+                  <Wallet size={13} />
+                </div>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-white">
+                  Portal & Bank Wallets
+                </span>
               </div>
-              <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-white">
-                  Portal Advance & Bank Wallets
-                </h3>
-                <p className="text-[11px] text-slate-400">Live balances available for government portal applications & banking</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-400">Total Portal Balance:</span>
-              <span className="font-mono text-sm font-black text-cyan-300 bg-cyan-950/60 border border-cyan-500/30 px-2.5 py-0.5 rounded-lg">
-                ₹ {wallets.reduce((s, w) => s + w.balance, 0).toLocaleString("en-IN")}
+              <span className="font-mono text-xs font-black text-cyan-300 bg-cyan-950/60 border border-cyan-800/60 px-2 py-0.5 rounded-md">
+                Total: ₹{wallets.reduce((s, w) => s + w.balance, 0).toLocaleString("en-IN")}
               </span>
             </div>
-          </div>
 
-          {/* 4 Wallet Cards Grid */}
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {wallets.map((wallet) => {
-              const isLow = wallet.balance <= wallet.min_alert_balance;
-              return (
-                <div
-                  key={wallet.id}
-                  className="rounded-xl border border-slate-800 bg-slate-900/70 p-3.5 hover:border-slate-700 transition flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
-                        wallet.category === "Banking"
-                          ? "bg-blue-500/10 border-blue-500/30 text-blue-300"
-                          : wallet.category === "Other"
-                          ? "bg-purple-500/10 border-purple-500/30 text-purple-300"
-                          : "bg-cyan-500/10 border-cyan-500/30 text-cyan-300"
-                      }`}>
-                        {wallet.category}
+            {/* 2x2 Wallet Grid */}
+            <div className="grid grid-cols-2 gap-2">
+              {wallets.map((wallet) => {
+                const isLow = wallet.balance <= wallet.min_alert_balance;
+                return (
+                  <div
+                    key={wallet.id}
+                    className="rounded-xl border border-slate-800/90 bg-slate-900/80 p-2.5 hover:border-slate-700 transition flex flex-col justify-between"
+                  >
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-[10px] font-bold text-slate-300 truncate" title={wallet.name}>
+                        {wallet.name}
                       </span>
-
                       {isLow && (
-                        <span className="text-[10px] font-semibold text-amber-400 flex items-center gap-1">
-                          <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
-                          Low (Min ₹{wallet.min_alert_balance})
-                        </span>
+                        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400 animate-pulse" title="Low Balance" />
                       )}
                     </div>
-
-                    <h4 className="mt-2 text-xs font-bold text-white line-clamp-1" title={wallet.name}>
-                      {wallet.name}
-                    </h4>
-
-                    <div className="mt-1.5 font-mono text-2xl font-black text-slate-100">
-                      ₹ {wallet.balance.toLocaleString("en-IN")}
+                    <div className="mt-1 flex items-baseline justify-between">
+                      <span className="font-mono text-sm font-black text-white">
+                        ₹{wallet.balance.toLocaleString("en-IN")}
+                      </span>
+                      <span className="text-[9px] text-slate-500 font-mono">
+                        min ₹{wallet.min_alert_balance}
+                      </span>
                     </div>
                   </div>
+                );
+              })}
+            </div>
+          </div>
 
-                  <div className="mt-3 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
-                    <span className="text-slate-400">Min Alert:</span>
-                    <span className="font-mono text-slate-300 font-semibold">₹{wallet.min_alert_balance}</span>
-                  </div>
+          {/* Right: 4 Shift Financial KPI Cards + Operator Badge (7 cols) */}
+          <div className="lg:col-span-7 rounded-2xl border border-slate-800 bg-[#0c1322] p-3.5 shadow-md flex flex-col justify-between">
+            {/* Operator info strip */}
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-2 mb-2.5">
+              <div className="flex items-center gap-2">
+                <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-xs font-bold text-slate-200">
+                  Shift Operator: <span className="text-cyan-300">{session?.employeeName}</span> ({session?.role})
+                </span>
+                <span className="rounded bg-cyan-950 text-cyan-400 border border-cyan-800/50 px-1.5 py-0.2 text-[9.5px] font-bold">
+                  Isolated Drawer
+                </span>
+              </div>
+              <span className="text-[10px] text-slate-400">
+                Personal daily tally
+              </span>
+            </div>
+
+            {/* 4 Shift KPI Cards Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {/* Today's Invoices */}
+              <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-2.5 flex flex-col justify-between">
+                <div className="flex items-center justify-between text-slate-400">
+                  <span className="text-[10px] font-semibold uppercase">Bills Issued</span>
+                  <Receipt size={12} className="text-cyan-400" />
                 </div>
-              );
-            })}
+                <div className="mt-1 font-mono text-lg font-black text-white">
+                  {shiftSummary.billCount}
+                </div>
+                <div className="text-[9.5px] text-slate-400">Today's count</div>
+              </div>
+
+              {/* Cash in Drawer */}
+              <div className="rounded-xl border border-emerald-500/25 bg-gradient-to-br from-slate-900/80 to-emerald-950/20 p-2.5 flex flex-col justify-between">
+                <div className="flex items-center justify-between text-emerald-400">
+                  <span className="text-[10px] font-semibold uppercase">Cash Drawer</span>
+                  <Banknote size={12} />
+                </div>
+                <div className="mt-1 font-mono text-lg font-black text-emerald-300">
+                  ₹{shiftSummary.totalCash.toFixed(0)}
+                </div>
+                <div className="text-[9.5px] text-emerald-400/70">Physical tally</div>
+              </div>
+
+              {/* UPI / Online */}
+              <div className="rounded-xl border border-cyan-500/25 bg-gradient-to-br from-slate-900/80 to-cyan-950/20 p-2.5 flex flex-col justify-between">
+                <div className="flex items-center justify-between text-cyan-400">
+                  <span className="text-[10px] font-semibold uppercase">UPI / Online</span>
+                  <Smartphone size={12} />
+                </div>
+                <div className="mt-1 font-mono text-lg font-black text-cyan-300">
+                  ₹{shiftSummary.totalUpi.toFixed(0)}
+                </div>
+                <div className="text-[9.5px] text-cyan-400/70">QR / Scanner</div>
+              </div>
+
+              {/* Total Turnover */}
+              <div className="rounded-xl border border-teal-500/25 bg-gradient-to-br from-slate-900/80 to-teal-950/20 p-2.5 flex flex-col justify-between">
+                <div className="flex items-center justify-between text-teal-400">
+                  <span className="text-[10px] font-semibold uppercase">Shift Sales</span>
+                  <TrendingUp size={12} />
+                </div>
+                <div className="mt-1 font-mono text-lg font-black text-white">
+                  ₹{shiftSummary.totalTurnover.toFixed(0)}
+                </div>
+                <div className="text-[9.5px] text-teal-400/70">Counter total</div>
+              </div>
+            </div>
           </div>
         </div>
 
