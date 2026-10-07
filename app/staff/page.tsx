@@ -2568,7 +2568,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                     </div>
                   </div>
 
-                  <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="grid gap-3 sm:grid-cols-3">
                     <div>
                       <label className="text-[11px] font-semibold text-slate-300 block mb-1">Official Fee (₹)</label>
                       <input
@@ -2580,6 +2580,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                         onChange={(e) => setInvGovtFee(e.target.value)}
                         className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-mono font-bold text-slate-300 outline-none focus:border-cyan-400"
                       />
+                      <span className="text-[9.5px] text-slate-500 mt-0.5 block">Official portal fee</span>
                     </div>
                     <div>
                       <label className="text-[11px] font-semibold text-slate-300 block mb-1">Service Charge (₹) *</label>
@@ -2593,28 +2594,27 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                         onChange={(e) => setInvServiceCharge(e.target.value)}
                         className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-mono font-bold text-cyan-300 outline-none focus:border-cyan-400"
                       />
+                      <span className="text-[9.5px] text-slate-500 mt-0.5 block">Center processing fee</span>
                     </div>
-                  </div>
-
-                  {parseFloat(invGovtFee) > 0 && (
-                    <div className="rounded-xl border border-cyan-500/20 bg-cyan-950/20 p-2.5">
-                      <label className="text-[11px] font-semibold text-cyan-300 block mb-1">
-                        Deduct Portal Advance Wallet
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                        Deduct Portal Wallet
                       </label>
                       <select
                         value={invWalletId}
                         onChange={(e) => setInvWalletId(e.target.value)}
-                        className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400"
+                        className="w-full rounded-xl border border-slate-700 bg-slate-900 px-2.5 py-2 text-xs text-white outline-none focus:border-cyan-400"
                       >
                         <option value="">None / External Cash</option>
                         {wallets.map((w) => (
                           <option key={w.id} value={w.id}>
-                            {w.name} (Live Bal: ₹{w.balance.toLocaleString("en-IN")})
+                            {w.name} (Bal: ₹{w.balance.toLocaleString("en-IN")})
                           </option>
                         ))}
                       </select>
+                      <span className="text-[9.5px] text-slate-500 mt-0.5 block">Portal deducted for fee</span>
                     </div>
-                  )}
+                  </div>
 
                   <div>
                     <label className="text-[11px] font-semibold text-slate-300 block mb-1">
