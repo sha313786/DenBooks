@@ -85,29 +85,29 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
   ];
 
   return (
-    <div className="min-h-screen bg-[#070b13] text-slate-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#090d16] text-slate-100 flex flex-col font-sans">
       {/* SaaS Top Header */}
-      <header className="border-b border-slate-800/80 bg-[#0c1322] px-4 md:px-6 py-3 flex flex-wrap items-center justify-between gap-3 sticky top-0 z-40">
+      <header className="border-b border-slate-800/80 bg-[#0e1526]/90 backdrop-blur-md px-4 md:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 sticky top-0 z-40 shadow-sm">
         <div className="flex items-center gap-3">
-          <Link href="/dashboard" className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 to-teal-500 text-slate-950 font-black shadow-md shadow-cyan-400/20">
+          <Link href="/dashboard" className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-cyan-500 via-teal-400 to-emerald-400 text-slate-950 font-black shadow-md shadow-cyan-500/20">
             <Receipt size={18} />
           </Link>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-base font-black text-white">{shopName}</span>
-              <span className="text-[10px] font-bold bg-cyan-950 text-cyan-300 border border-cyan-800 px-2 py-0.5 rounded-full flex items-center gap-1">
+              <span className="text-sm font-black tracking-tight text-white">{shopName}</span>
+              <span className="text-[10px] font-bold bg-cyan-950/70 text-cyan-300 border border-cyan-800/60 px-2 py-0.5 rounded-full flex items-center gap-1">
                 <Sparkles size={10} />
-                <span>Pro Trial ({trialDaysLeft}d left)</span>
+                <span>Admin Suite</span>
               </span>
             </div>
-            <p className="text-[11px] text-slate-400">
-              {ownerName} • {stateName}
+            <p className="text-[11px] text-slate-400 font-medium">
+              {ownerName} • <span className="text-slate-300">{stateName}</span>
             </p>
           </div>
         </div>
 
         {/* Dedicated Module Navigation Links */}
-        <nav className="flex items-center rounded-xl border border-slate-800 bg-slate-900/90 p-1 overflow-x-auto max-w-full">
+        <nav className="flex items-center rounded-xl border border-slate-800/90 bg-[#121b2f] p-1 overflow-x-auto max-w-full shadow-inner">
           {navLinks.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
@@ -115,10 +115,10 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
               <Link
                 key={item.href}
                 href={item.href}
-                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition whitespace-nowrap ${
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition whitespace-nowrap ${
                   isActive
-                    ? "bg-cyan-400 text-slate-950 shadow-sm"
-                    : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                    ? "bg-cyan-500 text-slate-950 font-bold shadow-sm"
+                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
                 }`}
               >
                 <Icon size={13} />
@@ -128,38 +128,32 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
           })}
         </nav>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           {/* Staff Counter Desk Shortcut */}
           <Link
             href="/staff"
-            className="inline-flex items-center gap-1.5 rounded-xl border border-teal-500/30 bg-teal-500/10 px-3 py-1.5 text-xs font-bold text-teal-300 hover:bg-teal-500/20 transition shadow-sm"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-teal-500/40 bg-teal-500/10 px-3 py-1.5 text-xs font-bold text-teal-300 hover:bg-teal-500/20 hover:border-teal-400 transition shadow-sm"
           >
-            <span>Counter Desk &rarr;</span>
+            <span>Front Desk &rarr;</span>
           </Link>
 
           {/* Settings Button */}
           <button
             type="button"
             onClick={() => setShowSettings(true)}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/90 px-3 py-1.5 text-xs font-bold text-slate-200 hover:border-cyan-400 hover:text-white transition shadow-sm"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700/80 bg-slate-800/80 px-2.5 py-1.5 text-xs font-medium text-slate-300 hover:border-slate-500 hover:text-white transition shadow-sm"
+            title="Center Profile & Receipt Settings"
           >
             <Settings size={14} className="text-cyan-400" />
             <span className="hidden sm:inline">Settings</span>
           </button>
 
           <Link
-            href="/#pricing"
-            className="hidden sm:inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-orange-400 px-3 py-1.5 text-xs font-black text-slate-950 hover:brightness-110 transition shadow-sm"
-          >
-            <CreditCard size={13} />
-            <span>Upgrade</span>
-          </Link>
-
-          <Link
             href="/"
-            className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition ml-1"
+            className="inline-flex items-center gap-1 text-xs text-slate-400 hover:text-slate-200 transition ml-1 px-2 py-1 rounded-lg hover:bg-slate-800/50"
+            title="Exit Admin"
           >
-            <LogOut size={14} />
+            <LogOut size={13} />
             <span className="hidden sm:inline">Exit</span>
           </Link>
         </div>

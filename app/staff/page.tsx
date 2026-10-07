@@ -1297,39 +1297,39 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
   }
 
   return (
-    <div className="min-h-screen bg-[#070b13] text-slate-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#090d16] text-slate-100 flex flex-col font-sans">
       {/* 1. Counter Top Navigation Bar */}
-      <header className="sticky top-0 z-40 border-b border-slate-800/90 bg-[#0c1322]/95 backdrop-blur-md px-4 py-3 shadow-md">
+      <header className="sticky top-0 z-40 border-b border-slate-800/80 bg-[#0e1526]/90 backdrop-blur-md px-4 md:px-6 py-2.5 shadow-sm">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-teal-500 text-slate-950 font-black shadow-md shadow-cyan-500/20 text-sm">
-              DD
-            </div>
+            <Link href="/staff" className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-cyan-500 via-teal-400 to-emerald-400 text-slate-950 font-black shadow-md shadow-cyan-500/20 text-xs">
+              FD
+            </Link>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-black text-sm tracking-wider text-white">DIGITAL DEN 360</span>
-                <span className="rounded-full bg-cyan-500/20 px-2 py-0.5 text-[10px] font-bold text-cyan-300 border border-cyan-400/30">
-                  CSC Counter Desk
+                <span className="font-black text-sm tracking-tight text-white">DenBooks Front Desk</span>
+                <span className="rounded-full bg-teal-950/70 text-teal-300 border border-teal-800/60 px-2 py-0.5 text-[10px] font-bold">
+                  Active Shift
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400">Citizen Services • Counter Billing • Xerox & Printing</p>
+              <p className="text-[11px] text-slate-400 font-medium">Citizen Services • Counter Billing • Xerox & Applications</p>
             </div>
           </div>
 
           {/* Active Employee Info & Actions */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-2.5">
             {/* Quick Admin Dashboard switch if admin/supervisor */}
             {(session?.role === "Branch Supervisor" || session?.employeeId === "emp-admin-owner") && (
-              <a
+              <Link
                 href="/dashboard"
-                className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-xs font-bold text-cyan-300 hover:bg-cyan-500/20 transition"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-3 py-1.5 text-xs font-bold text-cyan-300 hover:bg-cyan-500/20 transition shadow-sm"
               >
-                <span>&larr; Admin Dashboard</span>
-              </a>
+                <span>&larr; Admin Suite</span>
+              </Link>
             )}
 
-            <div className="flex items-center gap-2.5 rounded-xl border border-slate-800 bg-slate-900/80 px-3 py-1.5">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-500/20 font-bold text-cyan-300 text-xs">
+            <div className="flex items-center gap-2.5 rounded-xl border border-slate-800 bg-[#121b2f] px-3 py-1.5">
+              <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-cyan-500/20 font-bold text-cyan-300 text-xs">
                 {session?.employeeName.charAt(0) || "S"}
               </div>
               <div className="text-left">
@@ -1341,11 +1341,11 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
             <button
               type="button"
               onClick={handleLogout}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-bold text-red-300 hover:bg-red-500/20 transition"
+              className="inline-flex items-center gap-1 rounded-xl border border-red-500/30 bg-red-500/10 px-2.5 py-1.5 text-xs font-bold text-red-300 hover:bg-red-500/20 transition shadow-sm"
               title="Logout and end current shift"
             >
               <LogOut size={13} />
-              <span>Logout</span>
+              <span className="hidden sm:inline">Logout</span>
             </button>
           </div>
         </div>
@@ -1353,19 +1353,19 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
 
       {/* 2. Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-4">
-        {/* Compact Top Navigation & Action Command Bar */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 rounded-2xl border border-slate-800 bg-[#0c1322] p-3 shadow-lg">
+        {/* Modern Segmented Front Desk Navigation Bar */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 rounded-2xl border border-slate-800/80 bg-[#0e1526] p-2.5 shadow-md">
           {/* Module Tabs */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
+          <div className="flex items-center gap-1 overflow-x-auto p-0.5 rounded-xl bg-[#090d16]/70 border border-slate-800/60">
             <Link
               href="/staff/tokens"
-              className={`rounded-xl px-3.5 py-2 text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 ${
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition whitespace-nowrap flex items-center gap-1.5 ${
                 activeTab === "tokens"
-                  ? "bg-pink-500/20 text-pink-300 border border-pink-400/40 shadow-[0_0_12px_rgba(236,72,153,0.25)]"
-                  : "text-slate-400 hover:text-white hover:bg-slate-850"
+                  ? "bg-pink-500/20 text-pink-300 border border-pink-500/40 font-bold shadow-sm"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
               }`}
             >
-              <Ticket size={13} className="text-pink-400" />
+              <Ticket size={13} className={activeTab === "tokens" ? "text-pink-400" : "text-slate-500"} />
               <span>Queue Tokens</span>
               {queueStats.waitingCount > 0 && (
                 <span className="rounded-full bg-pink-500 text-slate-950 font-black px-1.5 py-0.2 text-[10px]">
@@ -1376,50 +1376,61 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
 
             <Link
               href="/staff/invoices"
-              className={`rounded-xl px-3.5 py-2 text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 ${
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition whitespace-nowrap flex items-center gap-1.5 ${
                 activeTab === "invoices"
-                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 shadow-[0_0_12px_rgba(8,145,178,0.25)]"
-                  : "text-slate-400 hover:text-white hover:bg-slate-850"
+                  ? "bg-cyan-500 text-slate-950 font-bold shadow-sm"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
               }`}
             >
-              <Receipt size={13} className="text-cyan-400" />
-              <span>Invoices & Bills ({transactions.length})</span>
+              <Receipt size={13} className={activeTab === "invoices" ? "text-slate-950" : "text-slate-500"} />
+              <span>Invoices & Bills</span>
+              <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${activeTab === "invoices" ? "bg-slate-950 text-cyan-300" : "bg-slate-800 text-slate-400"}`}>
+                {transactions.length}
+              </span>
             </Link>
 
             <Link
               href="/staff/requests"
-              className={`rounded-xl px-3.5 py-2 text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 ${
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition whitespace-nowrap flex items-center gap-1.5 ${
                 activeTab === "requests"
-                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 shadow-[0_0_12px_rgba(8,145,178,0.25)]"
-                  : "text-slate-400 hover:text-white hover:bg-slate-850"
+                  ? "bg-cyan-500 text-slate-950 font-bold shadow-sm"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
               }`}
             >
-              <FileText size={13} className="text-cyan-400" />
-              <span>Citizen Requests ({requests.length})</span>
+              <FileText size={13} className={activeTab === "requests" ? "text-slate-950" : "text-slate-500"} />
+              <span>Citizen Requests</span>
+              <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${activeTab === "requests" ? "bg-slate-950 text-cyan-300" : "bg-slate-800 text-slate-400"}`}>
+                {requests.length}
+              </span>
             </Link>
 
             <Link
               href="/staff/khata"
-              className={`rounded-xl px-3.5 py-2 text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 ${
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition whitespace-nowrap flex items-center gap-1.5 ${
                 activeTab === "khata"
-                  ? "bg-amber-500/20 text-amber-300 border border-amber-400/40 shadow-[0_0_12px_rgba(245,158,11,0.25)]"
-                  : "text-slate-400 hover:text-white hover:bg-slate-850"
+                  ? "bg-amber-500/20 text-amber-300 border border-amber-400/40 font-bold shadow-sm"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
               }`}
             >
-              <Clock size={13} className="text-amber-400" />
-              <span>Customer Dues ({khataList.length})</span>
+              <Clock size={13} className={activeTab === "khata" ? "text-amber-400" : "text-slate-500"} />
+              <span>Customer Khata</span>
+              {khataList.length > 0 && (
+                <span className="rounded-full bg-amber-500/30 text-amber-300 border border-amber-500/40 px-1.5 py-0.2 text-[10px] font-bold">
+                  {khataList.length}
+                </span>
+              )}
             </Link>
 
             <Link
               href="/staff/drawer"
-              className={`rounded-xl px-3.5 py-2 text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 ${
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition whitespace-nowrap flex items-center gap-1.5 ${
                 activeTab === "drawer"
-                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 shadow-[0_0_12px_rgba(16,185,129,0.25)]"
-                  : "text-slate-400 hover:text-white hover:bg-slate-850"
+                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 font-bold shadow-sm"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
               }`}
             >
-              <Banknote size={13} className="text-emerald-400" />
-              <span>Shift Drawer Tally</span>
+              <Banknote size={13} className={activeTab === "drawer" ? "text-emerald-400" : "text-slate-500"} />
+              <span>Shift Drawer</span>
             </Link>
           </div>
 
@@ -1437,7 +1448,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                   setTokNotes("");
                   setShowTokenModal(true);
                 }}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-pink-500/40 bg-pink-500/15 px-3 py-1.5 text-xs font-bold text-pink-300 hover:bg-pink-500/25 transition shadow-sm"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-pink-500/30 bg-pink-500/10 px-3 py-1.5 text-xs font-bold text-pink-300 hover:bg-pink-500/20 transition shadow-sm"
                 title="Issue sequential queue token for arriving citizen (First-Come, First-Served)"
               >
                 <Ticket size={13} />
@@ -1449,7 +1460,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
               <button
                 type="button"
                 onClick={() => setShowRequestModal(true)}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-1.5 text-xs font-bold text-slate-200 hover:border-cyan-400/40 hover:text-cyan-300 transition"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700/80 bg-slate-800/70 px-3 py-1.5 text-xs font-bold text-slate-200 hover:border-slate-500 hover:text-white transition shadow-sm"
               >
                 <Plus size={13} />
                 <span>+ New Request</span>
@@ -2424,61 +2435,66 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
       {/* 3. ADD INVOICE & BILL MODAL */}
       {showInvoiceModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm animate-fadeIn"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-fadeIn"
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) setShowInvoiceModal(false);
           }}
         >
-          <div className="relative w-full max-w-xl max-h-[92vh] flex flex-col rounded-3xl border border-slate-800 bg-[#0c1322] shadow-2xl overflow-hidden">
+          <div className="relative w-full max-w-xl max-h-[92vh] flex flex-col rounded-2xl border border-slate-700/80 bg-[#0e1526] shadow-2xl overflow-hidden">
             {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-slate-800 bg-slate-900/60 p-4">
-              <div>
-                <h3 className="text-sm font-bold text-white">Create Counter Bill & Invoice</h3>
-                <p className="text-[11px] text-slate-400">Instant thermal print & record to counter daybook</p>
+            <div className="flex items-center justify-between border-b border-slate-800 bg-[#121b2f] px-5 py-3.5">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                  <Receipt size={16} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">New Counter Invoice</h3>
+                  <p className="text-[11px] text-slate-400">Record transaction, deduct wallet & print thermal slip</p>
+                </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowInvoiceModal(false)}
-                className="rounded-lg p-1 text-slate-400 hover:bg-slate-800 hover:text-white"
+                className="rounded-lg p-1 text-slate-400 hover:bg-slate-800 hover:text-white transition"
               >
                 ✕
               </button>
             </div>
 
             {/* Mode Selector Tabs */}
-            <div className="flex border-b border-slate-800 bg-slate-950/60 p-1.5 gap-1">
+            <div className="flex border-b border-slate-800 bg-[#090d16]/60 p-1.5 gap-1.5">
               <button
                 type="button"
                 onClick={() => setInvMode("citizen")}
-                className={`flex-1 rounded-lg py-1.5 text-xs font-bold transition ${
+                className={`flex-1 rounded-lg py-1.5 text-xs font-bold transition flex items-center justify-center gap-1.5 ${
                   invMode === "citizen"
-                    ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/40"
-                    : "text-slate-400 hover:text-white"
+                    ? "bg-cyan-500 text-slate-950 shadow-sm"
+                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
                 }`}
               >
-                🏛️ Citizen / Portal
+                <span>🏛️ Citizen Service</span>
               </button>
               <button
                 type="button"
                 onClick={() => setInvMode("counter")}
-                className={`flex-1 rounded-lg py-1.5 text-xs font-bold transition ${
+                className={`flex-1 rounded-lg py-1.5 text-xs font-bold transition flex items-center justify-center gap-1.5 ${
                   invMode === "counter"
-                    ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/40"
-                    : "text-slate-400 hover:text-white"
+                    ? "bg-cyan-500 text-slate-950 shadow-sm"
+                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
                 }`}
               >
-                🖨️ Counter POS & Xerox
+                <span>🖨️ Counter Xerox</span>
               </button>
               <button
                 type="button"
                 onClick={() => setInvMode("custom")}
-                className={`flex-1 rounded-lg py-1.5 text-xs font-bold transition ${
+                className={`flex-1 rounded-lg py-1.5 text-xs font-bold transition flex items-center justify-center gap-1.5 ${
                   invMode === "custom"
-                    ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/40"
-                    : "text-slate-400 hover:text-white"
+                    ? "bg-cyan-500 text-slate-950 shadow-sm"
+                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
                 }`}
               >
-                ✍️ Custom Bill
+                <span>✍️ Custom Bill</span>
               </button>
             </div>
 
@@ -2796,21 +2812,23 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                 </div>
               </div>
 
-              {/* Total Banner */}
-              <div className="flex items-center justify-between rounded-xl border border-cyan-500/30 bg-cyan-950/30 p-3.5">
+              {/* Total Banner & Payment Details */}
+              <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-[#121b2f] p-3.5 shadow-sm">
                 <div>
-                  <span className="text-xs uppercase font-bold text-cyan-300">Total Bill Amount</span>
-                  <div className="text-[11px] text-slate-400">{invPaymentMethod} • {invIsCredit ? "Credit Due" : "Settled"}</div>
+                  <span className="text-xs uppercase font-bold text-slate-300">Total Payable</span>
+                  <div className="text-[11px] text-slate-400 mt-0.5">
+                    {invPaymentMethod} • {invIsCredit ? <span className="text-amber-400 font-semibold">Credit (Due in Khata)</span> : <span className="text-emerald-400 font-semibold">Settled</span>}
+                  </div>
                 </div>
-                <div className="font-mono text-2xl font-black text-emerald-300">₹ {invTotalAmount.toFixed(2)}</div>
+                <div className="font-mono text-2xl font-black text-cyan-300">₹{invTotalAmount.toFixed(2)}</div>
               </div>
 
               {/* Actions */}
-              <div className="pt-2 flex gap-2">
+              <div className="pt-1 flex gap-2.5">
                 <button
                   type="submit"
                   disabled={savingInvoice}
-                  className="flex-1 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 py-2.5 text-xs font-bold text-slate-950 hover:brightness-110"
+                  className="flex-1 rounded-xl bg-cyan-500 hover:bg-cyan-400 py-3 text-xs font-bold text-slate-950 transition shadow-md shadow-cyan-500/20 disabled:opacity-50"
                 >
                   {savingInvoice ? "Recording..." : `Save Bill (₹${invTotalAmount.toFixed(0)})`}
                 </button>
@@ -2818,10 +2836,10 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                   type="button"
                   disabled={savingInvoice}
                   onClick={() => handleSaveInvoice(true)}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-500/40 bg-cyan-500/15 px-4 py-2.5 text-xs font-bold text-cyan-300"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-750 bg-slate-800/90 hover:bg-slate-700/80 px-4 py-3 text-xs font-bold text-slate-100 transition shadow-sm disabled:opacity-50"
                 >
-                  <Printer size={14} />
-                  <span>Save & Print Receipt</span>
+                  <Printer size={15} className="text-cyan-400" />
+                  <span>Print Slip & Save</span>
                 </button>
               </div>
             </form>
