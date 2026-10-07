@@ -1455,179 +1455,158 @@ export function AccountsModule() {
         </div>
       </div>
 
-      {/* 2. Portal & Bank Advance Wallets (Refined, Modern Grid) */}
-      <div className="rounded-2xl border border-slate-800/90 bg-[#0c1322] p-4 space-y-3 shadow-lg shadow-black/20">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5">
-          <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-cyan-400/30 bg-cyan-400/10 text-cyan-300">
-              <Wallet size={15} />
-            </div>
-            <div>
+      {/* 2. Combined Single-Screen Command Bar: Wallets (Left) + Financial KPIs (Right) */}
+      <div className="grid gap-3.5 lg:grid-cols-12">
+        {/* Left: Compact Portal Advance Wallets (5 cols) */}
+        <div className="lg:col-span-5 rounded-2xl border border-slate-800/90 bg-[#0c1322] p-3.5 flex flex-col justify-between shadow-lg">
+          <div className="flex items-center justify-between border-b border-slate-800/80 pb-2 mb-2.5">
+            <div className="flex items-center gap-2">
+              <div className="flex h-6 w-6 items-center justify-center rounded-lg border border-cyan-400/30 bg-cyan-400/10 text-cyan-300">
+                <Wallet size={13} />
+              </div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-200">
-                Portal Advance & Bank Wallets
+                Portal Advance & Bank
               </h3>
             </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] text-slate-400">Total:</span>
+              <span className="font-mono text-xs font-black text-cyan-300 bg-cyan-950/60 border border-cyan-500/30 px-2 py-0.5 rounded-md">
+                ₹ {wallets.reduce((s, w) => s + w.balance, 0).toLocaleString("en-IN")}
+              </span>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] text-slate-400 font-medium">Total Balance:</span>
-            <span className="font-mono text-xs font-black text-cyan-300 bg-cyan-950/60 border border-cyan-500/30 px-2.5 py-0.5 rounded-lg">
-              ₹ {wallets.reduce((s, w) => s + w.balance, 0).toLocaleString("en-IN")}
-            </span>
+          {/* 4 Wallets Compact 2x2 Grid */}
+          <div className="grid grid-cols-2 gap-2">
+            {wallets.map((wallet) => {
+              const isLow = wallet.balance <= wallet.min_alert_balance;
+              return (
+                <div
+                  key={wallet.id}
+                  className="rounded-xl border border-slate-800/90 bg-[#0e1625] p-2.5 flex items-center justify-between hover:border-slate-700 transition"
+                >
+                  <div className="min-w-0 pr-1">
+                    <p className="text-[11px] font-bold text-slate-300 truncate" title={wallet.name}>
+                      {wallet.name}
+                    </p>
+                    <p className="font-mono text-sm font-black text-white mt-0.5">
+                      ₹ {wallet.balance.toLocaleString("en-IN")}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTargetWallet(wallet);
+                      setShowTopupModal(true);
+                    }}
+                    className="shrink-0 rounded-lg border border-slate-700 bg-slate-800 px-2 py-1 text-[11px] font-bold text-cyan-300 hover:border-cyan-400 hover:bg-cyan-500/10 transition"
+                    title="Top-up wallet"
+                  >
+                    +Top-up
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        {/* 4 Wallet Cards Grid */}
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {wallets.map((wallet) => {
-            const isLow = wallet.balance <= wallet.min_alert_balance;
-            return (
-              <div
-                key={wallet.id}
-                className="rounded-xl border border-slate-800/90 bg-[#0e1625] p-3.5 hover:border-slate-700 hover:bg-[#111a2c] transition flex flex-col justify-between group shadow-sm"
-              >
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
-                      wallet.category === "Banking"
-                        ? "bg-blue-500/10 border-blue-500/30 text-blue-300"
-                        : wallet.category === "Other"
-                        ? "bg-purple-500/10 border-purple-500/30 text-purple-300"
-                        : "bg-slate-800 border-slate-700 text-slate-300"
-                    }`}>
-                      {wallet.category}
-                    </span>
-
-                    {isLow && (
-                      <span className="text-[10px] font-medium text-amber-400/90 flex items-center gap-1">
-                        <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
-                        Min ₹{wallet.min_alert_balance}
-                      </span>
-                    )}
-                  </div>
-
-                  <h4 className="mt-2 text-xs font-bold text-white leading-snug line-clamp-1" title={wallet.name}>
-                    {wallet.name}
-                  </h4>
-
-                  <div className="mt-1.5 font-mono text-xl font-black text-slate-100">
-                    ₹ {wallet.balance.toLocaleString("en-IN")}
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTargetWallet(wallet);
-                    setShowTopupModal(true);
-                  }}
-                  className="mt-3 w-full inline-flex items-center justify-center gap-1 rounded-lg border border-slate-700/80 bg-slate-800/60 py-1.5 text-xs font-bold text-cyan-300 hover:border-cyan-400/50 hover:bg-cyan-500/10 transition"
-                >
-                  <Plus size={13} />
-                  <span>Top-up</span>
-                </button>
+        {/* Right: Compact 5-Metric Financial Strip (7 cols) */}
+        <div className="lg:col-span-7 grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+          {/* Cash in Drawer */}
+          <div className="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-[#0e1625] to-[#0f231e] p-3 flex flex-col justify-between shadow-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-400">
+                Cash In Drawer
+              </span>
+              <div className="rounded-lg bg-emerald-500/15 p-1 text-emerald-300">
+                <IndianRupee size={12} />
               </div>
-            );
-          })}
+            </div>
+            <p className="text-xl font-black text-white font-mono mt-1">
+              ₹ {summary.cashInHand.toFixed(0)}
+            </p>
+            <p className="text-[9.5px] text-slate-400 truncate">Physical drawer</p>
+          </div>
+
+          {/* UPI / Bank In */}
+          <div className="rounded-2xl border border-cyan-500/30 bg-gradient-to-br from-[#0e1625] to-[#102336] p-3 flex flex-col justify-between shadow-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-cyan-400">
+                UPI / Bank In
+              </span>
+              <div className="rounded-lg bg-cyan-500/15 p-1 text-cyan-300">
+                <CreditCard size={12} />
+              </div>
+            </div>
+            <p className="text-xl font-black text-white font-mono mt-1">
+              ₹ {summary.upiReceived.toFixed(0)}
+            </p>
+            <p className="text-[9.5px] text-slate-400 truncate">GPay / PhonePe</p>
+          </div>
+
+          {/* Real Shop Revenue */}
+          <div className="rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-[#0e1625] to-[#171a35] p-3 flex flex-col justify-between shadow-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-indigo-400">
+                Shop Revenue
+              </span>
+              <div className="rounded-lg bg-indigo-500/15 p-1 text-indigo-300">
+                <Sparkles size={12} />
+              </div>
+            </div>
+            <p className="text-xl font-black text-white font-mono mt-1">
+              ₹ {summary.realShopRevenue.toFixed(0)}
+            </p>
+            <p className="text-[9.5px] text-slate-400 truncate">Services + Xerox</p>
+          </div>
+
+          {/* Net Profit */}
+          <div className={`rounded-2xl border p-3 flex flex-col justify-between shadow-sm ${
+            summary.netShopProfit >= 0
+              ? "border-teal-500/30 bg-gradient-to-br from-[#0e1625] to-[#0d2a29]"
+              : "border-red-500/30 bg-gradient-to-br from-[#0e1625] to-[#2a0d0d]"
+          }`}>
+            <div className="flex items-center justify-between">
+              <span className={`text-[10px] uppercase font-bold tracking-wider ${
+                summary.netShopProfit >= 0 ? "text-teal-400" : "text-red-400"
+              }`}>
+                Net Profit
+              </span>
+              <div className={`rounded-lg p-1 ${
+                summary.netShopProfit >= 0 ? "bg-teal-500/15 text-teal-300" : "bg-red-500/15 text-red-300"
+              }`}>
+                {summary.netShopProfit >= 0 ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
+              </div>
+            </div>
+            <p className="text-xl font-black text-white font-mono mt-1">
+              ₹ {summary.netShopProfit.toFixed(0)}
+            </p>
+            <p className="text-[9.5px] text-slate-400 truncate">After ₹{summary.totalExpense.toFixed(0)} exp</p>
+          </div>
+
+          {/* Customer Khata */}
+          <div
+            onClick={() => setSubTab("khata")}
+            className="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-[#0e1625] to-[#291e10] p-3 flex flex-col justify-between cursor-pointer hover:border-amber-400/60 transition group shadow-sm col-span-2 sm:col-span-1"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-amber-400">
+                Customer Dues
+              </span>
+              <div className="rounded-lg bg-amber-500/15 p-1 text-amber-300 group-hover:scale-110 transition">
+                <Clock3 size={12} />
+              </div>
+            </div>
+            <p className="text-xl font-black text-amber-300 font-mono mt-1">
+              ₹ {khataList.reduce((sum, k) => sum + k.amount, 0).toFixed(0)}
+            </p>
+            <p className="text-[9.5px] text-amber-400/80 flex items-center justify-between">
+              <span>{khataList.length} dues</span>
+              <span className="underline group-hover:text-white">View &rarr;</span>
+            </p>
+          </div>
         </div>
       </div>
-
-      {/* Staff Filter Active Indicator */}
-      {staffFilter !== "all" && (
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-cyan-500/40 bg-cyan-950/30 px-4 py-2.5 text-xs shadow-sm">
-          <span className="text-cyan-300 font-semibold flex items-center gap-2">
-            <Users size={14} className="text-cyan-400" />
-            Filtered to operator: <strong className="text-white underline">{employees.find((e) => e.id === staffFilter)?.name || staffFilter}</strong> — Showing their individual cash drawer tally & sales
-          </span>
-          <button
-            type="button"
-            onClick={() => setStaffFilter("all")}
-            className="text-cyan-400 hover:text-white underline font-bold text-xs"
-          >
-            Clear Filter (Show All Staff) &rarr;
-          </button>
-        </div>
-      )}
-
-      {/* 3. Unified Financial KPI Metric Strip (5 Modern KPI Cards) */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        {/* Cash in Drawer */}
-        <div className="rounded-xl border border-emerald-500/30 bg-gradient-to-br from-[#0e1625] to-[#0f231e] p-3.5 relative overflow-hidden shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-400">
-              Cash In Drawer
-            </span>
-            <div className="rounded-lg bg-emerald-500/15 p-1 text-emerald-300">
-              <IndianRupee size={14} />
-            </div>
-          </div>
-          <p className="mt-1.5 text-2xl font-black text-white font-mono">
-            ₹ {summary.cashInHand.toFixed(0)}
-          </p>
-          <p className="text-[10.5px] text-slate-400">Physical drawer cash</p>
-        </div>
-
-        {/* UPI / Bank Received */}
-        <div className="rounded-xl border border-cyan-500/30 bg-gradient-to-br from-[#0e1625] to-[#102336] p-3.5 relative overflow-hidden shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] uppercase font-bold tracking-wider text-cyan-400">
-              UPI / Bank In
-            </span>
-            <div className="rounded-lg bg-cyan-500/15 p-1 text-cyan-300">
-              <CreditCard size={14} />
-            </div>
-          </div>
-          <p className="mt-1.5 text-2xl font-black text-white font-mono">
-            ₹ {summary.upiReceived.toFixed(0)}
-          </p>
-          <p className="text-[10.5px] text-slate-400">GPay, PhonePe & QR</p>
-        </div>
-
-        {/* Real Shop Revenue */}
-        <div className="rounded-xl border border-indigo-500/30 bg-gradient-to-br from-[#0e1625] to-[#171a35] p-3.5 relative overflow-hidden shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] uppercase font-bold tracking-wider text-indigo-400">
-              Shop Revenue
-            </span>
-            <div className="rounded-lg bg-indigo-500/15 p-1 text-indigo-300">
-              <Sparkles size={14} />
-            </div>
-          </div>
-          <p className="mt-1.5 text-2xl font-black text-white font-mono">
-            ₹ {summary.realShopRevenue.toFixed(0)}
-          </p>
-          <p className="text-[10.5px] text-slate-400">Services + Counter Xerox</p>
-        </div>
-
-        {/* Net Profit */}
-        <div className={`rounded-xl border p-3.5 relative overflow-hidden shadow-sm ${
-          summary.netShopProfit >= 0
-            ? "border-teal-500/30 bg-gradient-to-br from-[#0e1625] to-[#0d2a29]"
-            : "border-red-500/30 bg-gradient-to-br from-[#0e1625] to-[#2a0d0d]"
-        }`}>
-          <div className="flex items-center justify-between">
-            <span className={`text-[10px] uppercase font-bold tracking-wider ${
-              summary.netShopProfit >= 0 ? "text-teal-400" : "text-red-400"
-            }`}>
-              Net Daily Profit
-            </span>
-            <div className={`rounded-lg p-1 ${
-              summary.netShopProfit >= 0 ? "bg-teal-500/15 text-teal-300" : "bg-red-500/15 text-red-300"
-            }`}>
-              {summary.netShopProfit >= 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-            </div>
-          </div>
-          <p className="mt-1.5 text-2xl font-black text-white font-mono">
-            ₹ {summary.netShopProfit.toFixed(0)}
-          </p>
-          <p className="text-[10.5px] text-slate-400">After ₹{summary.totalExpense.toFixed(0)} expense</p>
-        </div>
-
-        {/* Customer Dues (Khata) */}
-        <div
-          onClick={() => setSubTab("khata")}
-          className="rounded-xl border border-amber-500/30 bg-gradient-to-br from-[#0e1625] to-[#291e10] p-3.5 relative overflow-hidden cursor-pointer hover:border-amber-400/60 transition group shadow-sm"
-        >
           <div className="flex items-center justify-between">
             <span className="text-[10px] uppercase font-bold tracking-wider text-amber-400">
               Customer Dues (Khata)
