@@ -80,7 +80,13 @@ import {
   printQueueTokenSlip,
 } from "@/lib/services/token.service";
 
-export default function StaffCounterPage() {
+export type StaffTab = "tokens" | "invoices" | "requests" | "khata" | "drawer";
+
+interface StaffCounterPageProps {
+  initialTab?: StaffTab;
+}
+
+export default function StaffCounterPage({ initialTab = "invoices" }: StaffCounterPageProps = {}) {
   const router = useRouter();
 
   // Authentication & Session
@@ -98,7 +104,7 @@ export default function StaffCounterPage() {
   }, [session]);
 
   // Active sub-tab in Staff Desk
-  const [activeTab, setActiveTab] = useState<"tokens" | "invoices" | "requests" | "khata" | "drawer">("invoices");
+  const [activeTab, setActiveTab] = useState<StaffTab>(initialTab);
 
   // Data states
   const [transactions, setTransactions] = useState<AccountTransaction[]>([]);
@@ -1469,7 +1475,10 @@ export default function StaffCounterPage() {
             {/* Queue Tokens Tab */}
             <button
               type="button"
-              onClick={() => setActiveTab("tokens")}
+              onClick={() => {
+                setActiveTab("tokens");
+                if (typeof window !== "undefined") window.history.pushState({}, "", "/staff/tokens");
+              }}
               className={`rounded-xl px-4 py-2 text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 ${
                 activeTab === "tokens"
                   ? "bg-pink-500/20 text-pink-300 border border-pink-400/30"
@@ -1487,7 +1496,10 @@ export default function StaffCounterPage() {
 
             <button
               type="button"
-              onClick={() => setActiveTab("invoices")}
+              onClick={() => {
+                setActiveTab("invoices");
+                if (typeof window !== "undefined") window.history.pushState({}, "", "/staff/invoices");
+              }}
               className={`rounded-xl px-4 py-2 text-xs font-bold transition whitespace-nowrap ${
                 activeTab === "invoices"
                   ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/30"
@@ -1498,7 +1510,10 @@ export default function StaffCounterPage() {
             </button>
             <button
               type="button"
-              onClick={() => setActiveTab("requests")}
+              onClick={() => {
+                setActiveTab("requests");
+                if (typeof window !== "undefined") window.history.pushState({}, "", "/staff/requests");
+              }}
               className={`rounded-xl px-4 py-2 text-xs font-bold transition whitespace-nowrap ${
                 activeTab === "requests"
                   ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/30"
@@ -1509,7 +1524,10 @@ export default function StaffCounterPage() {
             </button>
             <button
               type="button"
-              onClick={() => setActiveTab("khata")}
+              onClick={() => {
+                setActiveTab("khata");
+                if (typeof window !== "undefined") window.history.pushState({}, "", "/staff/khata");
+              }}
               className={`rounded-xl px-4 py-2 text-xs font-bold transition whitespace-nowrap ${
                 activeTab === "khata"
                   ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/30"
@@ -1520,7 +1538,10 @@ export default function StaffCounterPage() {
             </button>
             <button
               type="button"
-              onClick={() => setActiveTab("drawer")}
+              onClick={() => {
+                setActiveTab("drawer");
+                if (typeof window !== "undefined") window.history.pushState({}, "", "/staff/drawer");
+              }}
               className={`rounded-xl px-4 py-2 text-xs font-bold transition whitespace-nowrap ${
                 activeTab === "drawer"
                   ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/30"

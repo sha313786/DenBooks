@@ -63,14 +63,22 @@ import {
 } from "@/lib/services/accounts.service";
 import { getEmployees, Employee } from "@/lib/services/employee.service";
 
-type AccountsSubTab = "daybook" | "counter_pos" | "khata";
-const VALID_SUBTABS: AccountsSubTab[] = ["daybook", "counter_pos", "khata"];
+export type AccountsSubTab = "daybook" | "counter_pos" | "khata";
+export const VALID_SUBTABS: AccountsSubTab[] = ["daybook", "counter_pos", "khata"];
 
-export function AccountsModule() {
-  const [subTab, setSubTabState] = useState<AccountsSubTab>("daybook");
+interface AccountsModuleProps {
+  initialTab?: AccountsSubTab;
+}
+
+export function AccountsModule({ initialTab }: AccountsModuleProps = {}) {
+  const [subTab, setSubTabState] = useState<AccountsSubTab>(initialTab || "daybook");
 
   // Sync sub-tab with URL search parameter or localStorage on mount
   useEffect(() => {
+    if (initialTab) {
+      setSubTabState(initialTab);
+      return;
+    }
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     const subParam = params.get("sub") as AccountsSubTab;
@@ -84,7 +92,7 @@ export function AccountsModule() {
         setSubTabState(saved);
       }
     } catch {}
-  }, []);
+  }, [initialTab]);
 
   const setSubTab = useCallback((tab: AccountsSubTab) => {
     setSubTabState(tab);
