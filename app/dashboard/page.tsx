@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { AccountsModule } from "@/components/AccountsModule";
+import EmployeeManagementModule from "@/components/EmployeeManagementModule";
 import Link from "next/link";
 import {
   Receipt,
@@ -17,9 +18,14 @@ import {
   MapPin,
   Building,
   User,
+  Users,
+  BookOpen,
 } from "lucide-react";
 
+type AdminTab = "accounts" | "staff";
+
 export default function DashboardPage() {
+  const [activeTab, setActiveTab] = useState<AdminTab>("accounts");
   const [shopName, setShopName] = useState("My CSC Center");
   const [ownerName, setOwnerName] = useState("Owner");
   const [phone, setPhone] = useState("");
@@ -71,7 +77,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-[#070b13] text-slate-100 flex flex-col">
       {/* SaaS Top Header */}
-      <header className="border-b border-slate-800/80 bg-[#0c1322] px-6 py-3 flex items-center justify-between">
+      <header className="border-b border-slate-800/80 bg-[#0c1322] px-4 md:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 to-teal-500 text-slate-950 font-black shadow-md shadow-cyan-400/20">
             <Receipt size={18} />
@@ -90,7 +96,35 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        {/* Tab Switcher: Accounts & Daybook vs Manage Staff */}
+        <div className="flex items-center rounded-xl border border-slate-800 bg-slate-900/90 p-1">
+          <button
+            type="button"
+            onClick={() => setActiveTab("accounts")}
+            className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-bold transition ${
+              activeTab === "accounts"
+                ? "bg-cyan-400 text-slate-950 shadow-sm"
+                : "text-slate-400 hover:text-white"
+            }`}
+          >
+            <BookOpen size={13} />
+            <span>Accounts & Daybook</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("staff")}
+            className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-bold transition ${
+              activeTab === "staff"
+                ? "bg-cyan-400 text-slate-950 shadow-sm"
+                : "text-slate-400 hover:text-white"
+            }`}
+          >
+            <Users size={13} />
+            <span>Manage Staff & Operators</span>
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2.5">
           {/* Settings Button */}
           <button
             type="button"
@@ -119,9 +153,15 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* Embedded Standalone Accounts / Daybook Engine */}
+      {/* Main Content Area based on Tab */}
       <main className="flex-1 p-4 md:p-6">
-        <AccountsModule />
+        {activeTab === "accounts" ? (
+          <AccountsModule />
+        ) : (
+          <div className="rounded-2xl border border-slate-800/80 bg-[#0c1322] p-6 shadow-xl">
+            <EmployeeManagementModule />
+          </div>
+        )}
       </main>
 
       {/* CENTER SETTINGS MODAL */}
