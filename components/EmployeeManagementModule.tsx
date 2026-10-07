@@ -60,6 +60,7 @@ export default function EmployeeManagementModule() {
   const [formCanRequests, setFormCanRequests] = useState(true);
   const [formCanSettle, setFormCanSettle] = useState(true);
   const [formCanIssueTokens, setFormCanIssueTokens] = useState(true);
+  const [formCanRecordExpense, setFormCanRecordExpense] = useState(true);
 
   const [saving, setSaving] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -98,6 +99,7 @@ export default function EmployeeManagementModule() {
     setFormCanRequests(true);
     setFormCanSettle(true);
     setFormCanIssueTokens(true);
+    setFormCanRecordExpense(true);
     setShowModal(true);
   }
 
@@ -114,6 +116,7 @@ export default function EmployeeManagementModule() {
     setFormCanRequests(emp.permissions.canManageRequests);
     setFormCanSettle(emp.permissions.canSettleCredit);
     setFormCanIssueTokens(emp.permissions.canIssueTokens ?? true);
+    setFormCanRecordExpense(emp.permissions.canRecordExpense ?? true);
     setShowModal(true);
   }
 
@@ -145,6 +148,7 @@ export default function EmployeeManagementModule() {
             canSettleCredit: formCanSettle,
             canViewDaybookSummary: true,
             canIssueTokens: formCanIssueTokens,
+            canRecordExpense: formCanRecordExpense,
           },
         });
         setEmployees((prev) =>
@@ -166,6 +170,7 @@ export default function EmployeeManagementModule() {
             canSettleCredit: formCanSettle,
             canViewDaybookSummary: true,
             canIssueTokens: formCanIssueTokens,
+            canRecordExpense: formCanRecordExpense,
           },
         });
         setEmployees((prev) => [created, ...prev]);
@@ -719,6 +724,15 @@ export default function EmployeeManagementModule() {
                       className="rounded accent-cyan-500"
                     />
                     <span className="text-[11px]">Settle Customer Khata</span>
+                  </label>
+                  <label className="flex items-center gap-2 text-slate-300 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formCanRecordExpense}
+                      onChange={(e) => setFormCanRecordExpense(e.target.checked)}
+                      className="rounded accent-cyan-500"
+                    />
+                    <span className="text-[11px]">Record Shop Expense</span>
                   </label>
                 </div>
                 {formRole === "Receptionist" && (

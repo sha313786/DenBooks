@@ -24,6 +24,7 @@ import {
   ChevronRight,
   ShieldAlert,
   ArrowUpRight,
+  ArrowDownRight,
   TrendingUp,
   Eye,
   X,
@@ -178,6 +179,15 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
   const [requestScopeFilter, setRequestScopeFilter] = useState<"all" | "my">("all");
   const [updatingReqStatus, setUpdatingReqStatus] = useState(false);
   const [copiedReqId, setCopiedReqId] = useState(false);
+
+  // Expense Modal state
+  const [showExpenseModal, setShowExpenseModal] = useState(false);
+  const [expCategory, setExpCategory] = useState<AccountCategory>("Paper & Stationery");
+  const [expTitle, setExpTitle] = useState("");
+  const [expAmount, setExpAmount] = useState("");
+  const [expMethod, setExpMethod] = useState<PaymentMethod>("Cash");
+  const [expDesc, setExpDesc] = useState("");
+  const [savingExp, setSavingExp] = useState(false);
 
   // Portal Wallets state (read-only monitoring for counter operators)
   const [wallets, setWallets] = useState<PortalWallet[]>([]);
@@ -601,6 +611,48 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
     }
   }
 
+  // Handle Recording Shop Expense
+  async function handleSaveExpense(e: React.FormEvent) {
+    e.preventDefault();
+    const amt = parseFloat(expAmount);
+    if (isNaN(amt) || amt <= 0) {
+      alert("Please enter a valid expense amount greater than ₹0.");
+      return;
+    }
+    if (!expTitle.trim()) {
+      alert("Please enter a title or item description for the expense.");
+      return;
+    }
+
+    setSavingExp(true);
+    try {
+      const newTx = await createAccountTransaction({
+        transaction_date: getTodayDateString(),
+        type: "expense",
+        category: expCategory,
+        title: expTitle.trim(),
+        description: expDesc.trim() || undefined,
+        amount: amt,
+        payment_method: expMethod,
+        reference_id: `EXP-${Date.now().toString().slice(-6)}`,
+        is_settled: true,
+        employee_id: session?.employeeId || "emp-staff",
+        employee_name: session?.employeeName || "Counter Staff",
+      });
+
+      setTransactions((prev) => [newTx, ...prev]);
+      setShowExpenseModal(false);
+      setExpTitle("");
+      setExpAmount("");
+      setExpDesc("");
+    } catch (err: any) {
+      console.error(err);
+      alert("Failed to record expense.");
+    } finally {
+      setSavingExp(false);
+    }
+  }
+
   // Universal Thermal & A4 Receipt Print Function
   function handlePrintReceipt(tx: AccountTransaction) {
     const printWindow = window.open("", "_blank");
@@ -915,6 +967,10 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
     let totalCredit = 0;
     let totalTurnover = 0;
     let billCount = 0;
+    let totalExpense = 0;
+    let cashExpense = 0;
+    let upiExpense = 0;
+    let expenseCount = 0;
 
     transactions.forEach((tx) => {
       if (tx.type === "income") {
@@ -927,10 +983,31 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
         } else {
           totalUpi += tx.amount;
         }
+      } else if (tx.type === "expense") {
+        totalExpense += tx.amount;
+        expenseCount += 1;
+        if (tx.payment_method === "Cash") {
+          cashExpense += tx.amount;
+        } else {
+          upiExpense += tx.amount;
+        }
       }
     });
 
-    return { totalCash, totalUpi, totalCredit, totalTurnover, billCount };
+    const netCashInHand = Math.max(0, totalCash - cashExpense);
+
+    return {
+      totalCash,
+      totalUpi,
+      totalCredit,
+      totalTurnover,
+      billCount,
+      totalExpense,
+      cashExpense,
+      upiExpense,
+      expenseCount,
+      netCashInHand,
+    };
   }, [transactions]);
 
   // Unsettled Khata / Dues list
@@ -1467,6 +1544,25 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
               </button>
             )}
 
+            {(!session?.permissions || session?.permissions.canRecordExpense !== false) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setExpTitle("");
+                  setExpAmount("");
+                  setExpDesc("");
+                  setExpCategory("Paper & Stationery");
+                  setExpMethod("Cash");
+                  setShowExpenseModal(true);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-xs font-bold text-red-300 hover:bg-red-500/20 hover:border-red-400 transition shadow-sm"
+                title="Record shop expense paid from cash drawer or staff UPI"
+              >
+                <ArrowDownRight size={13} />
+                <span>+ Add Expense</span>
+              </button>
+            )}
+
             <button
               type="button"
               onClick={openInvoiceModalDialog}
@@ -1567,9 +1663,11 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                     <Banknote size={12} />
                   </div>
                   <div className="mt-1 font-mono text-lg font-black text-emerald-300">
-                    ₹{shiftSummary.totalCash.toFixed(0)}
+                    ₹{shiftSummary.netCashInHand.toFixed(0)}
                   </div>
-                  <div className="text-[9.5px] text-emerald-400/70">Physical tally</div>
+                  <div className="text-[9.5px] text-emerald-400/70">
+                    {shiftSummary.cashExpense > 0 ? `After -₹${shiftSummary.cashExpense.toFixed(0)} exp` : "Physical tally"}
+                  </div>
                 </div>
 
                 {/* UPI / Online */}
@@ -1584,7 +1682,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                   <div className="text-[9.5px] text-cyan-400/70">QR / Scanner</div>
                 </div>
 
-                {/* Total Turnover */}
+                {/* Total Turnover / Expenses */}
                 <div className="rounded-xl border border-teal-500/25 bg-gradient-to-br from-slate-900/80 to-teal-950/20 p-2.5 flex flex-col justify-between">
                   <div className="flex items-center justify-between text-teal-400">
                     <span className="text-[10px] font-semibold uppercase">Shift Sales</span>
@@ -1593,7 +1691,9 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                   <div className="mt-1 font-mono text-lg font-black text-white">
                     ₹{shiftSummary.totalTurnover.toFixed(0)}
                   </div>
-                  <div className="text-[9.5px] text-teal-400/70">Counter total</div>
+                  <div className="text-[9.5px] text-teal-400/70">
+                    {shiftSummary.totalExpense > 0 ? `₹${shiftSummary.totalExpense.toFixed(0)} exp logged` : "Counter total"}
+                  </div>
                 </div>
               </div>
             </div>
@@ -2002,67 +2102,88 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                     {filteredTx.length === 0 ? (
                       <tr>
                         <td colSpan={7} className="px-4 py-12 text-center text-slate-400">
-                          No transactions recorded yet today. Click "+ Add Invoice & Bill" above!
+                          No transactions recorded yet today. Click "+ Add Invoice" or "+ Add Expense" above!
                         </td>
                       </tr>
                     ) : (
-                      filteredTx.map((tx) => (
-                        <tr key={tx.id} className="hover:bg-slate-900/40 transition">
-                          <td className="px-4 py-3.5 font-mono text-xs text-cyan-300">
-                            {tx.reference_id || `INV-${tx.id.slice(-6).toUpperCase()}`}
-                          </td>
+                      filteredTx.map((tx) => {
+                        const isExpense = tx.type === "expense";
+                        return (
+                          <tr key={tx.id} className={`hover:bg-slate-900/40 transition ${isExpense ? "bg-red-950/10" : ""}`}>
+                            <td className="px-4 py-3.5 font-mono text-xs">
+                              <span className={isExpense ? "text-red-400" : "text-cyan-300"}>
+                                {tx.reference_id || `${isExpense ? "EXP" : "INV"}-${tx.id.slice(-6).toUpperCase()}`}
+                              </span>
+                            </td>
 
-                          <td className="px-4 py-3.5">
-                            <div className="font-bold text-white text-xs">{tx.customer_name || "Walk-in Customer"}</div>
-                            {tx.customer_phone && (
-                              <div className="text-[10px] text-slate-400 flex items-center gap-1">
-                                <Phone size={10} />
-                                <span>{tx.customer_phone}</span>
-                              </div>
-                            )}
-                          </td>
+                            <td className="px-4 py-3.5">
+                              {isExpense ? (
+                                <div>
+                                  <span className="inline-flex items-center gap-1 rounded bg-red-500/15 border border-red-500/30 px-2 py-0.5 text-[10px] font-bold text-red-300">
+                                    <ArrowDownRight size={10} />
+                                    <span>Shop Expense</span>
+                                  </span>
+                                  <div className="text-[10px] text-slate-400 mt-0.5">{tx.category}</div>
+                                </div>
+                              ) : (
+                                <div>
+                                  <div className="font-bold text-white text-xs">{tx.customer_name || "Walk-in Customer"}</div>
+                                  {tx.customer_phone && (
+                                    <div className="text-[10px] text-slate-400 flex items-center gap-1">
+                                      <Phone size={10} />
+                                      <span>{tx.customer_phone}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </td>
 
-                          <td className="px-4 py-3.5">
-                            <div className="font-bold text-slate-200">{tx.title}</div>
-                            {tx.description && tx.description !== tx.title && (
-                              <div className="text-[10px] text-slate-400 truncate max-w-xs">{tx.description}</div>
-                            )}
-                          </td>
+                            <td className="px-4 py-3.5">
+                              <div className="font-bold text-slate-200">{tx.title}</div>
+                              {tx.description && tx.description !== tx.title && (
+                                <div className="text-[10px] text-slate-400 truncate max-w-xs">{tx.description}</div>
+                              )}
+                            </td>
 
-                          <td className="px-4 py-3.5">
-                            <span className="rounded-lg bg-slate-800 px-2 py-1 text-[10px] font-bold text-slate-300 border border-slate-700">
-                              {tx.payment_method === "Cash" ? "💵 Cash" : tx.payment_method === "UPI" ? "📱 UPI" : "🏦 Bank"}
-                            </span>
-                          </td>
+                            <td className="px-4 py-3.5">
+                              <span className="rounded-lg bg-slate-800 px-2 py-1 text-[10px] font-bold text-slate-300 border border-slate-700">
+                                {tx.payment_method === "Cash" ? "💵 Cash" : tx.payment_method === "UPI" ? "📱 UPI" : "🏦 Bank"}
+                              </span>
+                            </td>
 
-                          <td className="px-4 py-3.5 text-right font-mono font-bold text-emerald-400 text-sm">
-                            ₹ {tx.amount.toFixed(2)}
-                          </td>
+                            <td className={`px-4 py-3.5 text-right font-mono font-bold text-sm ${isExpense ? "text-red-400" : "text-emerald-400"}`}>
+                              {isExpense ? "- " : "+ "}₹ {tx.amount.toFixed(2)}
+                            </td>
 
-                          <td className="px-4 py-3.5 text-center">
-                            <span
-                              className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold border ${
-                                tx.is_settled
-                                  ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
-                                  : "bg-amber-500/15 text-amber-300 border-amber-500/30"
-                              }`}
-                            >
-                              {tx.is_settled ? "PAID" : "DUE"}
-                            </span>
-                          </td>
+                            <td className="px-4 py-3.5 text-center">
+                              <span
+                                className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold border ${
+                                  isExpense
+                                    ? "bg-red-500/15 text-red-300 border-red-500/30"
+                                    : tx.is_settled
+                                    ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
+                                    : "bg-amber-500/15 text-amber-300 border-amber-500/30"
+                                }`}
+                              >
+                                {isExpense ? "EXPENSE" : tx.is_settled ? "PAID" : "DUE"}
+                              </span>
+                            </td>
 
-                          <td className="px-4 py-3.5 text-right">
-                            <button
-                              type="button"
-                              onClick={() => handlePrintReceipt(tx)}
-                              className="rounded-lg border border-slate-700 bg-slate-800/80 p-1.5 text-slate-300 hover:border-cyan-400/40 hover:text-cyan-300 transition"
-                              title="Print Thermal / A4 Receipt Slip"
-                            >
-                              <Printer size={14} />
-                            </button>
-                          </td>
-                        </tr>
-                      ))
+                            <td className="px-4 py-3.5 text-right">
+                              {!isExpense && (
+                                <button
+                                  type="button"
+                                  onClick={() => handlePrintReceipt(tx)}
+                                  className="rounded-lg border border-slate-700 bg-slate-800/80 p-1.5 text-slate-300 hover:border-cyan-400/40 hover:text-cyan-300 transition"
+                                  title="Print Thermal / A4 Receipt Slip"
+                                >
+                                  <Printer size={14} />
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })
                     )}
                   </tbody>
                 </table>
@@ -2363,17 +2484,29 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                   <span className="text-slate-400 font-sans">Physical Cash Collected:</span>
                   <span className="font-bold text-emerald-300">₹ {shiftSummary.totalCash.toFixed(2)}</span>
                 </div>
+                {shiftSummary.cashExpense > 0 && (
+                  <div className="flex justify-between py-2 border-b border-slate-800/80">
+                    <span className="text-red-400 font-sans">Less: Cash Expenses Paid:</span>
+                    <span className="font-bold text-red-400">- ₹ {shiftSummary.cashExpense.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between py-2 border-b border-slate-800/80">
                   <span className="text-slate-400 font-sans">Online / UPI Collected:</span>
                   <span className="font-bold text-cyan-300">₹ {shiftSummary.totalUpi.toFixed(2)}</span>
                 </div>
+                {shiftSummary.upiExpense > 0 && (
+                  <div className="flex justify-between py-2 border-b border-slate-800/80">
+                    <span className="text-slate-400 font-sans">UPI / Online Expenses:</span>
+                    <span className="font-bold text-slate-300">₹ {shiftSummary.upiExpense.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between py-2 border-b border-slate-800/80">
                   <span className="text-slate-400 font-sans">Pending Customer Credit:</span>
                   <span className="font-bold text-amber-300">₹ {shiftSummary.totalCredit.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between py-3 border-t-2 border-slate-700 text-base">
-                  <span className="font-sans font-bold text-white">CASH TO HAND OVER:</span>
-                  <span className="font-bold text-emerald-400 text-lg">₹ {shiftSummary.totalCash.toFixed(2)}</span>
+                  <span className="font-sans font-bold text-white">PHYSICAL CASH IN DRAWER:</span>
+                  <span className="font-bold text-emerald-400 text-lg">₹ {shiftSummary.netCashInHand.toFixed(2)}</span>
                 </div>
               </div>
 
@@ -2431,6 +2564,156 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
           </div>
         )}
       </main>
+
+      {/* 2.5 RECORD SHOP EXPENSE MODAL */}
+      {showExpenseModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-fadeIn"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setShowExpenseModal(false);
+          }}
+        >
+          <div className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-700 bg-[#121c2d] shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-800 bg-[#162236] px-6 py-4">
+              <div className="flex items-center gap-3">
+                <div className="rounded-xl border border-red-500/30 bg-red-500/15 p-2 text-red-300">
+                  <ArrowDownRight size={18} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-white text-base">Record Shop Expense</h3>
+                  <p className="text-xs text-slate-400">Deducts from shift cash drawer / accounts</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowExpenseModal(false)}
+                className="rounded-lg p-1 text-slate-400 hover:bg-slate-800 hover:text-white transition"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveExpense} className="p-6 space-y-4 text-xs">
+              <div>
+                <label className="block text-xs font-semibold uppercase text-slate-300 mb-1">
+                  Expense Category *
+                </label>
+                <select
+                  value={expCategory}
+                  onChange={(e) => setExpCategory(e.target.value as AccountCategory)}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-xs text-white outline-none focus:border-red-400"
+                >
+                  <option value="Paper & Stationery">Paper & Stationery (A4, envelopes)</option>
+                  <option value="Ink & Toner">Ink & Toner Refills / Cartridges</option>
+                  <option value="Refreshments & Tea">Tea, Refreshments & Snacks</option>
+                  <option value="Shop Electricity">Electricity & Power Bill</option>
+                  <option value="Internet & WiFi">Internet Broadband Recharge</option>
+                  <option value="Shop Rent">Monthly Shop Rent</option>
+                  <option value="Hardware & Maintenance">Machine Repair & Maintenance</option>
+                  <option value="Staff & Wages">Staff Wages / Helper</option>
+                  <option value="Other Expense">Other Miscellaneous</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase text-slate-300 mb-1">
+                  Expense Item / Title *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. 2 Reams A4 Paper JK Copier, Morning Tea"
+                  value={expTitle}
+                  onChange={(e) => setExpTitle(e.target.value)}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-xs text-white outline-none focus:border-red-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase text-slate-300 mb-1">
+                  Amount (₹) *
+                </label>
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 font-bold text-red-400">
+                    ₹
+                  </span>
+                  <input
+                    type="number"
+                    min="1"
+                    step="any"
+                    required
+                    placeholder="e.g. 150"
+                    value={expAmount}
+                    onChange={(e) => setExpAmount(e.target.value)}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-900 py-2.5 pl-8 pr-3 text-sm font-bold text-white outline-none focus:border-red-400"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase text-slate-300 mb-1">
+                  Paid From
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setExpMethod("Cash")}
+                    className={`rounded-xl border py-2.5 text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                      expMethod === "Cash"
+                        ? "border-emerald-400 bg-emerald-500/20 text-emerald-300 shadow-sm"
+                        : "border-slate-700 bg-slate-900 text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    <span>💵 Cash (Drawer)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setExpMethod("UPI")}
+                    className={`rounded-xl border py-2.5 text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                      expMethod === "UPI"
+                        ? "border-cyan-400 bg-cyan-500/20 text-cyan-300 shadow-sm"
+                        : "border-slate-700 bg-slate-900 text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    <span>📱 UPI / Online</span>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase text-slate-300 mb-1">
+                  Notes / Bill Details (Optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Purchased from Town Book Depot"
+                  value={expDesc}
+                  onChange={(e) => setExpDesc(e.target.value)}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-slate-500"
+                />
+              </div>
+
+              <div className="pt-2 flex gap-2">
+                <button
+                  type="submit"
+                  disabled={savingExp}
+                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-red-500 py-2.5 text-xs font-bold text-white hover:bg-red-600 transition shadow-md shadow-red-500/20 disabled:opacity-50"
+                >
+                  {savingExp ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                  <span>Save Expense</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowExpenseModal(false)}
+                  className="rounded-xl border border-slate-700 px-4 py-2.5 text-xs text-slate-400 hover:text-white transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* 3. ADD INVOICE & BILL MODAL */}
       {showInvoiceModal && (

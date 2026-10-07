@@ -13,6 +13,7 @@ export type EmployeePermissions = {
   canSettleCredit: boolean; // Settle customer credit/khata
   canViewDaybookSummary: boolean; // View shift cash drawer summary
   canIssueTokens: boolean; // Create queue token for first-come-first-serve
+  canRecordExpense?: boolean; // Record shop operational expense (paper, tea, maintenance)
 };
 
 export type Employee = {
@@ -68,6 +69,7 @@ function loadFromStorage(): Employee[] {
               canSettleCredit: e.permissions?.canSettleCredit ?? true,
               canViewDaybookSummary: e.permissions?.canViewDaybookSummary ?? true,
               canIssueTokens: isPrivileged ? (e.permissions?.canIssueTokens ?? true) : false,
+              canRecordExpense: e.permissions?.canRecordExpense ?? true,
             },
           };
         });
@@ -128,6 +130,7 @@ export async function getEmployees(): Promise<Employee[]> {
             canSettleCredit: d.permissions?.canSettleCredit ?? true,
             canViewDaybookSummary: d.permissions?.canViewDaybookSummary ?? true,
             canIssueTokens: isPrivileged ? (d.permissions?.canIssueTokens ?? true) : false,
+            canRecordExpense: d.permissions?.canRecordExpense ?? true,
           },
           notes: d.notes,
         };
