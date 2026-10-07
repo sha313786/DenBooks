@@ -7,7 +7,7 @@ import { AccountsModule } from "@/components/AccountsModule";
 export default function CustomerKhataPage() {
   return (
     <AdminHeaderLayout>
-      <AccountsModule initialTab="khata" />
+      <AccountsModule initialTab="khata" hideHeaderWidgets={true} />
     </AdminHeaderLayout>
   );
 }

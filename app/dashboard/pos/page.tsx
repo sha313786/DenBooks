@@ -7,7 +7,7 @@ import { AccountsModule } from "@/components/AccountsModule";
 export default function CounterPosPage() {
   return (
     <AdminHeaderLayout>
-      <AccountsModule initialTab="counter_pos" />
+      <AccountsModule initialTab="counter_pos" hideHeaderWidgets={true} />
     </AdminHeaderLayout>
   );
 }

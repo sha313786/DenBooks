@@ -68,9 +68,10 @@ export const VALID_SUBTABS: AccountsSubTab[] = ["daybook", "counter_pos", "khata
 
 interface AccountsModuleProps {
   initialTab?: AccountsSubTab;
+  hideHeaderWidgets?: boolean;
 }
 
-export function AccountsModule({ initialTab }: AccountsModuleProps = {}) {
+export function AccountsModule({ initialTab, hideHeaderWidgets = false }: AccountsModuleProps = {}) {
   const [subTab, setSubTabState] = useState<AccountsSubTab>(initialTab || "daybook");
 
   // Sync sub-tab with URL search parameter or localStorage on mount
@@ -1464,7 +1465,8 @@ export function AccountsModule({ initialTab }: AccountsModuleProps = {}) {
       </div>
 
       {/* 2. Combined Single-Screen Command Bar: Wallets (Left) + Financial KPIs (Right) */}
-      <div className="grid gap-3.5 lg:grid-cols-12">
+      {!hideHeaderWidgets && (
+        <div className="grid gap-3.5 lg:grid-cols-12">
         {/* Left: Compact Portal Advance Wallets (5 cols) */}
         <div className="lg:col-span-5 rounded-2xl border border-slate-800/90 bg-[#0c1322] p-3.5 flex flex-col justify-between shadow-lg">
           <div className="flex items-center justify-between border-b border-slate-800/80 pb-2 mb-2.5">
@@ -1614,72 +1616,75 @@ export function AccountsModule({ initialTab }: AccountsModuleProps = {}) {
             </p>
           </div>
         </div>
-      </div>
-
-      {/* 4. Modern Segmented Tab Switcher */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
-        <div className="inline-flex rounded-xl border border-slate-800 bg-[#0c1322] p-1 gap-1">
-          <button
-            type="button"
-            onClick={() => setSubTab("daybook")}
-            className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition ${
-              subTab === "daybook"
-                ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 shadow-[0_0_12px_rgba(8,145,178,0.25)]"
-                : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-            }`}
-          >
-            <FileText size={14} />
-            <span>Daily Daybook</span>
-            <span className="rounded-full bg-slate-800 px-1.5 py-0.2 text-[10px] font-bold text-slate-300">
-              {filteredDaybookTx.length}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setSubTab("counter_pos")}
-            className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition ${
-              subTab === "counter_pos"
-                ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 shadow-[0_0_12px_rgba(8,145,178,0.25)]"
-                : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-            }`}
-          >
-            <ShoppingBag size={14} />
-            <span>Walk-in Counter POS</span>
-            {posCart.length > 0 && (
-              <span className="rounded-full bg-cyan-400 text-slate-950 px-1.5 py-0.2 text-[10px] font-black">
-                {posCart.reduce((sum, item) => sum + item.qty, 0)}
-              </span>
-            )}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setSubTab("khata")}
-            className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition ${
-              subTab === "khata"
-                ? "bg-amber-500/20 text-amber-300 border border-amber-400/30 shadow-[0_0_12px_rgba(245,158,11,0.25)]"
-                : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-            }`}
-          >
-            <Clock3 size={14} />
-            <span>Customer Khata (Udhar)</span>
-            {khataList.length > 0 && (
-              <span className="rounded-full bg-amber-500/30 text-amber-300 px-1.5 py-0.2 text-[10px] font-bold">
-                {khataList.length}
-              </span>
-            )}
-          </button>
         </div>
+      )}
 
-        {/* Portal Wallet Fee Pass-through tag */}
-        {summary.totalGovtFees > 0 && (
-          <div className="hidden sm:flex items-center gap-1.5 text-xs text-slate-400 font-medium bg-[#0e1625] px-3 py-1.5 rounded-lg border border-slate-800">
-            <span>💳 Wallet Fees Passed:</span>
-            <span className="font-mono font-bold text-slate-200">₹{summary.totalGovtFees.toFixed(0)}</span>
+      {/* 4. Modern Segmented Tab Switcher (Only shown on combined Overview) */}
+      {!hideHeaderWidgets && (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
+          <div className="inline-flex rounded-xl border border-slate-800 bg-[#0c1322] p-1 gap-1">
+            <button
+              type="button"
+              onClick={() => setSubTab("daybook")}
+              className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition ${
+                subTab === "daybook"
+                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 shadow-[0_0_12px_rgba(8,145,178,0.25)]"
+                  : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+              }`}
+            >
+              <FileText size={14} />
+              <span>Daily Daybook</span>
+              <span className="rounded-full bg-slate-800 px-1.5 py-0.2 text-[10px] font-bold text-slate-300">
+                {filteredDaybookTx.length}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSubTab("counter_pos")}
+              className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition ${
+                subTab === "counter_pos"
+                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 shadow-[0_0_12px_rgba(8,145,178,0.25)]"
+                  : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+              }`}
+            >
+              <ShoppingBag size={14} />
+              <span>Walk-in Counter POS</span>
+              {posCart.length > 0 && (
+                <span className="rounded-full bg-cyan-400 text-slate-950 px-1.5 py-0.2 text-[10px] font-black">
+                  {posCart.reduce((sum, item) => sum + item.qty, 0)}
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSubTab("khata")}
+              className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition ${
+                subTab === "khata"
+                  ? "bg-amber-500/20 text-amber-300 border border-amber-400/30 shadow-[0_0_12px_rgba(245,158,11,0.25)]"
+                  : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+              }`}
+            >
+              <Clock3 size={14} />
+              <span>Customer Khata (Udhar)</span>
+              {khataList.length > 0 && (
+                <span className="rounded-full bg-amber-500/30 text-amber-300 px-1.5 py-0.2 text-[10px] font-bold">
+                  {khataList.length}
+                </span>
+              )}
+            </button>
           </div>
-        )}
-      </div>
+
+          {/* Portal Wallet Fee Pass-through tag */}
+          {summary.totalGovtFees > 0 && (
+            <div className="hidden sm:flex items-center gap-1.5 text-xs text-slate-400 font-medium bg-[#0e1625] px-3 py-1.5 rounded-lg border border-slate-800">
+              <span>💳 Wallet Fees Passed:</span>
+              <span className="font-mono font-bold text-slate-200">₹{summary.totalGovtFees.toFixed(0)}</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 4. Tab 1: DAYBOOK REGISTER */}
       {subTab === "daybook" && (

@@ -7,7 +7,7 @@ import { AccountsModule } from "@/components/AccountsModule";
 export default function DaybookPage() {
   return (
     <AdminHeaderLayout>
-      <AccountsModule initialTab="daybook" />
+      <AccountsModule initialTab="daybook" hideHeaderWidgets={true} />
     </AdminHeaderLayout>
   );
 }
