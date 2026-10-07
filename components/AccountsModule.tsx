@@ -1421,18 +1421,6 @@ export function AccountsModule() {
           </button>
 
           {/* Reset Balances / Daybook Button */}
-          <button
-            type="button"
-            onClick={() => {
-              setResetSuccessMsg("");
-              setShowResetModal(true);
-            }}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs font-bold text-amber-300 hover:bg-amber-500/20 hover:border-amber-400 transition shadow-sm cursor-pointer"
-            title="Reset options for portal wallets and daybook transactions"
-          >
-            <RotateCcw size={13} className="text-amber-400" />
-            <span>Reset ₹0</span>
-          </button>
 
           {/* Print Daybook */}
           <button

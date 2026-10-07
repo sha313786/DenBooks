@@ -1,26 +1,80 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #090f1d;
+  --foreground: #f8fafc;
+  --cyan: #00e5ff;
+  --blue: #2563eb;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+* { box-sizing: border-box; }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+html { scroll-behavior: smooth; }
 
 body {
-  background: var(--background);
+  margin: 0;
+  background:
+    radial-gradient(circle at 50% -10%, rgba(0, 186, 255, .22), transparent 45%),
+    radial-gradient(circle at 85% 45%, rgba(0, 229, 255, .12), transparent 35%),
+    var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+::selection {
+  background: var(--cyan);
+  color: #001018;
+}
+
+.glow {
+  box-shadow: 0 0 45px rgba(0, 211, 255, .14), inset 0 0 30px rgba(0, 211, 255, .035);
+}
+
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(0, 224, 255, .035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 224, 255, .035) 1px, transparent 1px);
+  background-size: 42px 42px;
+}
+
+.text-gradient {
+  background: linear-gradient(90deg, #fff 0%, #fff 40%, #00e7ff 72%, #1787ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.service-card {
+  transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease;
+}
+
+.service-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(0, 229, 255, .55);
+  box-shadow: 0 0 35px rgba(0, 200, 255, .10);
+}
+
+/* Hide scrollbar for Chrome, Safari, Edge, Firefox */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Sleek subtle scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.45);
 }
