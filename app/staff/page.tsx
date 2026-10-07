@@ -1351,6 +1351,134 @@ export default function StaffCounterPage({ initialTab = "invoices" }: StaffCount
 
       {/* 2. Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
+        {/* Counter Action Buttons & Tab Bar (MOVED TO TOP) */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-800 pb-4">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+            {/* Queue Tokens Tab */}
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab("tokens");
+                if (typeof window !== "undefined") window.history.pushState({}, "", "/staff/tokens");
+              }}
+              className={`rounded-xl px-4 py-2 text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 ${
+                activeTab === "tokens"
+                  ? "bg-pink-500/20 text-pink-300 border border-pink-400/30"
+                  : "bg-slate-900 text-slate-400 hover:text-white"
+              }`}
+            >
+              <Ticket size={13} className="text-pink-400" />
+              <span>🎟️ Queue Tokens</span>
+              {queueStats.waitingCount > 0 && (
+                <span className="rounded-full bg-pink-500 text-slate-950 font-black px-1.5 py-0.2 text-[10px]">
+                  {queueStats.waitingCount}
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab("invoices");
+                if (typeof window !== "undefined") window.history.pushState({}, "", "/staff/invoices");
+              }}
+              className={`rounded-xl px-4 py-2 text-xs font-bold transition whitespace-nowrap ${
+                activeTab === "invoices"
+                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/30"
+                  : "bg-slate-900 text-slate-400 hover:text-white"
+              }`}
+            >
+              🧾 Invoices & Bills ({transactions.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab("requests");
+                if (typeof window !== "undefined") window.history.pushState({}, "", "/staff/requests");
+              }}
+              className={`rounded-xl px-4 py-2 text-xs font-bold transition whitespace-nowrap ${
+                activeTab === "requests"
+                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/30"
+                  : "bg-slate-900 text-slate-400 hover:text-white"
+              }`}
+            >
+              📋 Citizen Requests ({requests.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab("khata");
+                if (typeof window !== "undefined") window.history.pushState({}, "", "/staff/khata");
+              }}
+              className={`rounded-xl px-4 py-2 text-xs font-bold transition whitespace-nowrap ${
+                activeTab === "khata"
+                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/30"
+                  : "bg-slate-900 text-slate-400 hover:text-white"
+              }`}
+            >
+              ⏳ Customer Dues ({khataList.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab("drawer");
+                if (typeof window !== "undefined") window.history.pushState({}, "", "/staff/drawer");
+              }}
+              className={`rounded-xl px-4 py-2 text-xs font-bold transition whitespace-nowrap ${
+                activeTab === "drawer"
+                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/30"
+                  : "bg-slate-900 text-slate-400 hover:text-white"
+              }`}
+            >
+              💵 Shift Drawer Tally
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Receptionist-only: Issue sequential queue tokens */}
+            {isReceptionistOrAdmin && (
+              <button
+                type="button"
+                onClick={() => {
+                  setTokCustName("");
+                  setTokCustPhone("");
+                  setTokService("Aadhaar / Citizen Services");
+                  setTokPriority("Normal");
+                  setTokCounter("Counter 1");
+                  setTokNotes("");
+                  setShowTokenModal(true);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-pink-500/40 bg-pink-500/15 px-3.5 py-2 text-xs font-bold text-pink-300 hover:bg-pink-500/25 transition shadow-sm"
+                title="Issue sequential queue token for arriving citizen (First-Come, First-Served)"
+              >
+                <Ticket size={14} />
+                <span>+ Issue Token (FCFS)</span>
+              </button>
+            )}
+
+            {/* Receptionist-only: Register new citizen applications */}
+            {isReceptionistOrAdmin && (
+              <button
+                type="button"
+                onClick={() => setShowRequestModal(true)}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/80 px-3.5 py-2 text-xs font-bold text-slate-200 hover:border-cyan-400/40 hover:text-cyan-300 transition"
+              >
+                <Plus size={14} />
+                <span>+ New Service Request</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={openInvoiceModalDialog}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 px-4 py-2 text-xs font-bold text-slate-950 hover:brightness-110 transition shadow-md shadow-cyan-500/20"
+            >
+              <Receipt size={15} />
+              <span>+ Add Invoice & Bill</span>
+            </button>
+          </div>
+        </div>
+
         {/* Shift Feed Attribution Banner */}
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-cyan-500/30 bg-gradient-to-r from-cyan-950/40 via-slate-900/70 to-[#0c1322] px-4 py-3 shadow-md">
           <div className="flex items-center gap-2.5">
@@ -1476,134 +1604,6 @@ export default function StaffCounterPage({ initialTab = "invoices" }: StaffCount
                 </div>
               );
             })}
-          </div>
-        </div>
-
-        {/* Counter Action Buttons & Tab Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-800 pb-4">
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-            {/* Queue Tokens Tab */}
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab("tokens");
-                if (typeof window !== "undefined") window.history.pushState({}, "", "/staff/tokens");
-              }}
-              className={`rounded-xl px-4 py-2 text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 ${
-                activeTab === "tokens"
-                  ? "bg-pink-500/20 text-pink-300 border border-pink-400/30"
-                  : "bg-slate-900 text-slate-400 hover:text-white"
-              }`}
-            >
-              <Ticket size={13} className="text-pink-400" />
-              <span>🎟️ Queue Tokens</span>
-              {queueStats.waitingCount > 0 && (
-                <span className="rounded-full bg-pink-500 text-slate-950 font-black px-1.5 py-0.2 text-[10px]">
-                  {queueStats.waitingCount}
-                </span>
-              )}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab("invoices");
-                if (typeof window !== "undefined") window.history.pushState({}, "", "/staff/invoices");
-              }}
-              className={`rounded-xl px-4 py-2 text-xs font-bold transition whitespace-nowrap ${
-                activeTab === "invoices"
-                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/30"
-                  : "bg-slate-900 text-slate-400 hover:text-white"
-              }`}
-            >
-              🧾 Invoices & Bills ({transactions.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab("requests");
-                if (typeof window !== "undefined") window.history.pushState({}, "", "/staff/requests");
-              }}
-              className={`rounded-xl px-4 py-2 text-xs font-bold transition whitespace-nowrap ${
-                activeTab === "requests"
-                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/30"
-                  : "bg-slate-900 text-slate-400 hover:text-white"
-              }`}
-            >
-              📋 Citizen Requests ({requests.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab("khata");
-                if (typeof window !== "undefined") window.history.pushState({}, "", "/staff/khata");
-              }}
-              className={`rounded-xl px-4 py-2 text-xs font-bold transition whitespace-nowrap ${
-                activeTab === "khata"
-                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/30"
-                  : "bg-slate-900 text-slate-400 hover:text-white"
-              }`}
-            >
-              ⏳ Customer Dues ({khataList.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab("drawer");
-                if (typeof window !== "undefined") window.history.pushState({}, "", "/staff/drawer");
-              }}
-              className={`rounded-xl px-4 py-2 text-xs font-bold transition whitespace-nowrap ${
-                activeTab === "drawer"
-                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/30"
-                  : "bg-slate-900 text-slate-400 hover:text-white"
-              }`}
-            >
-              💵 Shift Drawer Tally
-            </button>
-          </div>
-
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Receptionist-only: Issue sequential queue tokens */}
-            {isReceptionistOrAdmin && (
-              <button
-                type="button"
-                onClick={() => {
-                  setTokCustName("");
-                  setTokCustPhone("");
-                  setTokService("Aadhaar / Citizen Services");
-                  setTokPriority("Normal");
-                  setTokCounter("Counter 1");
-                  setTokNotes("");
-                  setShowTokenModal(true);
-                }}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-pink-500/40 bg-pink-500/15 px-3.5 py-2 text-xs font-bold text-pink-300 hover:bg-pink-500/25 transition shadow-sm"
-                title="Issue sequential queue token for arriving citizen (First-Come, First-Served)"
-              >
-                <Ticket size={14} />
-                <span>+ Issue Token (FCFS)</span>
-              </button>
-            )}
-
-            {/* Receptionist-only: Register new citizen applications */}
-            {isReceptionistOrAdmin && (
-              <button
-                type="button"
-                onClick={() => setShowRequestModal(true)}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/80 px-3.5 py-2 text-xs font-bold text-slate-200 hover:border-cyan-400/40 hover:text-cyan-300 transition"
-              >
-                <Plus size={14} />
-                <span>+ New Service Request</span>
-              </button>
-            )}
-
-            <button
-              type="button"
-              onClick={openInvoiceModalDialog}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 px-4 py-2 text-xs font-bold text-slate-950 hover:brightness-110 transition shadow-md shadow-cyan-500/20"
-            >
-              <Receipt size={15} />
-              <span>+ Add Invoice & Bill</span>
-            </button>
           </div>
         </div>
 
