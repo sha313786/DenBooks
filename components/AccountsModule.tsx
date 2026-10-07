@@ -1607,23 +1607,6 @@ export function AccountsModule() {
           </div>
         </div>
       </div>
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] uppercase font-bold tracking-wider text-amber-400">
-              Customer Dues (Khata)
-            </span>
-            <div className="rounded-lg bg-amber-500/15 p-1 text-amber-300 group-hover:scale-110 transition">
-              <Clock3 size={14} />
-            </div>
-          </div>
-          <p className="mt-1.5 text-2xl font-black text-amber-300 font-mono">
-            ₹ {khataList.reduce((sum, k) => sum + k.amount, 0).toFixed(0)}
-          </p>
-          <p className="text-[10.5px] text-amber-400/80 flex items-center justify-between">
-            <span>{khataList.length} pending</span>
-            <span className="underline group-hover:text-white">View &rarr;</span>
-          </p>
-        </div>
-      </div>
 
       {/* 4. Modern Segmented Tab Switcher */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
