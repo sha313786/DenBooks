@@ -4,5 +4,5 @@ import React from "react";
 import StaffCounterPage from "../page";
 
 export default function StaffTokensPage() {
-  return <StaffCounterPage initialTab="tokens" />;
+  return <StaffCounterPage initialTab="tokens" hideShiftWidgets={true} />;
 }

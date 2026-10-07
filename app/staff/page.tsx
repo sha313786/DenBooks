@@ -84,9 +84,10 @@ export type StaffTab = "tokens" | "invoices" | "requests" | "khata" | "drawer";
 
 interface StaffCounterPageProps {
   initialTab?: StaffTab;
+  hideShiftWidgets?: boolean;
 }
 
-export default function StaffCounterPage({ initialTab = "invoices" }: StaffCounterPageProps = {}) {
+export default function StaffCounterPage({ initialTab = "invoices", hideShiftWidgets = false }: StaffCounterPageProps = {}) {
   const router = useRouter();
 
   // Authentication & Session
@@ -1486,124 +1487,126 @@ export default function StaffCounterPage({ initialTab = "invoices" }: StaffCount
         </div>
 
         {/* 1-Screen Consolidated Command Bar: 4 Wallets (Left) + 4 Shift KPIs (Right) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-          {/* Left: 4 Portal Wallets (5 cols) */}
-          <div className="lg:col-span-5 rounded-2xl border border-slate-800 bg-[#0c1322] p-3.5 shadow-md flex flex-col justify-between">
-            <div className="flex items-center justify-between border-b border-slate-800/80 pb-2 mb-2.5">
-              <div className="flex items-center gap-2">
-                <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-cyan-400/10 text-cyan-400 border border-cyan-400/20">
-                  <Wallet size={13} />
-                </div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-white">
-                  Portal & Bank Wallets
-                </span>
-              </div>
-              <span className="font-mono text-xs font-black text-cyan-300 bg-cyan-950/60 border border-cyan-800/60 px-2 py-0.5 rounded-md">
-                Total: ₹{wallets.reduce((s, w) => s + w.balance, 0).toLocaleString("en-IN")}
-              </span>
-            </div>
-
-            {/* 2x2 Wallet Grid */}
-            <div className="grid grid-cols-2 gap-2">
-              {wallets.map((wallet) => {
-                const isLow = wallet.balance <= wallet.min_alert_balance;
-                return (
-                  <div
-                    key={wallet.id}
-                    className="rounded-xl border border-slate-800/90 bg-slate-900/80 p-2.5 hover:border-slate-700 transition flex flex-col justify-between"
-                  >
-                    <div className="flex items-center justify-between gap-1">
-                      <span className="text-[10px] font-bold text-slate-300 truncate" title={wallet.name}>
-                        {wallet.name}
-                      </span>
-                      {isLow && (
-                        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400 animate-pulse" title="Low Balance" />
-                      )}
-                    </div>
-                    <div className="mt-1 flex items-baseline justify-between">
-                      <span className="font-mono text-sm font-black text-white">
-                        ₹{wallet.balance.toLocaleString("en-IN")}
-                      </span>
-                      <span className="text-[9px] text-slate-500 font-mono">
-                        min ₹{wallet.min_alert_balance}
-                      </span>
-                    </div>
+        {!hideShiftWidgets && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+            {/* Left: 4 Portal Wallets (5 cols) */}
+            <div className="lg:col-span-5 rounded-2xl border border-slate-800 bg-[#0c1322] p-3.5 shadow-md flex flex-col justify-between">
+              <div className="flex items-center justify-between border-b border-slate-800/80 pb-2 mb-2.5">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-cyan-400/10 text-cyan-400 border border-cyan-400/20">
+                    <Wallet size={13} />
                   </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Right: 4 Shift Financial KPI Cards + Operator Badge (7 cols) */}
-          <div className="lg:col-span-7 rounded-2xl border border-slate-800 bg-[#0c1322] p-3.5 shadow-md flex flex-col justify-between">
-            {/* Operator info strip */}
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-2 mb-2.5">
-              <div className="flex items-center gap-2">
-                <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-xs font-bold text-slate-200">
-                  Shift Operator: <span className="text-cyan-300">{session?.employeeName}</span> ({session?.role})
-                </span>
-                <span className="rounded bg-cyan-950 text-cyan-400 border border-cyan-800/50 px-1.5 py-0.2 text-[9.5px] font-bold">
-                  Isolated Drawer
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-white">
+                    Portal & Bank Wallets
+                  </span>
+                </div>
+                <span className="font-mono text-xs font-black text-cyan-300 bg-cyan-950/60 border border-cyan-800/60 px-2 py-0.5 rounded-md">
+                  Total: ₹{wallets.reduce((s, w) => s + w.balance, 0).toLocaleString("en-IN")}
                 </span>
               </div>
-              <span className="text-[10px] text-slate-400">
-                Personal daily tally
-              </span>
+
+              {/* 2x2 Wallet Grid */}
+              <div className="grid grid-cols-2 gap-2">
+                {wallets.map((wallet) => {
+                  const isLow = wallet.balance <= wallet.min_alert_balance;
+                  return (
+                    <div
+                      key={wallet.id}
+                      className="rounded-xl border border-slate-800/90 bg-slate-900/80 p-2.5 hover:border-slate-700 transition flex flex-col justify-between"
+                    >
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-[10px] font-bold text-slate-300 truncate" title={wallet.name}>
+                          {wallet.name}
+                        </span>
+                        {isLow && (
+                          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400 animate-pulse" title="Low Balance" />
+                        )}
+                      </div>
+                      <div className="mt-1 flex items-baseline justify-between">
+                        <span className="font-mono text-sm font-black text-white">
+                          ₹{wallet.balance.toLocaleString("en-IN")}
+                        </span>
+                        <span className="text-[9px] text-slate-500 font-mono">
+                          min ₹{wallet.min_alert_balance}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
-            {/* 4 Shift KPI Cards Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {/* Today's Invoices */}
-              <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-2.5 flex flex-col justify-between">
-                <div className="flex items-center justify-between text-slate-400">
-                  <span className="text-[10px] font-semibold uppercase">Bills Issued</span>
-                  <Receipt size={12} className="text-cyan-400" />
+            {/* Right: 4 Shift Financial KPI Cards + Operator Badge (7 cols) */}
+            <div className="lg:col-span-7 rounded-2xl border border-slate-800 bg-[#0c1322] p-3.5 shadow-md flex flex-col justify-between">
+              {/* Operator info strip */}
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-2 mb-2.5">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-xs font-bold text-slate-200">
+                    Shift Operator: <span className="text-cyan-300">{session?.employeeName}</span> ({session?.role})
+                  </span>
+                  <span className="rounded bg-cyan-950 text-cyan-400 border border-cyan-800/50 px-1.5 py-0.2 text-[9.5px] font-bold">
+                    Isolated Drawer
+                  </span>
                 </div>
-                <div className="mt-1 font-mono text-lg font-black text-white">
-                  {shiftSummary.billCount}
-                </div>
-                <div className="text-[9.5px] text-slate-400">Today's count</div>
+                <span className="text-[10px] text-slate-400">
+                  Personal daily tally
+                </span>
               </div>
 
-              {/* Cash in Drawer */}
-              <div className="rounded-xl border border-emerald-500/25 bg-gradient-to-br from-slate-900/80 to-emerald-950/20 p-2.5 flex flex-col justify-between">
-                <div className="flex items-center justify-between text-emerald-400">
-                  <span className="text-[10px] font-semibold uppercase">Cash Drawer</span>
-                  <Banknote size={12} />
+              {/* 4 Shift KPI Cards Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {/* Today's Invoices */}
+                <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-2.5 flex flex-col justify-between">
+                  <div className="flex items-center justify-between text-slate-400">
+                    <span className="text-[10px] font-semibold uppercase">Bills Issued</span>
+                    <Receipt size={12} className="text-cyan-400" />
+                  </div>
+                  <div className="mt-1 font-mono text-lg font-black text-white">
+                    {shiftSummary.billCount}
+                  </div>
+                  <div className="text-[9.5px] text-slate-400">Today's count</div>
                 </div>
-                <div className="mt-1 font-mono text-lg font-black text-emerald-300">
-                  ₹{shiftSummary.totalCash.toFixed(0)}
-                </div>
-                <div className="text-[9.5px] text-emerald-400/70">Physical tally</div>
-              </div>
 
-              {/* UPI / Online */}
-              <div className="rounded-xl border border-cyan-500/25 bg-gradient-to-br from-slate-900/80 to-cyan-950/20 p-2.5 flex flex-col justify-between">
-                <div className="flex items-center justify-between text-cyan-400">
-                  <span className="text-[10px] font-semibold uppercase">UPI / Online</span>
-                  <Smartphone size={12} />
+                {/* Cash in Drawer */}
+                <div className="rounded-xl border border-emerald-500/25 bg-gradient-to-br from-slate-900/80 to-emerald-950/20 p-2.5 flex flex-col justify-between">
+                  <div className="flex items-center justify-between text-emerald-400">
+                    <span className="text-[10px] font-semibold uppercase">Cash Drawer</span>
+                    <Banknote size={12} />
+                  </div>
+                  <div className="mt-1 font-mono text-lg font-black text-emerald-300">
+                    ₹{shiftSummary.totalCash.toFixed(0)}
+                  </div>
+                  <div className="text-[9.5px] text-emerald-400/70">Physical tally</div>
                 </div>
-                <div className="mt-1 font-mono text-lg font-black text-cyan-300">
-                  ₹{shiftSummary.totalUpi.toFixed(0)}
-                </div>
-                <div className="text-[9.5px] text-cyan-400/70">QR / Scanner</div>
-              </div>
 
-              {/* Total Turnover */}
-              <div className="rounded-xl border border-teal-500/25 bg-gradient-to-br from-slate-900/80 to-teal-950/20 p-2.5 flex flex-col justify-between">
-                <div className="flex items-center justify-between text-teal-400">
-                  <span className="text-[10px] font-semibold uppercase">Shift Sales</span>
-                  <TrendingUp size={12} />
+                {/* UPI / Online */}
+                <div className="rounded-xl border border-cyan-500/25 bg-gradient-to-br from-slate-900/80 to-cyan-950/20 p-2.5 flex flex-col justify-between">
+                  <div className="flex items-center justify-between text-cyan-400">
+                    <span className="text-[10px] font-semibold uppercase">UPI / Online</span>
+                    <Smartphone size={12} />
+                  </div>
+                  <div className="mt-1 font-mono text-lg font-black text-cyan-300">
+                    ₹{shiftSummary.totalUpi.toFixed(0)}
+                  </div>
+                  <div className="text-[9.5px] text-cyan-400/70">QR / Scanner</div>
                 </div>
-                <div className="mt-1 font-mono text-lg font-black text-white">
-                  ₹{shiftSummary.totalTurnover.toFixed(0)}
+
+                {/* Total Turnover */}
+                <div className="rounded-xl border border-teal-500/25 bg-gradient-to-br from-slate-900/80 to-teal-950/20 p-2.5 flex flex-col justify-between">
+                  <div className="flex items-center justify-between text-teal-400">
+                    <span className="text-[10px] font-semibold uppercase">Shift Sales</span>
+                    <TrendingUp size={12} />
+                  </div>
+                  <div className="mt-1 font-mono text-lg font-black text-white">
+                    ₹{shiftSummary.totalTurnover.toFixed(0)}
+                  </div>
+                  <div className="text-[9.5px] text-teal-400/70">Counter total</div>
                 </div>
-                <div className="text-[9.5px] text-teal-400/70">Counter total</div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* TAB 0: QUEUE TOKENS (FIRST-COME, FIRST-SERVED) */}
         {activeTab === "tokens" && (
