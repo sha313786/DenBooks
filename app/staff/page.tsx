@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Users,
   LogOut,
@@ -1356,12 +1357,8 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 rounded-2xl border border-slate-800 bg-[#0c1322] p-3 shadow-lg">
           {/* Module Tabs */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab("tokens");
-                if (typeof window !== "undefined") window.history.pushState({}, "", "/staff/tokens");
-              }}
+            <Link
+              href="/staff/tokens"
               className={`rounded-xl px-3.5 py-2 text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 ${
                 activeTab === "tokens"
                   ? "bg-pink-500/20 text-pink-300 border border-pink-400/40 shadow-[0_0_12px_rgba(236,72,153,0.25)]"
@@ -1375,14 +1372,10 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                   {queueStats.waitingCount}
                 </span>
               )}
-            </button>
+            </Link>
 
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab("invoices");
-                if (typeof window !== "undefined") window.history.pushState({}, "", "/staff/invoices");
-              }}
+            <Link
+              href="/staff/invoices"
               className={`rounded-xl px-3.5 py-2 text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 ${
                 activeTab === "invoices"
                   ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 shadow-[0_0_12px_rgba(8,145,178,0.25)]"
@@ -1391,14 +1384,10 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
             >
               <Receipt size={13} className="text-cyan-400" />
               <span>Invoices & Bills ({transactions.length})</span>
-            </button>
+            </Link>
 
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab("requests");
-                if (typeof window !== "undefined") window.history.pushState({}, "", "/staff/requests");
-              }}
+            <Link
+              href="/staff/requests"
               className={`rounded-xl px-3.5 py-2 text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 ${
                 activeTab === "requests"
                   ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 shadow-[0_0_12px_rgba(8,145,178,0.25)]"
@@ -1407,14 +1396,10 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
             >
               <FileText size={13} className="text-cyan-400" />
               <span>Citizen Requests ({requests.length})</span>
-            </button>
+            </Link>
 
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab("khata");
-                if (typeof window !== "undefined") window.history.pushState({}, "", "/staff/khata");
-              }}
+            <Link
+              href="/staff/khata"
               className={`rounded-xl px-3.5 py-2 text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 ${
                 activeTab === "khata"
                   ? "bg-amber-500/20 text-amber-300 border border-amber-400/40 shadow-[0_0_12px_rgba(245,158,11,0.25)]"
@@ -1423,14 +1408,10 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
             >
               <Clock size={13} className="text-amber-400" />
               <span>Customer Dues ({khataList.length})</span>
-            </button>
+            </Link>
 
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab("drawer");
-                if (typeof window !== "undefined") window.history.pushState({}, "", "/staff/drawer");
-              }}
+            <Link
+              href="/staff/drawer"
               className={`rounded-xl px-3.5 py-2 text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 ${
                 activeTab === "drawer"
                   ? "bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 shadow-[0_0_12px_rgba(16,185,129,0.25)]"
@@ -1439,7 +1420,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
             >
               <Banknote size={13} className="text-emerald-400" />
               <span>Shift Drawer Tally</span>
-            </button>
+            </Link>
           </div>
 
           {/* Quick Action Buttons */}
@@ -1486,8 +1467,8 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
           </div>
         </div>
 
-        {/* 1-Screen Consolidated Command Bar: 4 Wallets (Left) + 4 Shift KPIs (Right) */}
-        {!hideShiftWidgets && (
+        {/* 1-Screen Consolidated Command Bar: 4 Wallets (Left) + 4 Shift KPIs (Right) (Only on Invoices overview) */}
+        {activeTab === "invoices" && !hideShiftWidgets && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
             {/* Left: 4 Portal Wallets (5 cols) */}
             <div className="lg:col-span-5 rounded-2xl border border-slate-800 bg-[#0c1322] p-3.5 shadow-md flex flex-col justify-between">
