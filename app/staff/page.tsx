@@ -1316,6 +1316,16 @@ export default function StaffCounterPage({ initialTab = "invoices" }: StaffCount
 
           {/* Active Employee Info & Actions */}
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Quick Admin Dashboard switch if admin/supervisor */}
+            {(session?.role === "Branch Supervisor" || session?.employeeId === "emp-admin-owner") && (
+              <a
+                href="/dashboard"
+                className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-xs font-bold text-cyan-300 hover:bg-cyan-500/20 transition"
+              >
+                <span>&larr; Admin Dashboard</span>
+              </a>
+            )}
+
             <div className="flex items-center gap-2.5 rounded-xl border border-slate-800 bg-slate-900/80 px-3 py-1.5">
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-500/20 font-bold text-cyan-300 text-xs">
                 {session?.employeeName.charAt(0) || "S"}
