@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
+import Link from "next/link";
 import {
   IndianRupee,
   Plus,
@@ -1595,8 +1596,8 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
           </div>
 
           {/* Customer Khata */}
-          <div
-            onClick={() => setSubTab("khata")}
+          <Link
+            href="/dashboard/khata"
             className="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-[#0e1625] to-[#291e10] p-3 flex flex-col justify-between cursor-pointer hover:border-amber-400/60 transition group shadow-sm col-span-2 sm:col-span-1"
           >
             <div className="flex items-center justify-between">
@@ -1614,77 +1615,12 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
               <span>{khataList.length} dues</span>
               <span className="underline group-hover:text-white">View &rarr;</span>
             </p>
-          </div>
+          </Link>
         </div>
         </div>
       )}
 
-      {/* 4. Modern Segmented Tab Switcher (Only shown on combined Overview) */}
-      {!hideHeaderWidgets && (
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
-          <div className="inline-flex rounded-xl border border-slate-800 bg-[#0c1322] p-1 gap-1">
-            <button
-              type="button"
-              onClick={() => setSubTab("daybook")}
-              className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition ${
-                subTab === "daybook"
-                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 shadow-[0_0_12px_rgba(8,145,178,0.25)]"
-                  : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-              }`}
-            >
-              <FileText size={14} />
-              <span>Daily Daybook</span>
-              <span className="rounded-full bg-slate-800 px-1.5 py-0.2 text-[10px] font-bold text-slate-300">
-                {filteredDaybookTx.length}
-              </span>
-            </button>
 
-            <button
-              type="button"
-              onClick={() => setSubTab("counter_pos")}
-              className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition ${
-                subTab === "counter_pos"
-                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 shadow-[0_0_12px_rgba(8,145,178,0.25)]"
-                  : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-              }`}
-            >
-              <ShoppingBag size={14} />
-              <span>Walk-in Counter POS</span>
-              {posCart.length > 0 && (
-                <span className="rounded-full bg-cyan-400 text-slate-950 px-1.5 py-0.2 text-[10px] font-black">
-                  {posCart.reduce((sum, item) => sum + item.qty, 0)}
-                </span>
-              )}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setSubTab("khata")}
-              className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition ${
-                subTab === "khata"
-                  ? "bg-amber-500/20 text-amber-300 border border-amber-400/30 shadow-[0_0_12px_rgba(245,158,11,0.25)]"
-                  : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-              }`}
-            >
-              <Clock3 size={14} />
-              <span>Customer Khata (Udhar)</span>
-              {khataList.length > 0 && (
-                <span className="rounded-full bg-amber-500/30 text-amber-300 px-1.5 py-0.2 text-[10px] font-bold">
-                  {khataList.length}
-                </span>
-              )}
-            </button>
-          </div>
-
-          {/* Portal Wallet Fee Pass-through tag */}
-          {summary.totalGovtFees > 0 && (
-            <div className="hidden sm:flex items-center gap-1.5 text-xs text-slate-400 font-medium bg-[#0e1625] px-3 py-1.5 rounded-lg border border-slate-800">
-              <span>💳 Wallet Fees Passed:</span>
-              <span className="font-mono font-bold text-slate-200">₹{summary.totalGovtFees.toFixed(0)}</span>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* 4. Tab 1: DAYBOOK REGISTER */}
       {subTab === "daybook" && (
