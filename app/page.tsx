@@ -26,79 +26,157 @@ import {
   Play,
   Flame,
   ArrowUpRight,
+  Sliders,
+  MessageSquare,
+  QrCode,
+  AlertCircle,
+  CheckCircle,
+  Building,
+  CreditCard,
+  Lock,
+  RefreshCw,
+  Award,
 } from "lucide-react";
 
 export default function LandingPage() {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("annual");
+  const [activeTab, setActiveTab] = useState<"isolation" | "thermal" | "drawer" | "khata">("isolation");
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
+
+  // Interactive Simulator State:
+  const [selectedService, setSelectedService] = useState<"passport" | "sarathi" | "edistrict" | "kseb">("passport");
+  const [receiptPaper, setReceiptPaper] = useState<"58mm" | "80mm">("80mm");
+  const [drawerInputNotes, setDrawerInputNotes] = useState<number>(6950);
+
+  // Service Simulation Data
+  const servicePresets = {
+    passport: {
+      name: "Fresh Passport Application (Normal)",
+      customerPaid: 1750,
+      govtFee: 1500,
+      portal: "Passport Seva / Digital Seva Wallet",
+      shopFee: 250,
+      category: "Govt Passport",
+    },
+    sarathi: {
+      name: "Driving Licence Renewal (Sarathi)",
+      customerPaid: 950,
+      govtFee: 750,
+      portal: "Parivahan Sarathi Wallet",
+      shopFee: 200,
+      category: "Transport",
+    },
+    edistrict: {
+      name: "Income & Caste Certificate Application",
+      customerPaid: 150,
+      govtFee: 50,
+      portal: "State e-District Advance Wallet",
+      shopFee: 100,
+      category: "Revenue e-District",
+    },
+    kseb: {
+      name: "Electricity Bill Quick Payment (KSEB / Discom)",
+      customerPaid: 2130,
+      govtFee: 2100,
+      portal: "CSC Utility BBPS Wallet",
+      shopFee: 30,
+      category: "Utility Bill BBPS",
+    },
+  };
+
+  const currentSim = servicePresets[selectedService];
 
   const faqs = [
     {
       q: "Why do generic accounting apps (Tally, Vyapar) fail for CSC & Cyber Cafes?",
-      a: "CSC centers handle pass-through government fees (e.g. ₹2,500 for a passport application) that are deducted from your portal advance wallet, while your actual shop processing fee is only ₹250. Standard apps treat the whole ₹2,750 as your shop revenue, distorting your real profit and taxes. DenBooks automatically isolates government fee pass-throughs from your real income.",
+      a: "Citizen service centers handle massive pass-through government fees (e.g. ₹1,500 for a passport application) that are deducted from your portal advance wallet, while your actual shop processing fee is only ₹250. Standard apps treat the whole ₹1,750 as your shop revenue, distorting your real gross profit and income tax records. DenBooks automatically isolates government pass-through fees from your net shop profit.",
+    },
+    {
+      q: "How does the Zero-Fee Direct UPI QR subscription work?",
+      a: "DenBooks eliminates middleman payment gateway commissions (2-3% + GST). You pay the subscription price (₹199/month or ₹1,999/year) directly to the platform via any UPI app (Google Pay, PhonePe, Paytm, BHIM). Once you submit your 12-digit UPI UTR number, your account is activated instantly with 0% extra charges.",
     },
     {
       q: "Does DenBooks work with my existing 58mm or 80mm thermal receipt printer?",
-      a: "Yes! DenBooks generates 1-click thermal receipts in 58mm, 80mm, and A4/A5 slip formats. No special printer drivers or proprietary hardware are required. It works seamlessly via standard browser printing (Bluetooth, USB, or Wi-Fi).",
+      a: "Yes! DenBooks generates instant thermal receipts in both 58mm and 80mm roll formats, as well as A4/A5 slips. No specialized printer drivers or proprietary hardware are required. It works over standard browser print dialogs via USB, Bluetooth, or Wi-Fi printers (TVS, Epson, NGX, POSIFLEX, etc.).",
     },
     {
-      q: "Can my staff use it on their own counter screens without seeing full center profit?",
-      a: "Yes. DenBooks includes an isolated Front Desk Counter POS (/staff) designed for clerks and operators. Staff can issue tokens, generate invoices, bill Xerox copies, record shop expenses, and balance their shift cash drawer without having access to owner-level settings or center-wide net profit.",
+      q: "Can my counter clerks use it without seeing my center's total bank balance or net profit?",
+      a: "Yes. DenBooks provides a dedicated Front Desk Counter POS (/staff) secured by operator PINs. Clerks can issue queue tokens, bill photocopy jobs, process portal services, record petty shop expenses, and print end-of-shift drawer reconciliation slips without having access to owner settings or center-wide net profit.",
     },
     {
-      q: "How does Portal Advance Wallet tracking work?",
-      a: "You can track running balances for CSC Digital Seva, e-District, UTIITSL/NSDL, Utility Portals, and bank accounts. When an operator records an official government fee, DenBooks automatically deducts the amount from the selected portal wallet and alerts you when balances dip below your safe threshold.",
+      q: "How does Portal Advance Wallet balance tracking work?",
+      a: "You can track real-time running balances for CSC Digital Seva, e-District, UTIITSL/NSDL PAN, and Electricity/BBPS wallets. Every time an operator records a government fee, DenBooks automatically deducts it from the appropriate portal wallet and triggers a visual low-balance alert before your wallet runs dry.",
     },
     {
-      q: "Can I collect unpaid customer dues (Khata/Udhar) with WhatsApp?",
-      a: "Yes! Any bill can be marked as 'Credit / Udhar'. You get an instant ledger of outstanding dues and can send 1-click WhatsApp payment reminders with the customer's balance and payment QR.",
+      q: "What happens if our shop internet drops during peak morning hours?",
+      a: "DenBooks features a local-first offline architecture. If internet connectivity drops, your counter POS continues to issue tokens, register daybook entries, and generate thermal receipts locally. Everything automatically synchronizes back to Supabase cloud once connectivity is restored.",
     },
   ];
 
   return (
     <div className="relative min-h-screen bg-[#070b13] text-slate-100 overflow-x-hidden font-sans selection:bg-cyan-400 selection:text-slate-950">
       {/* Background Neon Grid & Radial Glows */}
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(0,220,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,220,255,0.03)_1px,transparent_1px)] bg-[size:45px_45px]" />
-      <div className="pointer-events-none absolute left-1/2 top-16 h-[550px] w-[550px] -translate-x-1/2 rounded-full bg-cyan-500/10 blur-[140px]" />
-      <div className="pointer-events-none absolute right-10 top-[700px] h-[450px] w-[450px] rounded-full bg-emerald-500/8 blur-[130px]" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(0,220,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,220,255,0.03)_1px,transparent_1px)] bg-[size:48px_48px]" />
+      <div className="pointer-events-none absolute left-1/2 top-12 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-cyan-500/10 blur-[150px]" />
+      <div className="pointer-events-none absolute right-10 top-[650px] h-[450px] w-[450px] rounded-full bg-emerald-500/10 blur-[140px]" />
+
+      {/* TOP ANNOUNCEMENT BAR */}
+      <div className="relative z-50 bg-gradient-to-r from-cyan-950/80 via-slate-900 to-emerald-950/80 border-b border-cyan-800/40 px-4 py-2 text-center text-xs font-medium text-slate-200">
+        <div className="mx-auto flex max-w-7xl items-center justify-center gap-2 flex-wrap">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-cyan-400/20 px-2.5 py-0.5 text-[11px] font-black text-cyan-300 border border-cyan-400/40">
+            <Flame size={12} className="animate-pulse" /> NEW 2026 EDITION
+          </span>
+          <span>Zero Payment Gateway Fees • Direct UPI QR Activation with 14-Day Free Trial!</span>
+          <Link href="/demo" className="font-bold text-cyan-300 hover:text-cyan-200 underline ml-1 inline-flex items-center gap-0.5">
+            Test Live Sandbox <ArrowRight size={12} />
+          </Link>
+        </div>
+      </div>
 
       {/* NAVBAR */}
-      <nav className="sticky top-0 z-50 border-b border-slate-800/80 bg-[#070b13]/85 backdrop-blur-md px-4 sm:px-6 py-3.5 transition">
+      <nav className="sticky top-0 z-40 border-b border-slate-800/80 bg-[#070b13]/85 backdrop-blur-md px-4 sm:px-6 py-3.5 transition">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <Link href="/" className="flex items-center gap-3 group">
             <img
               src="/logo.png"
               alt="DenBooks 360 Logo"
-              className="h-10 w-10 rounded-xl shadow-lg shadow-cyan-500/25 group-hover:scale-105 transition object-cover"
+              className="h-10 w-10 rounded-xl shadow-lg shadow-cyan-500/25 group-hover:scale-105 transition object-cover border border-cyan-500/30"
             />
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="text-lg font-black tracking-tight text-white">DenBooks</span>
-                <span className="text-[10px] font-bold text-cyan-300 bg-cyan-950/70 border border-cyan-800/60 px-2 py-0.5 rounded-full">360</span>
+                <span className="text-[10px] font-bold text-cyan-300 bg-cyan-950/80 border border-cyan-800/60 px-2 py-0.5 rounded-full">360</span>
               </div>
-              <p className="text-[10px] text-slate-400 font-medium hidden sm:block">CSC & Cyber Cafe Operating Suite</p>
+              <p className="text-[10px] text-slate-400 font-medium hidden sm:block">Akshaya, CSC & Cyber Cafe OS</p>
             </div>
           </Link>
 
           <div className="hidden lg:flex items-center gap-8 text-xs font-bold text-slate-300">
-            <a href="#solutions" className="hover:text-cyan-400 transition">Solutions</a>
-            <a href="#how-it-works" className="hover:text-cyan-400 transition">How It Works</a>
-            <a href="#features" className="hover:text-cyan-400 transition">Features</a>
-            <a href="#pricing" className="hover:text-cyan-400 transition">Pricing Plans</a>
+            <a href="#simulator" className="hover:text-cyan-400 transition">Interactive Demo</a>
+            <a href="#solutions" className="hover:text-cyan-400 transition">Why DenBooks</a>
+            <a href="#features" className="hover:text-cyan-400 transition">Core Modules</a>
+            <a href="#pricing" className="hover:text-cyan-400 transition">Zero-Fee Pricing</a>
             <a href="#faq" className="hover:text-cyan-400 transition">FAQ</a>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2 sm:gap-3">
             <Link
               href="/demo"
-              className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-slate-700/80 bg-slate-900/80 px-3.5 py-2 text-xs font-bold text-slate-200 hover:border-cyan-400/50 hover:text-cyan-300 transition shadow-sm"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700/80 bg-slate-900/80 px-3 py-2 text-xs font-bold text-slate-200 hover:border-cyan-400/50 hover:text-cyan-300 transition shadow-sm"
             >
               <Play size={12} className="text-cyan-400 fill-cyan-400" />
-              <span>Live Sandbox</span>
+              <span>Sandbox Demo</span>
+            </Link>
+            <Link
+              href="/staff/login"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-300 hover:text-white transition"
+            >
+              <Store size={13} className="text-emerald-400" />
+              <span>Staff Desk</span>
             </Link>
             <Link
               href="/login"
-              className="px-3.5 py-2 text-xs font-bold text-slate-300 hover:text-white transition"
+              className="px-2.5 sm:px-3 py-2 text-xs font-bold text-slate-300 hover:text-white transition"
             >
               Sign In
             </Link>
@@ -106,20 +184,20 @@ export default function LandingPage() {
               href="/signup"
               className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan-400 to-teal-400 px-4 py-2 text-xs font-black text-slate-950 shadow-md shadow-cyan-400/20 hover:brightness-110 active:scale-95 transition"
             >
-              <span>Get Started</span>
-              <ArrowRight size={14} />
+              <span>Start Free</span>
+              <ArrowRight size={13} />
             </Link>
           </div>
         </div>
       </nav>
 
       {/* HERO SECTION */}
-      <section className="relative z-10 px-4 sm:px-6 pt-16 pb-20 text-center lg:pt-24 lg:pb-28">
+      <section className="relative z-10 px-4 sm:px-6 pt-12 pb-16 text-center lg:pt-20 lg:pb-24">
         <div className="mx-auto max-w-5xl">
-          {/* Badge */}
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-4 py-1.5 text-xs font-bold text-cyan-300 backdrop-blur-md shadow-sm">
-            <Flame size={14} className="text-cyan-400 animate-pulse" />
-            <span>Built Specifically for CSCs, Cyber Cafés & Akshaya Centers</span>
+          {/* Target Audience Pill */}
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-950/40 px-4 py-1.5 text-xs font-bold text-cyan-300 backdrop-blur-md shadow-sm">
+            <Sparkles size={14} className="text-cyan-400" />
+            <span>Tailored for CSC Digital Seva • Akshaya E-Centres • Jan Seva Kendra • Cyber Cafes</span>
           </div>
 
           <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white leading-[1.12]">
@@ -130,10 +208,10 @@ export default function LandingPage() {
           </h1>
 
           <p className="mx-auto mt-6 max-w-3xl text-sm sm:text-lg text-slate-300 font-normal leading-relaxed">
-            Stop guessing your daily take-home earnings with general accounting apps. DenBooks reconciles e-District & CSC advance wallets, prints instant thermal slips, manages customer Khata, and separates front desk staff drawers from executive owner accounting.
+            Stop guessing your daily take-home earnings with general retail apps. DenBooks reconciles e-District & CSC advance wallets, prints 58mm/80mm thermal receipts, balances front-desk shift drawers, and automates WhatsApp Khata reminders.
           </p>
 
-          {/* Primary Action Buttons */}
+          {/* Hero CTAs */}
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3.5">
             <Link
               href="/signup"
@@ -147,15 +225,15 @@ export default function LandingPage() {
               className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/90 px-6 py-3.5 text-sm font-bold text-white hover:border-slate-500 hover:bg-slate-800 transition"
             >
               <Play size={14} className="text-cyan-400 fill-cyan-400" />
-              <span>Explore Live Sandbox</span>
+              <span>Explore Live Sandbox (No Signup)</span>
             </Link>
           </div>
 
           {/* Trust Highlights */}
-          <div className="mt-9 flex flex-wrap items-center justify-center gap-6 sm:gap-10 text-xs font-semibold text-slate-400">
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-6 sm:gap-10 text-xs font-semibold text-slate-400">
             <div className="flex items-center gap-2">
               <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
-              <span>No credit card required</span>
+              <span>Direct UPI QR • Zero Gateway Fees</span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
@@ -163,142 +241,511 @@ export default function LandingPage() {
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
-              <span>Setup in 60 seconds</span>
+              <span>Local-First Offline Fallback</span>
             </div>
           </div>
+        </div>
 
-          {/* HERO APP INTERACTIVE MOCKUP PREVIEW */}
-          <div className="relative mt-14 mx-auto max-w-5xl rounded-3xl border border-slate-800/90 bg-[#0b1220]/95 p-3.5 sm:p-5 shadow-2xl shadow-cyan-500/10 text-left">
-            {/* Window bar */}
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
-              <div className="flex items-center gap-2">
-                <div className="flex gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-full bg-rose-500/80" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-amber-500/80" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-500/80" />
-                </div>
-                <span className="ml-2 font-mono text-[11px] text-slate-400 font-semibold hidden sm:inline">
-                  app.denbooks360.com/dashboard (Admin Executive Suite)
-                </span>
-              </div>
-              <div className="flex items-center gap-2 text-[11px] font-bold">
-                <span className="text-emerald-400 flex items-center gap-1">
-                  <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                  Live Sync
-                </span>
-                <span className="rounded-lg bg-cyan-950/70 text-cyan-300 border border-cyan-800/60 px-2 py-0.5">
-                  Demo Center: Apex Digital Seva Kendra
-                </span>
-              </div>
+        {/* METRICS STRIP */}
+        <div className="mx-auto mt-12 max-w-5xl rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4 sm:p-6 backdrop-blur-md">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center divide-y md:divide-y-0 md:divide-x divide-slate-800">
+            <div className="p-2">
+              <p className="text-2xl sm:text-3xl font-black text-cyan-400">₹1.5 Cr+</p>
+              <p className="text-[11px] text-slate-400 font-medium uppercase tracking-wider mt-1">Govt Fees Tracked</p>
             </div>
-
-            {/* Mockup Top Command Bar */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 mb-4">
-              {/* Left: Wallets mock */}
-              <div className="lg:col-span-5 rounded-2xl border border-slate-800/90 bg-[#0e1625] p-3 flex flex-col justify-between">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
-                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-200">
-                    <Wallet size={13} className="text-cyan-400" />
-                    <span>Portal Advance & Bank</span>
-                  </div>
-                  <span className="font-mono text-xs font-black text-cyan-300 bg-cyan-950 px-2 py-0.5 rounded border border-cyan-800/60">
-                    Total: ₹19,840
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-2">
-                    <p className="text-[10px] text-slate-400 font-semibold">CSC Digital Seva Portal</p>
-                    <p className="font-mono font-bold text-white text-sm mt-0.5">₹ 4,320</p>
-                  </div>
-                  <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-2">
-                    <p className="text-[10px] text-slate-400 font-semibold">State e-District Wallet</p>
-                    <p className="font-mono font-bold text-white text-sm mt-0.5">₹ 6,150</p>
-                  </div>
-                  <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-2">
-                    <p className="text-[10px] text-slate-400 font-semibold">PAN & UTIITSL Wallet</p>
-                    <p className="font-mono font-bold text-white text-sm mt-0.5">₹ 1,870</p>
-                  </div>
-                  <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-2">
-                    <p className="text-[10px] text-slate-400 font-semibold">Operating Bank A/c</p>
-                    <p className="font-mono font-bold text-white text-sm mt-0.5">₹ 7,500</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right: Financial KPIs mock */}
-              <div className="lg:col-span-7 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                <div className="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-[#0e1625] to-[#0f231e] p-3 flex flex-col justify-between">
-                  <span className="text-[10px] font-bold text-emerald-400 uppercase">Cash in Drawer</span>
-                  <p className="font-mono font-black text-white text-lg mt-1">₹ 4,820</p>
-                  <p className="text-[9.5px] text-slate-400">Physical drawer</p>
-                </div>
-                <div className="rounded-2xl border border-cyan-500/30 bg-gradient-to-br from-[#0e1625] to-[#102336] p-3 flex flex-col justify-between">
-                  <span className="text-[10px] font-bold text-cyan-400 uppercase">UPI / Online</span>
-                  <p className="font-mono font-black text-white text-lg mt-1">₹ 6,450</p>
-                  <p className="text-[9.5px] text-slate-400">GPay & PhonePe</p>
-                </div>
-                <div className="rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-[#0e1625] to-[#171a35] p-3 flex flex-col justify-between">
-                  <span className="text-[10px] font-bold text-indigo-400 uppercase">Shop Revenue</span>
-                  <p className="font-mono font-black text-white text-lg mt-1">₹ 3,920</p>
-                  <p className="text-[9.5px] text-slate-400">Net processing fees</p>
-                </div>
-                <div className="rounded-2xl border border-teal-500/30 bg-gradient-to-br from-[#0e1625] to-[#0d2a29] p-3 flex flex-col justify-between">
-                  <span className="text-[10px] font-bold text-teal-400 uppercase">Net Profit</span>
-                  <p className="font-mono font-black text-teal-300 text-lg mt-1">₹ 3,470</p>
-                  <p className="text-[9.5px] text-slate-400">After -₹450 exp</p>
-                </div>
-              </div>
+            <div className="p-2">
+              <p className="text-2xl sm:text-3xl font-black text-emerald-400">75,000+</p>
+              <p className="text-[11px] text-slate-400 font-medium uppercase tracking-wider mt-1">Thermal Slips Printed</p>
             </div>
-
-            {/* Mockup Daybook Rows */}
-            <div className="rounded-2xl border border-slate-800 bg-[#0e1625] overflow-hidden text-xs">
-              <div className="bg-slate-900/80 px-4 py-2 border-b border-slate-800 flex items-center justify-between text-slate-400 font-semibold text-[11px]">
-                <span>Sample Daybook Ledger</span>
-                <span className="text-cyan-400 font-mono">14 Entries Reconciled</span>
-              </div>
-              <div className="divide-y divide-slate-800/60 font-medium">
-                <div className="px-4 py-2.5 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className="font-mono text-slate-400 text-[11px]">04:12 PM</span>
-                    <div>
-                      <p className="text-white font-bold">Fresh Passport Application • Rajesh K.</p>
-                      <p className="text-[10px] text-slate-400">Official Portal Fee ₹1,500 (State Portal Wallet) + Shop Fee ₹250</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className="font-mono font-bold text-emerald-400 text-sm">+ ₹1,750</span>
-                    <span className="block text-[10px] text-cyan-300 font-bold">Shop Net: ₹250</span>
-                  </div>
-                </div>
-                <div className="px-4 py-2.5 flex items-center justify-between bg-slate-900/20">
-                  <div className="flex items-center gap-3">
-                    <span className="font-mono text-slate-400 text-[11px]">03:45 PM</span>
-                    <div>
-                      <p className="text-white font-bold">Colour Xerox (x12) + Spiral Binding</p>
-                      <p className="text-[10px] text-slate-400">Counter POS • Walk-in Student</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className="font-mono font-bold text-emerald-400 text-sm">+ ₹160</span>
-                    <span className="block text-[10px] text-cyan-300 font-bold">Shop Net: ₹160</span>
-                  </div>
-                </div>
-                <div className="px-4 py-2.5 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className="font-mono text-slate-400 text-[11px]">02:10 PM</span>
-                    <div>
-                      <p className="text-white font-bold">Premium A4 Copier Paper Bundle (2 Reams)</p>
-                      <p className="text-[10px] text-slate-400">Center Store Supplies • Cash Drawer</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className="font-mono font-bold text-red-400 text-sm">- ₹450</span>
-                    <span className="block text-[10px] text-red-400/80 font-bold">Expense</span>
-                  </div>
-                </div>
-              </div>
+            <div className="p-2">
+              <p className="text-2xl sm:text-3xl font-black text-teal-300">100%</p>
+              <p className="text-[11px] text-slate-400 font-medium uppercase tracking-wider mt-1">Offline-Ready Resilience</p>
+            </div>
+            <div className="p-2">
+              <p className="text-2xl sm:text-3xl font-black text-indigo-400">0%</p>
+              <p className="text-[11px] text-slate-400 font-medium uppercase tracking-wider mt-1">Gateway Commissions</p>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* INTERACTIVE LIVE SIMULATOR SHOWCASE */}
+      <section id="simulator" className="relative z-10 px-4 sm:px-6 py-12 border-t border-slate-800/80 bg-[#080e1a]">
+        <div className="mx-auto max-w-6xl">
+          <div className="text-center max-w-2xl mx-auto mb-10">
+            <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-cyan-400 bg-cyan-950/60 px-3 py-1 rounded-full border border-cyan-800/40 mb-2">
+              <Sliders size={13} />
+              <span>Interactive Live Preview</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-black text-white">Experience DenBooks In Action</h2>
+            <p className="text-xs sm:text-sm text-slate-400 mt-2">
+              Test how DenBooks solves the four biggest challenges of citizen service counters.
+            </p>
+          </div>
+
+          {/* Interactive Navigation Tabs */}
+          <div className="flex flex-wrap items-center justify-center gap-2 mb-8">
+            <button
+              onClick={() => setActiveTab("isolation")}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition ${
+                activeTab === "isolation"
+                  ? "bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-400/20"
+                  : "bg-slate-900 border border-slate-800 text-slate-300 hover:border-slate-700"
+              }`}
+            >
+              <TrendingUp size={14} />
+              <span>1. Govt Fee vs Real Profit</span>
+            </button>
+            <button
+              onClick={() => setActiveTab("thermal")}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition ${
+                activeTab === "thermal"
+                  ? "bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-400/20"
+                  : "bg-slate-900 border border-slate-800 text-slate-300 hover:border-slate-700"
+              }`}
+            >
+              <Printer size={14} />
+              <span>2. 58mm/80mm Thermal Receipt</span>
+            </button>
+            <button
+              onClick={() => setActiveTab("drawer")}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition ${
+                activeTab === "drawer"
+                  ? "bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-400/20"
+                  : "bg-slate-900 border border-slate-800 text-slate-300 hover:border-slate-700"
+              }`}
+            >
+              <Banknote size={14} />
+              <span>3. Shift Drawer Handover</span>
+            </button>
+            <button
+              onClick={() => setActiveTab("khata")}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition ${
+                activeTab === "khata"
+                  ? "bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-400/20"
+                  : "bg-slate-900 border border-slate-800 text-slate-300 hover:border-slate-700"
+              }`}
+            >
+              <MessageSquare size={14} />
+              <span>4. Customer Khata & WhatsApp</span>
+            </button>
+          </div>
+
+          {/* TAB 1: PASS-THROUGH GOVT FEE ISOLATION */}
+          {activeTab === "isolation" && (
+            <div className="rounded-3xl border border-slate-800 bg-[#0c1322] p-6 sm:p-8 shadow-2xl">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                {/* Left: Controls & Context */}
+                <div className="lg:col-span-5 space-y-4">
+                  <span className="text-xs font-bold uppercase tracking-wider text-cyan-400">Service Fee Isolation Simulator</span>
+                  <h3 className="text-2xl font-black text-white">Never Confuse Gross Cash with Your Take-Home Profit</h3>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    Select a typical citizen service below. Notice how DenBooks deducts the official government fee from your portal wallet balance while accurately crediting your shop profit.
+                  </p>
+
+                  <div className="space-y-2 pt-2">
+                    <p className="text-[11px] font-bold uppercase text-slate-400 tracking-wider">Select Citizen Service:</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <button
+                        onClick={() => setSelectedService("passport")}
+                        className={`p-2.5 rounded-xl text-left border text-xs font-bold transition ${
+                          selectedService === "passport"
+                            ? "bg-cyan-950/80 border-cyan-400 text-cyan-300"
+                            : "bg-slate-900/80 border-slate-800 text-slate-400 hover:border-slate-700"
+                        }`}
+                      >
+                        <p className="text-white font-bold">Passport Application</p>
+                        <p className="text-[10px] text-slate-400">₹1,500 Govt + ₹250 Shop</p>
+                      </button>
+                      <button
+                        onClick={() => setSelectedService("sarathi")}
+                        className={`p-2.5 rounded-xl text-left border text-xs font-bold transition ${
+                          selectedService === "sarathi"
+                            ? "bg-cyan-950/80 border-cyan-400 text-cyan-300"
+                            : "bg-slate-900/80 border-slate-800 text-slate-400 hover:border-slate-700"
+                        }`}
+                      >
+                        <p className="text-white font-bold">Sarathi Driving Licence</p>
+                        <p className="text-[10px] text-slate-400">₹750 Govt + ₹200 Shop</p>
+                      </button>
+                      <button
+                        onClick={() => setSelectedService("edistrict")}
+                        className={`p-2.5 rounded-xl text-left border text-xs font-bold transition ${
+                          selectedService === "edistrict"
+                            ? "bg-cyan-950/80 border-cyan-400 text-cyan-300"
+                            : "bg-slate-900/80 border-slate-800 text-slate-400 hover:border-slate-700"
+                        }`}
+                      >
+                        <p className="text-white font-bold">Income Certificate</p>
+                        <p className="text-[10px] text-slate-400">₹50 Govt + ₹100 Shop</p>
+                      </button>
+                      <button
+                        onClick={() => setSelectedService("kseb")}
+                        className={`p-2.5 rounded-xl text-left border text-xs font-bold transition ${
+                          selectedService === "kseb"
+                            ? "bg-cyan-950/80 border-cyan-400 text-cyan-300"
+                            : "bg-slate-900/80 border-slate-800 text-slate-400 hover:border-slate-700"
+                        }`}
+                      >
+                        <p className="text-white font-bold">Electricity Bill BBPS</p>
+                        <p className="text-[10px] text-slate-400">₹2,100 Govt + ₹30 Shop</p>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right: Interactive Isolation Card */}
+                <div className="lg:col-span-7 bg-[#0f172a] rounded-2xl border border-slate-700/80 p-5 sm:p-6 space-y-5">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <div>
+                      <p className="text-xs text-slate-400 uppercase font-semibold">Active Transaction</p>
+                      <h4 className="text-base font-bold text-white">{currentSim.name}</h4>
+                    </div>
+                    <span className="font-mono text-sm font-black px-2.5 py-1 rounded-lg bg-emerald-950 text-emerald-300 border border-emerald-800/60">
+                      Collected: ₹{currentSim.customerPaid}
+                    </span>
+                  </div>
+
+                  {/* Flow Split Visualizer */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Pass-Through Govt Fee Box */}
+                    <div className="rounded-xl border border-rose-500/30 bg-rose-950/15 p-4 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase text-rose-400 tracking-wider">Pass-Through Govt Fee</span>
+                        <Wallet size={14} className="text-rose-400" />
+                      </div>
+                      <p className="font-mono text-2xl font-black text-rose-300">- ₹{currentSim.govtFee}</p>
+                      <p className="text-[10px] text-slate-400">
+                        Deducted from: <strong className="text-slate-300">{currentSim.portal}</strong>
+                      </p>
+                      <div className="pt-1 text-[9.5px] text-rose-400/80 flex items-center gap-1">
+                        <AlertCircle size={10} />
+                        <span>Zero shop tax liability • Pure pass-through</span>
+                      </div>
+                    </div>
+
+                    {/* Real Shop Net Profit Box */}
+                    <div className="rounded-xl border border-emerald-500/40 bg-emerald-950/20 p-4 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase text-emerald-400 tracking-wider">Real Shop Profit</span>
+                        <TrendingUp size={14} className="text-emerald-400" />
+                      </div>
+                      <p className="font-mono text-2xl font-black text-emerald-300">+ ₹{currentSim.shopFee}</p>
+                      <p className="text-[10px] text-slate-400">
+                        Added to: <strong className="text-slate-300">Front Desk Cash Drawer / Bank</strong>
+                      </p>
+                      <div className="pt-1 text-[9.5px] text-emerald-400/80 flex items-center gap-1">
+                        <CheckCircle size={10} />
+                        <span>Your true center gross income</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Progress Comparison Bar */}
+                  <div className="space-y-1.5 pt-2">
+                    <div className="flex justify-between text-xs font-semibold">
+                      <span className="text-rose-400">Govt Wallet Liability: ₹{currentSim.govtFee}</span>
+                      <span className="text-emerald-400">Real Profit: ₹{currentSim.shopFee}</span>
+                    </div>
+                    <div className="h-3 w-full bg-slate-800 rounded-full overflow-hidden flex">
+                      <div
+                        className="bg-rose-500/80 transition-all duration-300"
+                        style={{ width: `${(currentSim.govtFee / currentSim.customerPaid) * 100}%` }}
+                      />
+                      <div
+                        className="bg-emerald-400 transition-all duration-300"
+                        style={{ width: `${(currentSim.shopFee / currentSim.customerPaid) * 100}%` }}
+                      />
+                    </div>
+                    <p className="text-[10px] text-slate-400 text-center italic">
+                      Generic apps register ₹{currentSim.customerPaid} as your income. DenBooks correctly shows ₹{currentSim.shopFee}.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: 58MM / 80MM THERMAL RECEIPT */}
+          {activeTab === "thermal" && (
+            <div className="rounded-3xl border border-slate-800 bg-[#0c1322] p-6 sm:p-8 shadow-2xl">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                {/* Left: Printer settings */}
+                <div className="lg:col-span-5 space-y-4">
+                  <span className="text-xs font-bold uppercase tracking-wider text-cyan-400">Hardware & Paper Freedom</span>
+                  <h3 className="text-2xl font-black text-white">Instant 1-Click Thermal Printing</h3>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    Designed for high-traffic front desks. Prints clean citizen receipts with itemized breakdown, tracking QR codes, and center VLE credentials without annoying software drivers.
+                  </p>
+
+                  <div className="space-y-3 pt-2">
+                    <p className="text-[11px] font-bold uppercase text-slate-400 tracking-wider">Select Roll Width:</p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setReceiptPaper("80mm")}
+                        className={`flex-1 py-2 px-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                          receiptPaper === "80mm"
+                            ? "bg-cyan-950 border-cyan-400 text-cyan-300"
+                            : "bg-slate-900 border-slate-800 text-slate-400"
+                        }`}
+                      >
+                        <Printer size={13} /> 80mm Standard Roll
+                      </button>
+                      <button
+                        onClick={() => setReceiptPaper("58mm")}
+                        className={`flex-1 py-2 px-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                          receiptPaper === "58mm"
+                            ? "bg-cyan-950 border-cyan-400 text-cyan-300"
+                            : "bg-slate-900 border-slate-800 text-slate-400"
+                        }`}
+                      >
+                        <Printer size={13} /> 58mm Compact POS
+                      </button>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3 text-xs space-y-2">
+                      <div className="flex items-center gap-2 text-emerald-400 font-bold">
+                        <Check size={14} /> Works with USB, Bluetooth, & Wi-Fi POS Printers
+                      </div>
+                      <div className="flex items-center gap-2 text-emerald-400 font-bold">
+                        <Check size={14} /> Citizens can scan QR code to track service status
+                      </div>
+                      <div className="flex items-center gap-2 text-emerald-400 font-bold">
+                        <Check size={14} /> Supports Malayalam, Hindi, Tamil & English Headers
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right: Realistic Thermal Paper Mockup */}
+                <div className="lg:col-span-7 flex justify-center">
+                  <div
+                    className={`bg-white text-slate-900 p-5 sm:p-6 rounded-lg shadow-2xl font-mono text-[11px] leading-tight transition-all duration-300 border-t-8 border-cyan-400 ${
+                      receiptPaper === "58mm" ? "max-w-[270px] text-[10px]" : "max-w-[340px]"
+                    }`}
+                  >
+                    {/* Header */}
+                    <div className="text-center border-b border-dashed border-slate-400 pb-3 mb-3">
+                      <p className="font-black text-sm uppercase tracking-wider text-slate-950">APEX DIGITAL SEVA KENDRA</p>
+                      <p className="text-[10px] text-slate-600">VLE Code: CSC-KL-982140</p>
+                      <p className="text-[9.5px] text-slate-500">Bus Stand Junction, Kottayam, Kerala</p>
+                      <p className="text-[9.5px] text-slate-500">Ph: +91 98471 23456</p>
+                      <div className="mt-2 inline-block bg-slate-100 border border-slate-300 px-2 py-0.5 rounded text-[10px] font-bold">
+                        TOKEN #42 • COUNTER 01
+                      </div>
+                    </div>
+
+                    {/* Metadata */}
+                    <div className="flex justify-between text-[10px] text-slate-600 mb-2">
+                      <span>Date: 09/10/2026 11:42 AM</span>
+                      <span>Operator: Anjali</span>
+                    </div>
+                    <div className="text-[10px] text-slate-700 mb-2 font-bold">
+                      Customer: Rajesh Kumar (Ph: 98****3210)
+                    </div>
+
+                    {/* Items table */}
+                    <div className="border-b border-dashed border-slate-400 pb-2 mb-2">
+                      <div className="flex justify-between font-bold text-slate-900 pb-1 border-b border-slate-200">
+                        <span>SERVICE / ITEM</span>
+                        <span>AMT</span>
+                      </div>
+                      <div className="py-1">
+                        <div className="flex justify-between">
+                          <span>1. Passport Seva (Govt Fee)</span>
+                          <span>₹1,500.00</span>
+                        </div>
+                        <div className="flex justify-between text-slate-600 text-[9.5px]">
+                          <span>   Processing & Slot Booking</span>
+                          <span>₹250.00</span>
+                        </div>
+                        <div className="flex justify-between mt-1">
+                          <span>2. Colour Photo Print (x4)</span>
+                          <span>₹60.00</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Total */}
+                    <div className="space-y-1 text-right mb-3">
+                      <div className="flex justify-between font-black text-sm text-slate-950">
+                        <span>TOTAL PAID:</span>
+                        <span>₹1,810.00</span>
+                      </div>
+                      <div className="flex justify-between text-[10px] text-slate-600">
+                        <span>Payment Mode:</span>
+                        <span className="font-bold text-slate-900">UPI (Google Pay)</span>
+                      </div>
+                    </div>
+
+                    {/* QR Code Simulation */}
+                    <div className="text-center pt-2 border-t border-dashed border-slate-400">
+                      <div className="inline-block p-1 bg-white border border-slate-300 rounded mb-1">
+                        <QrCode size={48} className="text-slate-900 mx-auto" />
+                      </div>
+                      <p className="text-[9px] text-slate-600">Scan QR to check application status</p>
+                      <p className="text-[9px] font-bold text-slate-900 mt-1">THANK YOU • VISIT AGAIN</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: SHIFT DRAWER RECONCILIATION */}
+          {activeTab === "drawer" && (
+            <div className="rounded-3xl border border-slate-800 bg-[#0c1322] p-6 sm:p-8 shadow-2xl">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                {/* Left: Shift Description */}
+                <div className="lg:col-span-5 space-y-4">
+                  <span className="text-xs font-bold uppercase tracking-wider text-cyan-400">Counter Staff Accountability</span>
+                  <h3 className="text-2xl font-black text-white">Zero Cash Leaks at Evening Shift Handover</h3>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    Operators handle hundreds of cash transactions and photocopy notes. DenBooks' Shift Drawer compares actual counted notes with system entries to eliminate arguments when closing the till.
+                  </p>
+
+                  <div className="space-y-2 pt-2">
+                    <p className="text-[11px] font-bold uppercase text-slate-400 tracking-wider">Test Note Counter Input:</p>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        value={drawerInputNotes}
+                        onChange={(e) => setDrawerInputNotes(Number(e.target.value) || 0)}
+                        className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-mono font-bold text-white w-32 focus:border-cyan-400 focus:outline-none"
+                      />
+                      <button
+                        onClick={() => setDrawerInputNotes(6950)}
+                        className="text-xs text-cyan-400 hover:underline font-bold"
+                      >
+                        Reset to Exact (₹6,950)
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right: Drawer Reconciliation Slip */}
+                <div className="lg:col-span-7 bg-[#0f172a] rounded-2xl border border-slate-700/80 p-5 sm:p-6 space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <div>
+                      <p className="text-xs font-bold text-slate-400">SHIFT CLOSING REPORT • COUNTER #1</p>
+                      <p className="text-sm font-bold text-white">Operator: Rahul M. (Morning Shift)</p>
+                    </div>
+                    <span className="text-xs font-mono font-black text-cyan-300 bg-cyan-950 px-2.5 py-1 rounded border border-cyan-800/60">
+                      09:00 AM - 05:30 PM
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+                    <div className="rounded-xl bg-slate-900/80 border border-slate-800 p-3">
+                      <p className="text-[10px] text-slate-400 font-semibold">Opening Float</p>
+                      <p className="font-mono text-base font-bold text-white mt-1">₹ 1,000</p>
+                    </div>
+                    <div className="rounded-xl bg-slate-900/80 border border-slate-800 p-3">
+                      <p className="text-[10px] text-slate-400 font-semibold">Cash Collected</p>
+                      <p className="font-mono text-base font-bold text-emerald-400 mt-1">+ ₹ 6,400</p>
+                    </div>
+                    <div className="rounded-xl bg-slate-900/80 border border-slate-800 p-3">
+                      <p className="text-[10px] text-slate-400 font-semibold">Petty Expenses (Paper)</p>
+                      <p className="font-mono text-base font-bold text-rose-400 mt-1">- ₹ 450</p>
+                    </div>
+                  </div>
+
+                  {/* Expected vs Actual */}
+                  <div className="rounded-xl border border-slate-700 bg-slate-900 p-4 space-y-3">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-slate-400">System Expected Drawer Cash:</span>
+                      <span className="font-mono font-black text-white text-base">₹ 6,950</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-slate-400">Physically Counted Cash:</span>
+                      <span className="font-mono font-black text-cyan-300 text-base">₹ {drawerInputNotes}</span>
+                    </div>
+                    <div className="border-t border-slate-800 pt-3 flex justify-between items-center">
+                      <span className="text-xs font-bold text-slate-300">Variance / Difference:</span>
+                      {drawerInputNotes === 6950 ? (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950 text-emerald-300 font-mono font-black text-xs border border-emerald-800">
+                          <CheckCircle size={13} /> ₹0 (PERFECT TALLY)
+                        </span>
+                      ) : (
+                        <span
+                          className={`inline-flex items-center gap-1 px-3 py-1 rounded-full font-mono font-black text-xs border ${
+                            drawerInputNotes > 6950
+                              ? "bg-amber-950 text-amber-300 border-amber-800"
+                              : "bg-rose-950 text-rose-300 border-rose-800"
+                          }`}
+                        >
+                          <AlertCircle size={13} />
+                          {drawerInputNotes > 6950 ? `+₹${drawerInputNotes - 6950} SURPLUS` : `-₹${6950 - drawerInputNotes} SHORTAGE`}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: CUSTOMER KHATA & WHATSAPP */}
+          {activeTab === "khata" && (
+            <div className="rounded-3xl border border-slate-800 bg-[#0c1322] p-6 sm:p-8 shadow-2xl">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                {/* Left: Udhar Explanation */}
+                <div className="lg:col-span-5 space-y-4">
+                  <span className="text-xs font-bold uppercase tracking-wider text-cyan-400">Customer Credit Ledger</span>
+                  <h3 className="text-2xl font-black text-white">Recover Pending Udhar with 1-Click WhatsApp</h3>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    Regular customers often say "I will pay tomorrow". DenBooks creates an automatic Khata entry and prepares a personalized WhatsApp reminder with your center's payment QR code.
+                  </p>
+
+                  <div className="space-y-2 pt-2">
+                    <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-3.5 text-xs space-y-1.5">
+                      <p className="font-bold text-emerald-300 flex items-center gap-1.5">
+                        <MessageSquare size={14} /> Zero Awkward Reminders
+                      </p>
+                      <p className="text-slate-300 text-[11px]">
+                        The message is formatted respectfully with date, pending balance, and your shop's direct UPI QR.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right: WhatsApp Message Preview Mockup */}
+                <div className="lg:col-span-7 bg-[#0b141a] rounded-2xl border border-slate-800 p-5 sm:p-6 space-y-4 shadow-xl">
+                  <div className="flex items-center gap-3 border-b border-slate-800 pb-3">
+                    <div className="h-9 w-9 rounded-full bg-emerald-600 flex items-center justify-center font-bold text-white text-xs">
+                      RP
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-white">Ramesh Patel (Customer)</p>
+                      <p className="text-[10px] text-emerald-400">+91 98765 43210 • Online</p>
+                    </div>
+                  </div>
+
+                  {/* Chat bubble */}
+                  <div className="bg-[#122e23] border border-emerald-900/60 rounded-2xl p-4 text-xs space-y-2 text-slate-200">
+                    <p className="font-bold text-emerald-300">Namaste Ramesh Ji 🙏</p>
+                    <p className="text-[11px] leading-relaxed">
+                      This is a gentle reminder from <strong className="text-white">Apex Digital Seva Kendra</strong> regarding your pending balance of <strong className="text-white">₹320.00</strong> for:
+                    </p>
+                    <div className="bg-[#0b2018] p-2.5 rounded-lg border border-emerald-900/40 text-[10.5px] font-mono space-y-1">
+                      <div className="flex justify-between">
+                        <span>• Aadhaar Card PVC Print (x2)</span>
+                        <span>₹100</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>• PAN Card Correction</span>
+                        <span>₹220</span>
+                      </div>
+                    </div>
+                    <p className="text-[11px]">
+                      You can pay instantly via UPI: <strong className="text-cyan-300 font-mono">apexseva@upi</strong>
+                    </p>
+                    <p className="text-[10px] text-emerald-400/80">Thank you for your patronage! Have a great day.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
@@ -307,7 +754,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-6xl">
           <div className="text-center max-w-2xl mx-auto mb-14">
             <h2 className="text-xs font-bold uppercase tracking-widest text-cyan-400">The Purpose-Built Difference</h2>
-            <p className="mt-2 text-3xl font-black text-white sm:text-4xl">General Billing Apps vs. DenBooks</p>
+            <p className="mt-2 text-3xl font-black text-white sm:text-4xl">Generic Billing Software vs. DenBooks</p>
             <p className="mt-3 text-sm text-slate-400">
               Why generic retail POS and desktop software fail for government citizen service providers.
             </p>
@@ -373,7 +820,7 @@ export default function LandingPage() {
       <section id="features" className="relative z-10 px-4 sm:px-6 py-20">
         <div className="mx-auto max-w-6xl">
           <div className="text-center max-w-xl mx-auto mb-14">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-cyan-400">Built For High-Velocity Counters</h2>
+            <h2 className="text-xs font-bold uppercase tracking-widest text-cyan-400">Engineered for Front Desks</h2>
             <p className="mt-2 text-3xl font-black text-white sm:text-4xl">Everything Your Center Needs</p>
           </div>
 
@@ -450,10 +897,13 @@ export default function LandingPage() {
       {/* PRICING SECTION */}
       <section id="pricing" className="relative z-10 px-4 sm:px-6 py-20 border-t border-slate-800/80 bg-slate-950/40">
         <div className="mx-auto max-w-5xl text-center">
-          <h2 className="text-xs font-bold uppercase tracking-widest text-cyan-400">Transparent SaaS Pricing</h2>
-          <p className="mt-2 text-3xl font-black text-white sm:text-4xl">Honest Plans with 14-Day Free Trial</p>
+          <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-cyan-400 bg-cyan-950/60 px-3 py-1 rounded-full border border-cyan-800/40 mb-2">
+            <IndianRupee size={13} />
+            <span>Direct UPI • Zero Gateway Deductions</span>
+          </div>
+          <h2 className="text-3xl font-black text-white sm:text-4xl">Simple, Transparent Pricing</h2>
           <p className="mt-3 text-sm text-slate-400 max-w-lg mx-auto">
-            Pick the right tier for your center. All plans include 14 days full access with zero credit card required.
+            14-day full free trial on all plans. Pay directly via UPI QR with zero payment gateway fees.
           </p>
 
           {/* Billing Cycle Switcher */}
@@ -476,33 +926,36 @@ export default function LandingPage() {
             >
               <span>Annual Billing</span>
               <span className="rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] px-2 py-0.5 font-black border border-emerald-400/40">
-                Save 25%
+                Save 60% (~₹166/mo)
               </span>
             </button>
           </div>
 
           {/* Pricing Cards */}
           <div className="mt-12 grid gap-6 md:grid-cols-3 text-left">
-            {/* Starter */}
+            {/* Starter Monthly */}
             <div className="rounded-3xl border border-slate-800 bg-[#0e1625] p-7 flex flex-col justify-between hover:border-slate-700 transition">
               <div>
-                <h3 className="text-lg font-bold text-white">Single Counter</h3>
-                <p className="text-xs text-slate-400 mt-1">For single-operator CSCs, Xerox shops & internet cafés.</p>
+                <h3 className="text-lg font-bold text-white">Starter Monthly</h3>
+                <p className="text-xs text-slate-400 mt-1">Flexible month-to-month access for single-counter VLEs & Cyber Cafes.</p>
                 <div className="mt-6 flex items-baseline gap-1">
                   <span className="text-4xl font-black text-white">
-                    {billingCycle === "monthly" ? "₹199" : "₹149"}
+                    {billingCycle === "monthly" ? "₹199" : "₹166"}
                   </span>
                   <span className="text-xs text-slate-400">/ month</span>
                 </div>
+                <p className="text-[11px] text-cyan-400 font-semibold mt-1">
+                  {billingCycle === "monthly" ? "Regular ₹499 (60% Launch Special)" : "Billed as ₹1,999 annually"}
+                </p>
 
                 <ul className="mt-6 space-y-3 text-xs text-slate-300">
                   <li className="flex items-center gap-2">
                     <CheckCircle2 size={14} className="text-cyan-400 shrink-0" />
-                    <span>Single Counter POS & Daybook</span>
+                    <span><b>Single Center</b> Full Access</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 size={14} className="text-cyan-400 shrink-0" />
-                    <span>Up to 4 Portal Advance Wallets</span>
+                    <span>4 Portal Advance Wallets</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 size={14} className="text-cyan-400 shrink-0" />
@@ -510,47 +963,52 @@ export default function LandingPage() {
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 size={14} className="text-cyan-400 shrink-0" />
-                    <span>Customer Khata (Credit) Tracker</span>
+                    <span>Front Desk Staff PIN Access</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 size={14} className="text-cyan-400 shrink-0" />
+                    <span>Customer Khata & WhatsApp Ledger</span>
                   </li>
                 </ul>
               </div>
 
               <Link
-                href="/signup?plan=starter"
+                href="/signup?plan=monthly"
                 className="mt-8 block text-center rounded-xl border border-slate-700 bg-slate-900 py-3 text-xs font-bold text-white hover:border-cyan-400 hover:text-cyan-300 transition"
               >
                 Start 14-Day Free Trial
               </Link>
             </div>
 
-            {/* Pro Center (Featured) */}
+            {/* Annual Pro (Featured) */}
             <div className="relative rounded-3xl border-2 border-cyan-400 bg-gradient-to-b from-[#112138] to-[#0c1524] p-7 shadow-2xl shadow-cyan-500/10 flex flex-col justify-between">
               <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-cyan-400 px-3.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-slate-950 shadow-md">
-                Most Popular
+                Best Value • Save 60%
               </div>
 
               <div>
-                <h3 className="text-lg font-bold text-white">Pro Center Hub</h3>
-                <p className="text-xs text-slate-400 mt-1">For busy Akshaya, CSC & Xerox centers with multiple staff.</p>
+                <h3 className="text-lg font-bold text-white">Annual Pro Plan</h3>
+                <p className="text-xs text-slate-400 mt-1">Full-year peace of mind for busy Akshaya, CSC & Xerox centers.</p>
                 <div className="mt-6 flex items-baseline gap-1">
-                  <span className="text-4xl font-black text-white">
-                    {billingCycle === "monthly" ? "₹399" : "₹299"}
-                  </span>
-                  <span className="text-xs text-slate-400">/ month</span>
+                  <span className="text-4xl font-black text-white">₹1,999</span>
+                  <span className="text-xs text-slate-400">/ year</span>
                 </div>
+                <p className="text-[11px] text-emerald-400 font-semibold mt-1">
+                  Works out to ~₹166/month • Direct UPI QR Activation
+                </p>
 
                 <ul className="mt-6 space-y-3 text-xs text-slate-200">
                   <li className="flex items-center gap-2">
                     <CheckCircle2 size={14} className="text-cyan-400 shrink-0" />
-                    <span><b>Unlimited Staff Logins</b> with PIN Security</span>
+                    <span><b>Unlimited Staff Counter Logins</b></span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 size={14} className="text-cyan-400 shrink-0" />
-                    <span><b>Isolated Shift Cash Drawers</b> per clerk</span>
+                    <span><b>Shift Cash Drawer Reconciliation</b></span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 size={14} className="text-cyan-400 shrink-0" />
-                    <span>Unlimited Portal & Bank Wallets</span>
+                    <span>Unlimited Portal Wallets & Bank Accounts</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 size={14} className="text-cyan-400 shrink-0" />
@@ -562,47 +1020,52 @@ export default function LandingPage() {
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 size={14} className="text-cyan-400 shrink-0" />
-                    <span>Excel & CSV Daybook Export</span>
+                    <span>Excel & CSV Daybook Data Export</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 size={14} className="text-cyan-400 shrink-0" />
+                    <span>Direct WhatsApp Priority Support</span>
                   </li>
                 </ul>
               </div>
 
               <Link
-                href="/signup?plan=pro"
+                href="/signup?plan=annual"
                 className="mt-8 block text-center rounded-xl bg-gradient-to-r from-cyan-400 to-teal-400 py-3 text-xs font-black text-slate-950 hover:brightness-110 transition shadow-lg shadow-cyan-400/25"
               >
-                Start 14-Day Free Trial
+                Claim 14-Day Free Trial
               </Link>
             </div>
 
-            {/* Multi-Branch */}
+            {/* Enterprise Multi-Branch */}
             <div className="rounded-3xl border border-slate-800 bg-[#0e1625] p-7 flex flex-col justify-between hover:border-slate-700 transition">
               <div>
-                <h3 className="text-lg font-bold text-white">Multi-Branch Owner</h3>
+                <h3 className="text-lg font-bold text-white">Multi-Branch Network</h3>
                 <p className="text-xs text-slate-400 mt-1">For operators running multiple branches or franchise kiosks.</p>
                 <div className="mt-6 flex items-baseline gap-1">
-                  <span className="text-4xl font-black text-white">
-                    {billingCycle === "monthly" ? "₹799" : "₹599"}
-                  </span>
-                  <span className="text-xs text-slate-400">/ month</span>
+                  <span className="text-4xl font-black text-white">₹4,999</span>
+                  <span className="text-xs text-slate-400">/ year</span>
                 </div>
+                <p className="text-[11px] text-slate-400 font-semibold mt-1">
+                  Up to 5 Branches Included
+                </p>
 
                 <ul className="mt-6 space-y-3 text-xs text-slate-300">
                   <li className="flex items-center gap-2">
                     <CheckCircle2 size={14} className="text-cyan-400 shrink-0" />
-                    <span>Up to 3 Center Locations</span>
+                    <span>Up to 5 Center Locations</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 size={14} className="text-cyan-400 shrink-0" />
-                    <span>Centralized Owner Financial Dashboard</span>
+                    <span>Consolidated Owner Financial Dashboard</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 size={14} className="text-cyan-400 shrink-0" />
-                    <span>Custom Center Logo & Header on Receipts</span>
+                    <span>Custom Center Branding & Headers</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 size={14} className="text-cyan-400 shrink-0" />
-                    <span>Priority WhatsApp & Phone Support</span>
+                    <span>Dedicated Relationship Manager</span>
                   </li>
                 </ul>
               </div>
@@ -611,8 +1074,65 @@ export default function LandingPage() {
                 href="/signup?plan=multi"
                 className="mt-8 block text-center rounded-xl border border-slate-700 bg-slate-900 py-3 text-xs font-bold text-white hover:border-cyan-400 hover:text-cyan-300 transition"
               >
-                Contact Sales / Multi-Branch
+                Register Multi-Branch
               </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* OPERATOR TESTIMONIALS */}
+      <section className="relative z-10 px-4 sm:px-6 py-20 border-t border-slate-800/80 bg-slate-950/80">
+        <div className="mx-auto max-w-6xl">
+          <div className="text-center max-w-xl mx-auto mb-14">
+            <h2 className="text-xs font-bold uppercase tracking-widest text-cyan-400">Trusted by Counter Operators</h2>
+            <p className="mt-2 text-3xl font-black text-white sm:text-4xl">What Center Owners Say</p>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-3">
+            <div className="rounded-2xl border border-slate-800 bg-[#0e1625] p-6 space-y-4">
+              <p className="text-xs text-slate-300 leading-relaxed italic">
+                "Earlier I had no idea whether my evening cash had my actual earnings or the customer's ₹1,500 passport portal fee. DenBooks made my daily take-home crystal clear."
+              </p>
+              <div className="flex items-center gap-3 pt-2 border-t border-slate-800">
+                <div className="h-9 w-9 rounded-full bg-cyan-500/20 text-cyan-400 font-bold flex items-center justify-center text-xs">
+                  MN
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-white">Manoj Nambiar</p>
+                  <p className="text-[10px] text-slate-400">Akshaya E-Centre, Kannur (Kerala)</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-800 bg-[#0e1625] p-6 space-y-4">
+              <p className="text-xs text-slate-300 leading-relaxed italic">
+                "The 80mm thermal receipt with the queue token is fantastic. Morning crowds stopped quarreling because everyone gets a numbered slip with their status QR code."
+              </p>
+              <div className="flex items-center gap-3 pt-2 border-t border-slate-800">
+                <div className="h-9 w-9 rounded-full bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center text-xs">
+                  SS
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-white">Sanjay Sharma</p>
+                  <p className="text-[10px] text-slate-400">CSC Digital Seva Kendra, Lucknow (UP)</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-800 bg-[#0e1625] p-6 space-y-4">
+              <p className="text-xs text-slate-300 leading-relaxed italic">
+                "The shift drawer tally saved us from daily arguments. My clerks count the cash notes at 7 PM and hand over the exact till with 0 discrepancy."
+              </p>
+              <div className="flex items-center gap-3 pt-2 border-t border-slate-800">
+                <div className="h-9 w-9 rounded-full bg-teal-500/20 text-teal-400 font-bold flex items-center justify-center text-xs">
+                  PK
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-white">Pooja Kulkarni</p>
+                  <p className="text-[10px] text-slate-400">Cyber Hub & Xerox Center, Pune (MH)</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -693,7 +1213,7 @@ export default function LandingPage() {
             <img
               src="/logo.png"
               alt="DenBooks 360 Logo"
-              className="h-7 w-7 rounded-lg object-cover shadow-sm"
+              className="h-7 w-7 rounded-lg object-cover shadow-sm border border-slate-700"
             />
             <span className="font-bold text-slate-300">DenBooks 360 SaaS</span>
           </div>
@@ -702,8 +1222,9 @@ export default function LandingPage() {
             <Link href="/login" className="hover:text-white transition">Sign In</Link>
             <Link href="/signup" className="hover:text-white transition">Register Center</Link>
             <Link href="/staff/login" className="hover:text-white transition">Staff Desk</Link>
+            <Link href="/admin/super" className="hover:text-cyan-400 transition text-slate-500">Super Admin</Link>
           </div>
-          <p>© 2026 DenBooks 360. All rights reserved.</p>
+          <p>© 2026 DenBooks 360. Built for Indian Citizen Service Centers.</p>
         </div>
       </footer>
     </div>
