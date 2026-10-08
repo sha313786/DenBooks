@@ -91,8 +91,12 @@ export default function StaffLoginPage() {
         <div className="rounded-3xl border border-slate-800/90 bg-[#0c1322]/90 p-8 shadow-2xl backdrop-blur-xl">
           {/* Header */}
           <div className="text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-cyan-400/40 bg-gradient-to-br from-cyan-500/20 to-teal-500/20 text-cyan-300 shadow-[0_0_20px_rgba(0,229,255,0.2)]">
-              <Users size={28} />
+            <div className="mx-auto mb-2 flex h-16 w-16 items-center justify-center">
+              <img
+                src="/logo.png"
+                alt="DenBooks Logo"
+                className="h-16 w-16 rounded-2xl shadow-[0_0_25px_rgba(0,229,255,0.35)] object-cover"
+              />
             </div>
 
             <h1 className="mt-4 text-xl font-black uppercase tracking-wider text-white">

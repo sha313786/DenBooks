@@ -232,9 +232,11 @@ export default function DemoSandboxPage() {
       <header className="relative z-20 border-b border-slate-800/80 bg-[#070b13]/85 backdrop-blur-md px-4 sm:px-6 py-3.5">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 to-teal-500 text-slate-950 font-black shadow-lg shadow-cyan-500/25">
-              <Receipt size={22} />
-            </div>
+            <img
+              src="/logo.png"
+              alt="DenBooks 360 Logo"
+              className="h-10 w-10 rounded-xl shadow-lg shadow-cyan-500/25 object-cover"
+            />
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-lg font-black tracking-tight text-white">DenBooks 360</span>

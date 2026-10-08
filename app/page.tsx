@@ -66,9 +66,11 @@ export default function LandingPage() {
       <nav className="sticky top-0 z-50 border-b border-slate-800/80 bg-[#070b13]/85 backdrop-blur-md px-4 sm:px-6 py-3.5 transition">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-cyan-400 via-teal-400 to-emerald-400 text-slate-950 font-black shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition">
-              <Receipt size={22} />
-            </div>
+            <img
+              src="/logo.png"
+              alt="DenBooks 360 Logo"
+              className="h-10 w-10 rounded-xl shadow-lg shadow-cyan-500/25 group-hover:scale-105 transition object-cover"
+            />
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="text-lg font-black tracking-tight text-white">DenBooks</span>
@@ -687,10 +689,12 @@ export default function LandingPage() {
       {/* FOOTER */}
       <footer className="border-t border-slate-800 px-6 py-10 text-center text-xs text-slate-500 bg-[#060910]">
         <div className="mx-auto max-w-6xl flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-400 text-slate-950 font-black">
-              <Receipt size={14} />
-            </div>
+          <div className="flex items-center gap-2.5">
+            <img
+              src="/logo.png"
+              alt="DenBooks 360 Logo"
+              className="h-7 w-7 rounded-lg object-cover shadow-sm"
+            />
             <span className="font-bold text-slate-300">DenBooks 360 SaaS</span>
           </div>
           <div className="flex items-center gap-6 text-slate-400">

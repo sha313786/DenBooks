@@ -102,11 +102,13 @@ export default function SignupPage() {
         <div className="rounded-3xl border border-slate-800/90 bg-[#0c1322]/90 p-8 shadow-2xl backdrop-blur-xl">
           {/* Header */}
           <div className="text-center">
-            <Link href="/" className="inline-flex items-center gap-2 mb-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 to-teal-500 text-slate-950 font-black shadow-md shadow-cyan-400/20">
-                <Receipt size={20} />
-              </div>
-              <span className="text-xl font-black text-white">DenBooks</span>
+            <Link href="/" className="inline-flex items-center gap-2.5 mb-2 group">
+              <img
+                src="/logo.png"
+                alt="DenBooks 360 Logo"
+                className="h-11 w-11 rounded-xl shadow-md shadow-cyan-500/25 object-cover group-hover:scale-105 transition"
+              />
+              <span className="text-xl font-black text-white">DenBooks 360</span>
             </Link>
             <h1 className="mt-2 text-xl font-black text-white">Register Your Center</h1>
             <p className="mt-1 text-xs text-slate-400">

@@ -89,8 +89,12 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
       {/* SaaS Top Header */}
       <header className="border-b border-slate-800/80 bg-[#0e1526]/90 backdrop-blur-md px-4 md:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 sticky top-0 z-40 shadow-sm">
         <div className="flex items-center gap-3">
-          <Link href="/dashboard" className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-cyan-500 via-teal-400 to-emerald-400 text-slate-950 font-black shadow-md shadow-cyan-500/20">
-            <Receipt size={18} />
+          <Link href="/dashboard" className="flex h-9 w-9 shrink-0 items-center justify-center group">
+            <img
+              src="/logo.png"
+              alt="DenBooks Logo"
+              className="h-9 w-9 rounded-xl shadow-md shadow-cyan-500/25 object-cover group-hover:scale-105 transition"
+            />
           </Link>
           <div>
             <div className="flex items-center gap-2">

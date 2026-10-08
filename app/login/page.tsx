@@ -71,9 +71,13 @@ export default function LoginPage() {
           <div className="text-center">
             <Link
               href="/"
-              className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 to-teal-500 text-slate-950 font-black shadow-lg shadow-cyan-500/25 mx-auto"
+              className="inline-block mx-auto mb-1 group"
             >
-              <Receipt size={24} />
+              <img
+                src="/logo.png"
+                alt="DenBooks 360 Logo"
+                className="h-14 w-14 rounded-2xl shadow-lg shadow-cyan-500/25 object-cover mx-auto group-hover:scale-105 transition"
+              />
             </Link>
             <h1 className="mt-4 text-xl font-black uppercase tracking-wider text-white">
               DenBooks 360
