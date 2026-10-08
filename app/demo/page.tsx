@@ -26,6 +26,17 @@ import {
   Smartphone,
   Banknote,
   TrendingUp,
+  TrendingDown,
+  Copy,
+  Files,
+  Palette,
+  Camera,
+  CreditCard,
+  BookOpen,
+  Send,
+  Keyboard,
+  Zap,
+  TestTube2,
 } from "lucide-react";
 
 interface SandboxWallet {
@@ -177,13 +188,13 @@ export default function DemoSandboxPage() {
         w.id === "w2" ? { ...w, balance: w.balance + 5000 } : w
       )
     );
-    showToast("💳 Topped up State e-District Wallet with +₹5,000 balance!");
+    showToast("Topped up State e-District Wallet with +₹5,000 balance!");
   }
 
   function handleSimulatePOSSale() {
     const amount = 95;
     if (amount <= 0) {
-      showToast("❌ Cannot Save: Transaction amount cannot be ₹0.");
+      showToast("Cannot Save: Transaction amount cannot be ₹0.");
       return;
     }
     setUpiTotal((prev) => prev + amount);
@@ -201,17 +212,17 @@ export default function DemoSandboxPage() {
     };
 
     setTransactions((prev) => [newTx, ...prev]);
-    showToast("✅ Quick POS Bill: +₹95 added to UPI ledger.");
+    showToast("Quick POS Bill: +₹95 added to UPI ledger.");
   }
 
   function handleSimulateExpense() {
     const expenseAmt = 120;
     if (expenseAmt <= 0) {
-      showToast("❌ Cannot Save: Expense amount cannot be ₹0.");
+      showToast("Cannot Save: Expense amount cannot be ₹0.");
       return;
     }
     if (cashDrawer < expenseAmt) {
-      showToast("⚠️ Cash Drawer has insufficient cash for this expense!");
+      showToast("Cash Drawer has insufficient cash for this expense!");
       return;
     }
     setCashDrawer((prev) => prev - expenseAmt);
@@ -228,7 +239,7 @@ export default function DemoSandboxPage() {
     };
 
     setTransactions((prev) => [newTx, ...prev]);
-    showToast("📉 Recorded Shop Expense: -₹120 subtracted from Physical Cash Drawer.");
+    showToast("Recorded Shop Expense: -₹120 subtracted from Physical Cash Drawer.");
   }
 
   function handleResetSandbox() {
@@ -240,7 +251,7 @@ export default function DemoSandboxPage() {
       { name: "B&W Xerox Copy", qty: 4, rate: 3 },
       { name: "PVC Smart ID Card", qty: 1, rate: 70 },
     ]);
-    showToast("🔄 Sandbox reset to initial sample state.");
+    showToast("Sandbox reset to initial sample state.");
   }
 
   // Financial calculations
@@ -303,9 +314,12 @@ export default function DemoSandboxPage() {
       </header>
 
       {/* SANDBOX BANNER */}
-      <div className="relative z-10 border-b border-cyan-500/20 bg-cyan-950/30 px-4 py-2 text-center text-xs text-cyan-300">
-        <span className="font-bold">🧪 Safe Sandbox Environment:</span> Showing sample data for{" "}
-        <span className="font-semibold text-white">"Apex Digital Seva Kendra (Demo)"</span>. None of your real accounts or credentials are loaded.
+      <div className="relative z-10 border-b border-cyan-500/20 bg-cyan-950/30 px-4 py-2 text-center text-xs text-cyan-300 flex items-center justify-center gap-1.5">
+        <TestTube2 size={14} className="text-cyan-400 shrink-0" />
+        <span>
+          <span className="font-bold">Safe Sandbox Environment:</span> Showing sample data for{" "}
+          <span className="font-semibold text-white">"Apex Digital Seva Kendra (Demo)"</span>. None of your real accounts or credentials are loaded.
+        </span>
       </div>
 
       {/* TOAST NOTIFICATION */}
@@ -418,28 +432,32 @@ export default function DemoSandboxPage() {
               <div className="flex flex-wrap items-center gap-2.5">
                 <button
                   onClick={handleSimulatePassport}
-                  className="rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-3.5 py-2 text-xs font-bold text-cyan-300 hover:bg-cyan-500/20 active:scale-95 transition"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-3.5 py-2 text-xs font-bold text-cyan-300 hover:bg-cyan-500/20 active:scale-95 transition"
                 >
-                  ⚡ Record Fresh Passport (₹1,750)
+                  <Zap size={14} className="text-cyan-400" />
+                  <span>Record Fresh Passport (₹1,750)</span>
                 </button>
                 <button
                   onClick={handleSimulateTopup}
-                  className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-3.5 py-2 text-xs font-bold text-amber-300 hover:bg-amber-500/20 active:scale-95 transition"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3.5 py-2 text-xs font-bold text-amber-300 hover:bg-amber-500/20 active:scale-95 transition"
                   title="Replenish wallet advance balance"
                 >
-                  💳 Top Up Wallet (+₹5,000)
+                  <CreditCard size={14} className="text-amber-400" />
+                  <span>Top Up Wallet (+₹5,000)</span>
                 </button>
                 <button
                   onClick={handleSimulatePOSSale}
-                  className="rounded-xl border border-teal-500/40 bg-teal-500/10 px-3.5 py-2 text-xs font-bold text-teal-300 hover:bg-teal-500/20 active:scale-95 transition"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-teal-500/40 bg-teal-500/10 px-3.5 py-2 text-xs font-bold text-teal-300 hover:bg-teal-500/20 active:scale-95 transition"
                 >
-                  ⚡ Record Quick POS Sale (+₹95)
+                  <Sparkles size={14} className="text-teal-400" />
+                  <span>Record Quick POS Sale (+₹95)</span>
                 </button>
                 <button
                   onClick={handleSimulateExpense}
-                  className="rounded-xl border border-rose-500/40 bg-rose-500/10 px-3.5 py-2 text-xs font-bold text-rose-300 hover:bg-rose-500/20 active:scale-95 transition"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-rose-500/40 bg-rose-500/10 px-3.5 py-2 text-xs font-bold text-rose-300 hover:bg-rose-500/20 active:scale-95 transition"
                 >
-                  📉 Record Shop Expense (-₹120)
+                  <TrendingDown size={14} className="text-rose-400" />
+                  <span>Record Shop Expense (-₹120)</span>
                 </button>
               </div>
             </div>
@@ -561,15 +579,15 @@ export default function DemoSandboxPage() {
               {/* Items Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {[
-                  { name: "B&W Xerox (Single)", rate: 3, unit: "page", icon: "📄" },
-                  { name: "B&W Xerox (Both Sides)", rate: 5, unit: "sheet", icon: "📑" },
-                  { name: "Colour Printout (A4)", rate: 10, unit: "page", icon: "🌈" },
-                  { name: "Passport Photos (8x)", rate: 60, unit: "sheet", icon: "📷" },
-                  { name: "PVC Smart ID Card", rate: 70, unit: "card", icon: "💳" },
-                  { name: "A4 Lamination", rate: 25, unit: "sheet", icon: "🛡️" },
-                  { name: "Spiral Book Binding", rate: 45, unit: "book", icon: "📚" },
-                  { name: "Scan & Email/WhatsApp", rate: 20, unit: "doc", icon: "📤" },
-                  { name: "Biodata / Job Typing", rate: 50, unit: "page", icon: "⌨️" },
+                  { name: "B&W Xerox (Single)", rate: 3, unit: "page", icon: Copy, badgeColor: "border-cyan-500/30 bg-cyan-500/10 text-cyan-400" },
+                  { name: "B&W Xerox (Both Sides)", rate: 5, unit: "sheet", icon: Files, badgeColor: "border-blue-500/30 bg-blue-500/10 text-blue-400" },
+                  { name: "Colour Printout (A4)", rate: 10, unit: "page", icon: Palette, badgeColor: "border-pink-500/30 bg-pink-500/10 text-pink-400" },
+                  { name: "Passport Photos (8x)", rate: 60, unit: "sheet", icon: Camera, badgeColor: "border-amber-500/30 bg-amber-500/10 text-amber-400" },
+                  { name: "PVC Smart ID Card", rate: 70, unit: "card", icon: CreditCard, badgeColor: "border-teal-500/30 bg-teal-500/10 text-teal-400" },
+                  { name: "A4 Lamination", rate: 25, unit: "sheet", icon: ShieldCheck, badgeColor: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400" },
+                  { name: "Spiral Book Binding", rate: 45, unit: "book", icon: BookOpen, badgeColor: "border-indigo-500/30 bg-indigo-500/10 text-indigo-400" },
+                  { name: "Scan & Email/WhatsApp", rate: 20, unit: "doc", icon: Send, badgeColor: "border-sky-500/30 bg-sky-500/10 text-sky-400" },
+                  { name: "Biodata / Job Typing", rate: 50, unit: "page", icon: Keyboard, badgeColor: "border-violet-500/30 bg-violet-500/10 text-violet-400" },
                 ].map((item, idx) => (
                   <button
                     key={idx}
@@ -585,9 +603,11 @@ export default function DemoSandboxPage() {
                       });
                       showToast(`Added ${item.name} to bill`);
                     }}
-                    className="flex flex-col justify-between rounded-2xl border border-slate-800 bg-[#0e1625] p-3 text-left hover:border-teal-400 hover:bg-teal-950/20 active:scale-95 transition"
+                    className="group flex flex-col justify-between rounded-2xl border border-slate-800 bg-[#0e1625] p-3 text-left hover:border-teal-400 hover:bg-teal-950/20 active:scale-95 transition"
                   >
-                    <div className="text-xl mb-1">{item.icon}</div>
+                    <div className={`flex h-9 w-9 items-center justify-center rounded-xl border ${item.badgeColor} mb-2.5 transition-transform group-hover:scale-110 shadow-sm`}>
+                      <item.icon size={17} />
+                    </div>
                     <div>
                       <p className="font-bold text-white text-xs leading-snug">{item.name}</p>
                       <p className="font-mono text-teal-300 font-bold text-xs mt-1">₹ {item.rate} / {item.unit}</p>
