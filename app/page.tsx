@@ -916,7 +916,7 @@ export default function LandingPage() {
 
                 {/* Right: Drawer Reconciliation Slip */}
                 <div
-                  className={`rounded-2xl border p-5 sm:p-6 space-y-4 ${
+                  className={`lg:col-span-7 rounded-2xl border p-5 sm:p-6 space-y-4 ${
                     isDark ? "border-slate-700/80 bg-[#0f172a]" : "border-slate-200 bg-slate-50"
                   }`}
                 >
@@ -930,7 +930,7 @@ export default function LandingPage() {
                         SHIFT CLOSING REPORT • COUNTER #1
                       </p>
                       <p className={`text-sm font-bold ${isDark ? "text-white" : "text-slate-900"}`}>
-                        Operator: Rahul M. (Morning Shift)
+                        Operator: Staff (Shift A)
                       </p>
                     </div>
                     <span
@@ -1659,7 +1659,7 @@ export default function LandingPage() {
             Ready to Take Control of Your Center's Accounts?
           </h2>
           <p className={`mt-4 text-sm sm:text-base max-w-2xl mx-auto ${isDark ? "text-slate-300" : "text-slate-600"}`}>
-            Join hundreds of CSC, Akshaya, and Cyber Café operators managing portal wallets, daily profits, and counter clerks with zero hassle.
+            Purpose-built for CSC, Akshaya, and Cyber Café operators to manage portal wallets, daily profits, and counter staff with zero hassle.
           </p>
 
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
@@ -1687,10 +1687,10 @@ export default function LandingPage() {
 
       {/* FOOTER */}
       <footer
-        className={`border-t transition-colors ${
+        className={`relative z-10 border-t transition-colors ${
           isDark
             ? "border-slate-800/80 bg-[#060911] text-slate-400"
-            : "border-slate-200 bg-slate-50/70 text-slate-600"
+            : "border-slate-200 bg-white text-slate-600 shadow-sm"
         }`}
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-16 pb-12">
@@ -1779,35 +1779,35 @@ export default function LandingPage() {
               </ul>
             </div>
 
-            {/* Column 3: Portals & Access */}
+            {/* Column 3: Quick Navigation */}
             <div className="space-y-3">
               <p className={`text-xs font-bold uppercase tracking-wider ${isDark ? "text-white" : "text-slate-900"}`}>
-                Access Portals
+                Navigation
               </p>
               <ul className="space-y-2 text-xs">
                 <li>
-                  <Link href="/login" className="hover:text-cyan-400 transition flex items-center gap-1.5">
-                    <span className="text-teal-500">•</span> Center Owner Login
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/signup" className="hover:text-cyan-400 transition flex items-center gap-1.5">
-                    <span className="text-teal-500">•</span> Register New Center (Free Trial)
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/staff/login" className="hover:text-cyan-400 transition flex items-center gap-1.5">
-                    <span className="text-teal-500">•</span> Counter Staff Desk
-                  </Link>
+                  <a href="#simulator" className="hover:text-cyan-400 transition flex items-center gap-1.5">
+                    <span className="text-cyan-500">•</span> Feature Tour
+                  </a>
                 </li>
                 <li>
                   <Link href="/demo" className="hover:text-cyan-400 transition flex items-center gap-1.5">
-                    <span className="text-teal-500">•</span> Interactive Sandbox
+                    <span className="text-cyan-500">•</span> Interactive Demo
                   </Link>
                 </li>
                 <li>
-                  <Link href="/admin/super" className="hover:text-cyan-400 transition flex items-center gap-1.5 opacity-70 hover:opacity-100">
-                    <span className="text-teal-500">•</span> Super Admin Console
+                  <a href="#pricing" className="hover:text-cyan-400 transition flex items-center gap-1.5">
+                    <span className="text-cyan-500">•</span> Plans & Pricing
+                  </a>
+                </li>
+                <li>
+                  <a href="#faq" className="hover:text-cyan-400 transition flex items-center gap-1.5">
+                    <span className="text-cyan-500">•</span> Frequently Asked Questions
+                  </a>
+                </li>
+                <li>
+                  <Link href="/signup" className="hover:text-cyan-400 transition flex items-center gap-1.5">
+                    <span className="text-cyan-500">•</span> Start 14-Day Free Trial
                   </Link>
                 </li>
               </ul>
