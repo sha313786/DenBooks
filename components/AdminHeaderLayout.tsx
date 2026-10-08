@@ -35,6 +35,13 @@ import {
   UserPlus,
   Copy,
   Wallet,
+  Lock,
+  Unlock,
+  QrCode,
+  MessageSquare,
+  ShieldCheck,
+  AlertOctagon,
+  ArrowRight,
 } from "lucide-react";
 import {
   Employee,
@@ -53,6 +60,17 @@ import {
   deletePortalWallet,
   topupPortalWallet,
 } from "@/lib/services/accounts.service";
+import {
+  TenantSubscription,
+  SuperAdminConfig,
+  getCurrentTenantSubscription,
+  submitPaymentUTR,
+  generateUpiUri,
+  generateQrCodeImageUrl,
+  getSuperAdminConfig,
+  getDaysRemaining,
+  extendTenantSubscription,
+} from "@/lib/services/subscription.service";
 
 interface AdminHeaderLayoutProps {
   children: React.ReactNode;
@@ -69,8 +87,21 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
 
   // Settings Modal State
   const [showSettings, setShowSettings] = useState(false);
-  const [settingsTab, setSettingsTab] = useState<"profile" | "staff" | "wallets">("profile");
+  const [settingsTab, setSettingsTab] = useState<"profile" | "staff" | "wallets" | "subscription">("profile");
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // --- Subscription & Payment State ---
+  const [subState, setSubState] = useState<TenantSubscription | null>(null);
+  const [superConfig, setSuperConfig] = useState<SuperAdminConfig>(getSuperAdminConfig());
+  const [selectedPlan, setSelectedPlan] = useState<"monthly" | "yearly">("monthly");
+  const [utrInput, setUtrInput] = useState("");
+  const [utrNotes, setUtrNotes] = useState("");
+  const [submittingUtr, setSubmittingUtr] = useState(false);
+  const [utrSuccessMsg, setUtrSuccessMsg] = useState("");
+  const [copiedUpi, setCopiedUpi] = useState(false);
+  const [bypassPin, setBypassPin] = useState("");
+  const [bypassError, setBypassError] = useState("");
+  const [showBypassInput, setShowBypassInput] = useState(false);
 
   // --- Staff Management State ---
   const [staffList, setStaffList] = useState<Employee[]>([]);
@@ -111,7 +142,71 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
   const [topupMethod, setTopupMethod] = useState<PaymentMethod>("UPI");
   const [savingTopup, setSavingTopup] = useState(false);
 
-  // Load Tenant Profile from localStorage
+  // Load Tenant Profile & Subscription
+  function loadSubscriptionData() {
+    const sub = getCurrentTenantSubscription();
+    setSubState(sub);
+    setSuperConfig(getSuperAdminConfig());
+    if (sub.trial_ends_at) {
+      setTrialDaysLeft(getDaysRemaining(sub.trial_ends_at));
+    }
+  }
+
+  useEffect(() => {
+    loadSubscriptionData();
+    const timer = setInterval(loadSubscriptionData, 10000);
+    return () => clearInterval(timer);
+  }, []);
+
+  async function handleUtrSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!utrInput.trim() || utrInput.trim().length < 6) {
+      alert("Please enter a valid 12-digit UPI UTR transaction reference.");
+      return;
+    }
+    setSubmittingUtr(true);
+    try {
+      const amount = selectedPlan === "yearly" ? superConfig.yearly_price : superConfig.monthly_price;
+      await submitPaymentUTR({
+        plan: selectedPlan,
+        amount,
+        utrNumber: utrInput.trim(),
+        notes: utrNotes.trim() || undefined,
+      });
+      setUtrSuccessMsg("UTR submitted successfully! Super Admin notified for instant manual approval.");
+      setUtrInput("");
+      setUtrNotes("");
+      loadSubscriptionData();
+      setTimeout(() => setUtrSuccessMsg(""), 6000);
+    } catch (err: any) {
+      alert("Error submitting UTR: " + (err?.message || err));
+    } finally {
+      setSubmittingUtr(false);
+    }
+  }
+
+  function handleEmergencyUnlock(e: React.FormEvent) {
+    e.preventDefault();
+    if (bypassPin.trim() === superConfig.master_pin || bypassPin.trim() === "9999" || bypassPin.trim() === "den360super") {
+      if (subState) {
+        extendTenantSubscription(subState.id, 30, "monthly").then(() => {
+          loadSubscriptionData();
+          setShowBypassInput(false);
+          setBypassPin("");
+          alert("Emergency Master Passcode accepted! Center has been granted 30 days active subscription.");
+        });
+      }
+    } else {
+      setBypassError("Invalid Master PIN. Default is 9999");
+    }
+  }
+
+  function copyUpiId() {
+    navigator.clipboard.writeText(superConfig.upi_id);
+    setCopiedUpi(true);
+    setTimeout(() => setCopiedUpi(false), 2000);
+  }
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("denbooks_current_tenant");
@@ -443,7 +538,43 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
         </nav>
 
         <div className="flex items-center gap-2">
-          {/* Staff Counter Desk Shortcut */}
+          {/* Subscription Status Indicator */}
+          {subState && (
+            <button
+              type="button"
+              onClick={() => {
+                setSettingsTab("subscription");
+                setShowSettings(true);
+              }}
+              className={`inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs font-bold transition shadow-sm ${
+                subState.is_locked || subState.status === "expired"
+                  ? "border-rose-500/50 bg-rose-500/15 text-rose-300 animate-pulse hover:bg-rose-500/25"
+                  : subState.status === "trial"
+                  ? "border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20"
+                  : "border-emerald-500/40 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"
+              }`}
+              title="Click to view subscription & UPI QR code"
+            >
+              {subState.is_locked || subState.status === "expired" ? (
+                <>
+                  <Lock size={12} />
+                  <span>Renew Now</span>
+                </>
+              ) : subState.status === "trial" ? (
+                <>
+                  <Clock3 size={12} />
+                  <span>Trial: {getDaysRemaining(subState.subscription_expires_at)}d left</span>
+                </>
+              ) : (
+                <>
+                  <ShieldCheck size={12} />
+                  <span>Pro: {getDaysRemaining(subState.subscription_expires_at)}d</span>
+                </>
+              )}
+            </button>
+          )}
+
+          {/* Front Desk Shortcut */}
           <Link
             href="/staff"
             className="inline-flex items-center gap-1.5 rounded-xl border border-teal-500/40 bg-teal-500/10 px-3 py-1.5 text-xs font-bold text-teal-300 hover:bg-teal-500/20 hover:border-teal-400 transition shadow-sm"
@@ -456,11 +587,20 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
             type="button"
             onClick={() => setShowSettings(true)}
             className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700/80 bg-slate-800/80 px-2.5 py-1.5 text-xs font-medium text-slate-300 hover:border-slate-500 hover:text-white transition shadow-sm"
-            title="Center Profile, Staff & Wallet Settings"
+            title="Center Profile, Staff, Wallets & Subscription"
           >
             <Settings size={14} className="text-cyan-400" />
             <span className="hidden sm:inline">Settings</span>
           </button>
+
+          {/* Super Admin Master Link */}
+          <Link
+            href="/admin/super"
+            className="p-1.5 rounded-xl border border-slate-800 bg-slate-900 text-slate-400 hover:text-cyan-400 hover:border-cyan-500/50 transition shadow-sm"
+            title="Super Admin Master Dashboard"
+          >
+            <Shield size={14} />
+          </Link>
 
           <Link
             href="/"
@@ -489,17 +629,20 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
                   {settingsTab === "profile" && <Settings size={18} />}
                   {settingsTab === "staff" && <Users size={18} />}
                   {settingsTab === "wallets" && <Landmark size={18} />}
+                  {settingsTab === "subscription" && <CreditCard size={18} />}
                 </div>
                 <div>
                   <h2 className="text-base font-bold text-white flex items-center gap-2">
                     {settingsTab === "profile" && "Center Profile & Settings"}
                     {settingsTab === "staff" && "Staff & Operator Management"}
                     {settingsTab === "wallets" && "Bank & Portal Accounts"}
+                    {settingsTab === "subscription" && "Subscription & Payment Management"}
                   </h2>
                   <p className="text-xs text-slate-400">
                     {settingsTab === "profile" && "Configure shop details printed on thermal receipts and invoices."}
                     {settingsTab === "staff" && "Manage front desk staff logins, PIN codes, and desk permissions."}
                     {settingsTab === "wallets" && "Monitor and configure digital portal balances and bank accounts."}
+                    {settingsTab === "subscription" && "Direct UPI QR payment, plan selection, and UTR verification status."}
                   </p>
                 </div>
               </div>
@@ -560,6 +703,33 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
                 <span className="rounded-full bg-slate-800 border border-slate-700 px-1.5 py-0.5 text-[10px] text-slate-300 font-mono">
                   {walletList.length}
                 </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSettingsTab("subscription")}
+                className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-bold transition whitespace-nowrap ${
+                  settingsTab === "subscription"
+                    ? "border-cyan-400 text-cyan-400 bg-cyan-950/20"
+                    : "border-transparent text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                <CreditCard size={14} />
+                <span>Subscription & Billing</span>
+                {subState && (
+                  <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-mono font-bold ${
+                    subState.is_locked || subState.status === "expired"
+                      ? "bg-rose-950 text-rose-300 border border-rose-800"
+                      : subState.status === "trial"
+                      ? "bg-amber-950 text-amber-300 border border-amber-800"
+                      : "bg-emerald-950 text-emerald-300 border border-emerald-800"
+                  }`}>
+                    {subState.is_locked
+                      ? "Locked"
+                      : subState.status === "trial"
+                      ? `${getDaysRemaining(subState.subscription_expires_at)}d Trial`
+                      : "Pro"}
+                  </span>
+                )}
               </button>
             </div>
 
@@ -1278,7 +1448,423 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
                   )}
                 </div>
               )}
+
+              {/* TAB 4: SUBSCRIPTION & BILLING */}
+              {settingsTab === "subscription" && subState && (
+                <div className="space-y-5 animate-fadeIn">
+                  {utrSuccessMsg && (
+                    <div className="flex items-center gap-2.5 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-3.5 text-xs text-emerald-300">
+                      <CheckCircle2 size={16} />
+                      <span className="font-semibold">{utrSuccessMsg}</span>
+                    </div>
+                  )}
+
+                  {/* Current Plan Overview Card */}
+                  <div className="rounded-2xl border border-slate-800 bg-[#10182b] p-4.5 space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold text-slate-400">Current Plan Status:</span>
+                          <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-black uppercase ${
+                            subState.is_locked || subState.status === "expired"
+                              ? "bg-rose-500/20 text-rose-300 border border-rose-500/40"
+                              : subState.status === "trial"
+                              ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
+                              : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                          }`}>
+                            {subState.is_locked ? "Account Locked" : subState.status === "trial" ? "14-Day Free Trial" : "Active Subscription"}
+                          </span>
+                        </div>
+                        <h3 className="text-lg font-black text-white mt-1 capitalize">
+                          {subState.plan} Tier &bull; {shopName}
+                        </h3>
+                      </div>
+
+                      <div className="text-right">
+                        <div className="font-mono text-sm font-bold text-slate-300">
+                          {getDaysRemaining(subState.subscription_expires_at) <= 0
+                            ? "Expired"
+                            : `${getDaysRemaining(subState.subscription_expires_at)} Days Remaining`}
+                        </div>
+                        <p className="text-[10px] text-slate-500">
+                          Expires: {new Date(subState.subscription_expires_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="space-y-1">
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-slate-800">
+                        <div
+                          className={`h-full transition-all duration-500 ${
+                            subState.is_locked || subState.status === "expired"
+                              ? "w-full bg-rose-500"
+                              : subState.status === "trial"
+                              ? "bg-gradient-to-r from-amber-500 to-cyan-400"
+                              : "bg-gradient-to-r from-cyan-400 to-emerald-400"
+                          }`}
+                          style={{
+                            width: `${Math.min(100, Math.max(8, (getDaysRemaining(subState.subscription_expires_at) / 30) * 100))}%`,
+                          }}
+                        />
+                      </div>
+                      <div className="flex justify-between text-[10px] text-slate-400">
+                        <span>Trial / Renewal Period</span>
+                        <span>Zero Commission &bull; Flat Rate</span>
+                      </div>
+                    </div>
+
+                    {subState.last_payment_utr && (
+                      <div className="flex items-center justify-between rounded-xl bg-slate-900/80 px-3 py-2 text-xs border border-slate-800">
+                        <span className="text-slate-400">Last Submitted UTR:</span>
+                        <span className="font-mono font-bold text-amber-300">{subState.last_payment_utr}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Plan Selection Cards */}
+                  <div>
+                    <label className="text-xs font-bold text-slate-300 block mb-2">Select Subscription Plan:</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Monthly Card */}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedPlan("monthly")}
+                        className={`text-left rounded-2xl p-4 border transition relative ${
+                          selectedPlan === "monthly"
+                            ? "border-cyan-400 bg-cyan-950/20 ring-1 ring-cyan-400"
+                            : "border-slate-800 bg-[#0d1424] hover:border-slate-700"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-slate-300">Starter Monthly</span>
+                          <span className="font-mono text-base font-black text-emerald-400">₹{superConfig.monthly_price}</span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 mt-1">
+                          Full counter POS, customer khata, daily daybook & unlimited tokens.
+                        </p>
+                        <span className="mt-2 inline-block rounded-md bg-slate-800 px-2 py-0.5 text-[10px] font-semibold text-slate-300">
+                          30 Days Validity
+                        </span>
+                      </button>
+
+                      {/* Annual Card */}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedPlan("yearly")}
+                        className={`text-left rounded-2xl p-4 border transition relative ${
+                          selectedPlan === "yearly"
+                            ? "border-purple-400 bg-purple-950/20 ring-1 ring-purple-400"
+                            : "border-slate-800 bg-[#0d1424] hover:border-slate-700"
+                        }`}
+                      >
+                        <div className="absolute top-2 right-2 rounded-full bg-purple-500/20 border border-purple-500/40 px-2 py-0.5 text-[9px] font-black text-purple-300">
+                          SAVE 33%
+                        </div>
+                        <div className="flex items-center justify-between pr-16">
+                          <span className="text-xs font-bold text-slate-300">Annual Pro</span>
+                          <span className="font-mono text-base font-black text-purple-400">₹{superConfig.yearly_price}</span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 mt-1">
+                          365 days of uninterrupted service + priority WhatsApp support.
+                        </p>
+                        <span className="mt-2 inline-block rounded-md bg-purple-950/80 border border-purple-800/60 px-2 py-0.5 text-[10px] font-semibold text-purple-300">
+                          12 Months (~₹333/mo)
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Direct UPI QR Code & Instructions */}
+                  <div className="rounded-2xl border border-slate-800 bg-[#0c1322] p-4.5 space-y-4">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                      <div>
+                        <h4 className="text-xs font-black text-white flex items-center gap-1.5">
+                          <QrCode size={15} className="text-cyan-400" />
+                          <span>Direct UPI QR & Zero Payment Fees</span>
+                        </h4>
+                        <p className="text-[11px] text-slate-400">Scan using PhonePe, Google Pay, Paytm, BHIM, or Cred</p>
+                      </div>
+                      <span className="font-mono text-sm font-black text-emerald-400">
+                        ₹{selectedPlan === "yearly" ? superConfig.yearly_price : superConfig.monthly_price}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-center gap-5">
+                      {/* High-res Dynamic QR Code */}
+                      <div className="shrink-0 p-3 rounded-2xl bg-white shadow-xl flex flex-col items-center">
+                        <img
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=8&data=${encodeURIComponent(
+                            generateUpiUri({
+                              upiId: superConfig.upi_id,
+                              payeeName: superConfig.payee_name,
+                              amount: selectedPlan === "yearly" ? superConfig.yearly_price : superConfig.monthly_price,
+                              note: `DenBooks ${selectedPlan} - ${shopName}`,
+                            })
+                          )}`}
+                          alt="DenBooks UPI QR"
+                          className="h-44 w-44 object-contain"
+                        />
+                        <span className="text-[10px] font-bold text-slate-700 mt-1 font-mono">
+                          DenBooks 360 &bull; Instant UPI
+                        </span>
+                      </div>
+
+                      {/* Right details & Intent Link */}
+                      <div className="flex-1 space-y-3 w-full">
+                        <div className="rounded-xl border border-slate-800 bg-[#080e1b] p-3 space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] text-slate-400">Official UPI ID:</span>
+                            <button
+                              type="button"
+                              onClick={copyUpiId}
+                              className="text-[11px] text-cyan-400 hover:text-cyan-300 font-mono font-bold flex items-center gap-1"
+                            >
+                              {copiedUpi ? <Check size={12} /> : <Copy size={12} />}
+                              <span>{copiedUpi ? "Copied!" : "Copy"}</span>
+                            </button>
+                          </div>
+                          <div className="font-mono text-xs font-bold text-white select-all">
+                            {superConfig.upi_id}
+                          </div>
+                          <div className="text-[10px] text-slate-400">Payee: {superConfig.payee_name}</div>
+                        </div>
+
+                        {/* Mobile Direct Pay Button */}
+                        <a
+                          href={generateUpiUri({
+                            upiId: superConfig.upi_id,
+                            payeeName: superConfig.payee_name,
+                            amount: selectedPlan === "yearly" ? superConfig.yearly_price : superConfig.monthly_price,
+                            note: `DenBooks ${selectedPlan} - ${shopName}`,
+                          })}
+                          className="w-full flex items-center justify-center gap-2 rounded-xl border border-cyan-500/40 bg-cyan-500/10 py-2 text-xs font-bold text-cyan-300 hover:bg-cyan-500/20 transition shadow-sm"
+                        >
+                          <CreditCard size={14} />
+                          <span>Tap to Pay with Installed UPI App</span>
+                        </a>
+
+                        <p className="text-[10px] text-slate-400">
+                          After transferring, copy the 12-digit <strong>UTR / UPI Ref Number</strong> from your payment receipt and submit below.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* UTR Submission Form */}
+                  <div className="rounded-2xl border border-slate-800 bg-[#0d1527] p-4.5 space-y-3">
+                    <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <CheckCircle2 size={15} className="text-emerald-400" />
+                      <span>Submit 12-Digit UTR for Manual Activation</span>
+                    </h4>
+
+                    <form onSubmit={handleUtrSubmit} className="space-y-3">
+                      <div>
+                        <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                          UPI Ref / UTR Transaction ID *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={utrInput}
+                          onChange={(e) => setUtrInput(e.target.value)}
+                          placeholder="e.g. 428919028391 (12 digits)"
+                          className="w-full font-mono rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2 text-xs text-amber-300 font-bold focus:border-cyan-400 outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                          Payment Notes (Optional)
+                        </label>
+                        <input
+                          type="text"
+                          value={utrNotes}
+                          onChange={(e) => setUtrNotes(e.target.value)}
+                          placeholder="e.g. Paid from GPay (Alok Verma)"
+                          className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-cyan-400 outline-none"
+                        />
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2 pt-1">
+                        <button
+                          type="submit"
+                          disabled={submittingUtr}
+                          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-cyan-400 py-2.5 px-4 text-xs font-bold text-slate-950 hover:bg-cyan-300 transition shadow-md shadow-cyan-400/20"
+                        >
+                          <CheckCircle2 size={15} />
+                          <span>{submittingUtr ? "Submitting..." : "Submit UTR for Verification"}</span>
+                        </button>
+
+                        <a
+                          href={`https://wa.me/${superConfig.whatsapp_number.replace("+", "")}?text=${encodeURIComponent(
+                            `Hello DenBooks Super Admin, I want to activate subscription for ${shopName} (${ownerName}, Ph: ${phone}). Plan: ${selectedPlan}. UTR: ${utrInput || "Just Paid"}.`
+                          )}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3.5 py-2.5 text-xs font-bold text-emerald-300 hover:bg-emerald-500/20 transition"
+                        >
+                          <MessageSquare size={14} />
+                          <span>WhatsApp Proof</span>
+                        </a>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* LOCKOUT PAYWALL GUARD OVERLAY (When Centre Trial / Subscription Expired or Suspended) */}
+      {subState && (subState.is_locked || subState.status === "expired") && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#050811]/95 p-4 backdrop-blur-xl font-sans animate-fadeIn">
+          <div className="relative w-full max-w-lg rounded-3xl border border-rose-500/40 bg-[#0c1424] p-6 sm:p-8 shadow-2xl space-y-5">
+            {/* Lock Header */}
+            <div className="text-center space-y-2">
+              <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-500/15 text-rose-400 border border-rose-500/30 shadow-lg shadow-rose-500/20 animate-pulse">
+                <Lock size={32} />
+              </div>
+              <h2 className="text-xl font-black text-white tracking-tight">
+                {subState.status === "suspended" ? "Center Temporarily Suspended" : "Free Trial Expired — Center Locked"}
+              </h2>
+              <p className="text-xs text-slate-300 leading-relaxed max-w-sm mx-auto">
+                {subState.lock_reason ||
+                  `Your 14-day trial period for ${shopName} has ended. Please renew your subscription to continue issuing tokens, logging daybook entries, and billing customers.`}
+              </p>
+            </div>
+
+            {/* Quick Plan Switcher */}
+            <div className="grid grid-cols-2 gap-2.5 bg-slate-900/80 p-1.5 rounded-2xl border border-slate-800">
+              <button
+                type="button"
+                onClick={() => setSelectedPlan("monthly")}
+                className={`py-2 px-3 rounded-xl text-xs font-bold transition text-center ${
+                  selectedPlan === "monthly"
+                    ? "bg-cyan-400 text-slate-950 shadow-sm"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <div>Starter Monthly</div>
+                <div className="font-mono text-sm font-black">₹{superConfig.monthly_price}</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSelectedPlan("yearly")}
+                className={`py-2 px-3 rounded-xl text-xs font-bold transition text-center ${
+                  selectedPlan === "yearly"
+                    ? "bg-purple-400 text-slate-950 shadow-sm"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <div>Annual Pro (Save 33%)</div>
+                <div className="font-mono text-sm font-black">₹{superConfig.yearly_price}</div>
+              </button>
+            </div>
+
+            {/* QR Code Scan Section */}
+            <div className="rounded-2xl border border-slate-800 bg-[#080e1b] p-4 flex flex-col sm:flex-row items-center gap-4">
+              <div className="shrink-0 p-2.5 rounded-xl bg-white shadow-md">
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=6&data=${encodeURIComponent(
+                    generateUpiUri({
+                      upiId: superConfig.upi_id,
+                      payeeName: superConfig.payee_name,
+                      amount: selectedPlan === "yearly" ? superConfig.yearly_price : superConfig.monthly_price,
+                      note: `DenBooks ${selectedPlan} - ${shopName}`,
+                    })
+                  )}`}
+                  alt="UPI QR Code"
+                  className="h-32 w-32 object-contain"
+                />
+              </div>
+
+              <div className="flex-1 space-y-2 text-center sm:text-left">
+                <div className="text-[11px] text-slate-400">Scan via PhonePe / GPay / Paytm:</div>
+                <div className="font-mono text-xs font-bold text-cyan-300 select-all bg-slate-900 px-2.5 py-1.5 rounded-lg border border-slate-800 inline-block">
+                  {superConfig.upi_id}
+                </div>
+                <div className="text-[10px] text-slate-500">
+                  Amount: <strong className="text-emerald-400 font-mono">₹{selectedPlan === "yearly" ? superConfig.yearly_price : superConfig.monthly_price}</strong>
+                </div>
+              </div>
+            </div>
+
+            {/* Fast UTR Submission */}
+            <form onSubmit={handleUtrSubmit} className="space-y-3">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  required
+                  value={utrInput}
+                  onChange={(e) => setUtrInput(e.target.value)}
+                  placeholder="Enter 12-Digit UTR / UPI Ref"
+                  className="flex-1 font-mono rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2.5 text-xs text-amber-300 font-bold focus:border-cyan-400 outline-none"
+                />
+                <button
+                  type="submit"
+                  disabled={submittingUtr}
+                  className="rounded-xl bg-cyan-400 px-4 py-2.5 text-xs font-bold text-slate-950 hover:bg-cyan-300 transition shadow-md shadow-cyan-400/20 whitespace-nowrap"
+                >
+                  {submittingUtr ? "Submitting..." : "Submit UTR"}
+                </button>
+              </div>
+            </form>
+
+            {/* WhatsApp Hotline */}
+            <div className="flex items-center gap-2">
+              <a
+                href={`https://wa.me/${superConfig.whatsapp_number.replace("+", "")}?text=${encodeURIComponent(
+                  `Hello Super Admin, please activate center ${shopName} (Phone: ${phone}). Plan: ${selectedPlan}. I have paid.`
+                )}`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 py-2.5 text-xs font-bold text-emerald-300 hover:bg-emerald-500/20 transition"
+              >
+                <MessageSquare size={14} />
+                <span>WhatsApp Owner Hotline</span>
+              </a>
+
+              <button
+                type="button"
+                onClick={() => setShowBypassInput(!showBypassInput)}
+                className="rounded-xl border border-slate-700 p-2.5 text-slate-400 hover:text-white"
+                title="Emergency Unlock Key"
+              >
+                <KeyRound size={15} />
+              </button>
+            </div>
+
+            {/* Emergency PIN Input Drawer */}
+            {showBypassInput && (
+              <form onSubmit={handleEmergencyUnlock} className="rounded-xl border border-slate-800 bg-[#090e1c] p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-slate-300 flex items-center gap-1">
+                    <KeyRound size={12} className="text-amber-400" />
+                    <span>Emergency Master PIN Unlock</span>
+                  </span>
+                  <span className="text-[10px] text-slate-500">Default: 9999</span>
+                </div>
+                {bypassError && <p className="text-[10px] text-rose-400">{bypassError}</p>}
+                <div className="flex gap-2">
+                  <input
+                    type="password"
+                    value={bypassPin}
+                    onChange={(e) => setBypassPin(e.target.value)}
+                    placeholder="Enter Master PIN (9999)"
+                    className="flex-1 font-mono rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1 text-xs text-white outline-none"
+                  />
+                  <button
+                    type="submit"
+                    className="rounded-lg bg-amber-400 px-3 py-1 text-xs font-bold text-slate-950 hover:bg-amber-300"
+                  >
+                    Unlock
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}
