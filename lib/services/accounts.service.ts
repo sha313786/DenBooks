@@ -676,6 +676,64 @@ export async function deductPortalWallet(
   }
 }
 
+// Create a new bank/portal wallet account
+export async function createPortalWallet(
+  wallet: Omit<PortalWallet, "id">
+): Promise<PortalWallet> {
+  loadFromStorage();
+  const newWallet: PortalWallet = {
+    ...wallet,
+    id: `w-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+  };
+  memoryWallets.push(newWallet);
+  saveToStorage();
+
+  try {
+    await supabase.from("portal_wallets").insert([newWallet]);
+  } catch (err) {
+    console.warn("Supabase insert portal_wallets warning:", err);
+  }
+
+  return newWallet;
+}
+
+// Update a bank/portal wallet account
+export async function updatePortalWallet(
+  id: string,
+  updates: Partial<Omit<PortalWallet, "id">>
+): Promise<PortalWallet> {
+  loadFromStorage();
+  const index = memoryWallets.findIndex((w) => w.id === id);
+  if (index === -1) throw new Error("Wallet not found");
+
+  memoryWallets[index] = {
+    ...memoryWallets[index],
+    ...updates,
+  };
+  saveToStorage();
+
+  try {
+    await supabase.from("portal_wallets").update(updates).eq("id", id);
+  } catch (err) {
+    console.warn("Supabase update portal_wallets warning:", err);
+  }
+
+  return memoryWallets[index];
+}
+
+// Delete a bank/portal wallet account
+export async function deletePortalWallet(id: string): Promise<void> {
+  loadFromStorage();
+  memoryWallets = memoryWallets.filter((w) => w.id !== id);
+  saveToStorage();
+
+  try {
+    await supabase.from("portal_wallets").delete().eq("id", id);
+  } catch (err) {
+    console.warn("Supabase delete portal_wallets warning:", err);
+  }
+}
+
 // Daybook Summary Statistics
 export type DaybookSummary = {
   date: string;
