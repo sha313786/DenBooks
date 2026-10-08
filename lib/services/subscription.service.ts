@@ -79,6 +79,10 @@ export function saveSuperAdminConfig(cfg: Partial<SuperAdminConfig>): SuperAdmin
   const updated = { ...current, ...cfg };
   if (typeof window !== "undefined") {
     localStorage.setItem(LOCAL_STORAGE_CONFIG_KEY, JSON.stringify(updated));
+    try {
+      window.dispatchEvent(new Event("storage"));
+      window.dispatchEvent(new CustomEvent("denbooks_config_updated", { detail: updated }));
+    } catch {}
   }
   return updated;
 }
@@ -199,6 +203,11 @@ export function saveTenantSubscription(sub: TenantSubscription): void {
       all.unshift(sub);
     }
     localStorage.setItem(LOCAL_STORAGE_ALL_TENANTS_KEY, JSON.stringify(all));
+
+    try {
+      window.dispatchEvent(new Event("storage"));
+      window.dispatchEvent(new CustomEvent("denbooks_tenant_updated", { detail: sub }));
+    } catch {}
 
     // Try background sync with Supabase tenants table if exists
     Promise.resolve(

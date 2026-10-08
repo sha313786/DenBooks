@@ -64,6 +64,7 @@ import {
   TenantSubscription,
   SuperAdminConfig,
   getCurrentTenantSubscription,
+  saveTenantSubscription,
   submitPaymentUTR,
   generateUpiUri,
   generateQrCodeImageUrl,
@@ -142,7 +143,25 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
   const [topupMethod, setTopupMethod] = useState<PaymentMethod>("UPI");
   const [savingTopup, setSavingTopup] = useState(false);
 
-  // Load Tenant Profile & Subscription
+  // Load Tenant Profile
+  function loadTenantData() {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("denbooks_current_tenant");
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (parsed.name) setShopName(parsed.name);
+          if (parsed.owner) setOwnerName(parsed.owner);
+          if (parsed.phone) setPhone(parsed.phone);
+          if (parsed.address) setAddress(parsed.address);
+          if (parsed.state) setStateName(parsed.state);
+          if (parsed.trialDaysLeft !== undefined) setTrialDaysLeft(parsed.trialDaysLeft);
+        } catch {}
+      }
+    }
+  }
+
+  // Load Subscription & Super Config
   function loadSubscriptionData() {
     const sub = getCurrentTenantSubscription();
     setSubState(sub);
@@ -152,10 +171,35 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
     }
   }
 
+  // Real-time automatic listener for changes across settings, tabs, or Super Admin
   useEffect(() => {
     loadSubscriptionData();
-    const timer = setInterval(loadSubscriptionData, 10000);
-    return () => clearInterval(timer);
+    loadTenantData();
+
+    function handleAutoSync() {
+      loadSubscriptionData();
+      loadTenantData();
+      loadSettingsData();
+    }
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("storage", handleAutoSync);
+      window.addEventListener("denbooks_config_updated", handleAutoSync);
+      window.addEventListener("denbooks_tenant_updated", handleAutoSync);
+    }
+
+    const timer = setInterval(() => {
+      loadSubscriptionData();
+    }, 4000);
+
+    return () => {
+      clearInterval(timer);
+      if (typeof window !== "undefined") {
+        window.removeEventListener("storage", handleAutoSync);
+        window.removeEventListener("denbooks_config_updated", handleAutoSync);
+        window.removeEventListener("denbooks_tenant_updated", handleAutoSync);
+      }
+    };
   }, []);
 
   async function handleUtrSubmit(e: React.FormEvent) {
@@ -207,23 +251,6 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
     setTimeout(() => setCopiedUpi(false), 2000);
   }
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("denbooks_current_tenant");
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          if (parsed.name) setShopName(parsed.name);
-          if (parsed.owner) setOwnerName(parsed.owner);
-          if (parsed.phone) setPhone(parsed.phone);
-          if (parsed.address) setAddress(parsed.address);
-          if (parsed.state) setStateName(parsed.state);
-          if (parsed.trialDaysLeft !== undefined) setTrialDaysLeft(parsed.trialDaysLeft);
-        } catch {}
-      }
-    }
-  }, []);
-
   // Load Staff and Wallet data whenever Settings modal opens
   async function loadSettingsData() {
     setLoadingStaff(true);
@@ -246,23 +273,46 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
   useEffect(() => {
     if (showSettings) {
       loadSettingsData();
+      loadSubscriptionData();
+      loadTenantData();
     }
   }, [showSettings]);
 
-  // Profile Save
+  // Profile Save with immediate live sync across subscription and other tabs
   function handleSaveProfile(e: React.FormEvent) {
     e.preventDefault();
+    const cleanShop = shopName.trim() || "My CSC Center";
+    const cleanOwner = ownerName.trim() || "Owner";
+    const cleanPhone = phone.trim();
+    const cleanAddress = address.trim();
+    const cleanState = stateName;
+
     const updated = {
-      name: shopName.trim() || "My CSC Center",
-      owner: ownerName.trim() || "Owner",
-      phone: phone.trim(),
-      address: address.trim(),
-      state: stateName,
+      name: cleanShop,
+      owner: cleanOwner,
+      phone: cleanPhone,
+      address: cleanAddress,
+      state: cleanState,
       trialDaysLeft,
     };
+
     if (typeof window !== "undefined") {
       localStorage.setItem("denbooks_current_tenant", JSON.stringify(updated));
+
+      // Also sync into subscription state immediately
+      const sub = getCurrentTenantSubscription();
+      sub.shop_name = cleanShop;
+      sub.owner_name = cleanOwner;
+      sub.owner_phone = cleanPhone;
+      sub.state = cleanState;
+      saveTenantSubscription(sub);
+      setSubState({ ...sub });
+
+      // Broadcast changes so any open modal or tab re-renders instantly
+      window.dispatchEvent(new Event("storage"));
+      window.dispatchEvent(new CustomEvent("denbooks_tenant_updated", { detail: updated }));
     }
+
     setSaveSuccess(true);
     setTimeout(() => {
       setSaveSuccess(false);
@@ -488,6 +538,18 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
     { label: "Customer Khata", href: "/dashboard/khata", icon: Clock3 },
     { label: "Manage Staff", href: "/dashboard/staff", icon: Users },
   ];
+
+  // Dynamic pricing calculations based on live Super Admin settings
+  const currentPlanAmount = selectedPlan === "yearly" ? superConfig.yearly_price : superConfig.monthly_price;
+  const yearlyPerMonth = Math.round((superConfig.yearly_price || 3999) / 12);
+  const yearlySavingsPct =
+    superConfig.monthly_price * 12 > superConfig.yearly_price
+      ? Math.round(
+          ((superConfig.monthly_price * 12 - superConfig.yearly_price) /
+            (superConfig.monthly_price * 12)) *
+            100
+        )
+      : 0;
 
   return (
     <div className="min-h-screen bg-[#090d16] text-slate-100 flex flex-col font-sans">
@@ -1558,9 +1620,11 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
                             : "border-slate-800 bg-[#0d1424] hover:border-slate-700"
                         }`}
                       >
-                        <div className="absolute top-2 right-2 rounded-full bg-purple-500/20 border border-purple-500/40 px-2 py-0.5 text-[9px] font-black text-purple-300">
-                          SAVE 33%
-                        </div>
+                        {yearlySavingsPct > 0 && (
+                          <div className="absolute top-2 right-2 rounded-full bg-purple-500/20 border border-purple-500/40 px-2 py-0.5 text-[9px] font-black text-purple-300">
+                            SAVE {yearlySavingsPct}%
+                          </div>
+                        )}
                         <div className="flex items-center justify-between pr-16">
                           <span className="text-xs font-bold text-slate-300">Annual Pro</span>
                           <span className="font-mono text-base font-black text-purple-400">₹{superConfig.yearly_price}</span>
@@ -1569,7 +1633,7 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
                           365 days of uninterrupted service + priority WhatsApp support.
                         </p>
                         <span className="mt-2 inline-block rounded-md bg-purple-950/80 border border-purple-800/60 px-2 py-0.5 text-[10px] font-semibold text-purple-300">
-                          12 Months (~₹333/mo)
+                          12 Months (~₹{yearlyPerMonth}/mo)
                         </span>
                       </button>
                     </div>
@@ -1769,7 +1833,7 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
                     : "text-slate-400 hover:text-white"
                 }`}
               >
-                <div>Annual Pro (Save 33%)</div>
+                <div>Annual Pro {yearlySavingsPct > 0 ? `(Save ${yearlySavingsPct}%)` : ""}</div>
                 <div className="font-mono text-sm font-black">₹{superConfig.yearly_price}</div>
               </button>
             </div>
