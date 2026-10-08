@@ -1371,14 +1371,14 @@ export default function LandingPage() {
                     : "bg-emerald-100 text-emerald-800 border-emerald-300"
                 }`}
               >
-                Save 60% (~₹166/mo)
+                Save up to 52%
               </span>
             </button>
           </div>
 
           {/* Pricing Cards */}
           <div className="mt-12 grid gap-6 md:grid-cols-3 text-left">
-            {/* Starter Monthly */}
+            {/* Tier 1: Single Counter */}
             <div
               className={`rounded-3xl border p-7 flex flex-col justify-between transition-all ${
                 isDark
@@ -1388,29 +1388,31 @@ export default function LandingPage() {
             >
               <div>
                 <h3 className={`text-lg font-bold ${isDark ? "text-white" : "text-slate-950"}`}>
-                  Starter Monthly
+                  Single Counter
                 </h3>
                 <p className={`text-xs mt-1 ${isDark ? "text-slate-400" : "text-slate-600"}`}>
-                  Flexible month-to-month access for single-counter VLEs & Cyber Cafes.
+                  Essential daybook & thermal POS for single-operator CSCs & Cyber Cafes.
                 </p>
                 <div className="mt-6 flex items-baseline gap-1">
                   <span className={`text-4xl font-black ${isDark ? "text-white" : "text-slate-950"}`}>
-                    {billingCycle === "monthly" ? "₹199" : "₹166"}
+                    {billingCycle === "monthly" ? "₹199" : "₹125"}
                   </span>
                   <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>/ month</span>
                 </div>
                 <p className="text-[11px] text-cyan-500 font-semibold mt-1">
-                  {billingCycle === "monthly" ? "Regular ₹499 (60% Launch Special)" : "Billed as ₹1,999 annually"}
+                  {billingCycle === "monthly"
+                    ? "Billed monthly • Cancel anytime"
+                    : "₹1,499 billed annually (Save 37%)"}
                 </p>
 
                 <ul className={`mt-6 space-y-3 text-xs ${isDark ? "text-slate-300" : "text-slate-700"}`}>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 size={14} className="text-cyan-500 shrink-0" />
-                    <span><b>Single Center</b> Full Access</span>
+                    <span><b>Single Counter POS</b> & Daybook</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 size={14} className="text-cyan-500 shrink-0" />
-                    <span>4 Portal Advance Wallets</span>
+                    <span>4 Portal Advance Wallets (CSC, e-District)</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 size={14} className="text-cyan-500 shrink-0" />
@@ -1418,17 +1420,17 @@ export default function LandingPage() {
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 size={14} className="text-cyan-500 shrink-0" />
-                    <span>Front Desk Staff PIN Access</span>
+                    <span>Customer Khata (Credit) Tracker</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 size={14} className="text-cyan-500 shrink-0" />
-                    <span>Customer Khata & WhatsApp Ledger</span>
+                    <span>Pass-Through Govt Fee Isolation</span>
                   </li>
                 </ul>
               </div>
 
               <Link
-                href="/signup?plan=monthly"
+                href="/signup?plan=starter"
                 className={`mt-8 block text-center rounded-xl border py-3 text-xs font-bold transition ${
                   isDark
                     ? "border-slate-700 bg-slate-900 text-white hover:border-cyan-400 hover:text-cyan-300"
@@ -1439,7 +1441,7 @@ export default function LandingPage() {
               </Link>
             </div>
 
-            {/* Annual Pro (Featured) */}
+            {/* Tier 2: Pro Center Hub (Most Popular) */}
             <div
               className={`relative rounded-3xl border-2 p-7 shadow-2xl flex flex-col justify-between ${
                 isDark
@@ -1448,32 +1450,36 @@ export default function LandingPage() {
               }`}
             >
               <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-cyan-400 px-3.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-slate-950 shadow-md">
-                Best Value • Save 60%
+                {billingCycle === "annual" ? "Most Popular • Save 52%" : "Most Popular"}
               </div>
 
               <div>
                 <h3 className={`text-lg font-bold ${isDark ? "text-white" : "text-slate-950"}`}>
-                  Annual Pro Plan
+                  Pro Center Hub
                 </h3>
                 <p className={`text-xs mt-1 ${isDark ? "text-slate-400" : "text-slate-600"}`}>
-                  Full-year peace of mind for busy Akshaya, CSC & Xerox centers.
+                  Full multi-staff power for busy Akshaya, CSC & Xerox centers.
                 </p>
                 <div className="mt-6 flex items-baseline gap-1">
-                  <span className={`text-4xl font-black ${isDark ? "text-white" : "text-slate-950"}`}>₹1,999</span>
-                  <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>/ year</span>
+                  <span className={`text-4xl font-black ${isDark ? "text-white" : "text-slate-950"}`}>
+                    {billingCycle === "monthly" ? "₹349" : "₹166"}
+                  </span>
+                  <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>/ month</span>
                 </div>
                 <p className="text-[11px] text-emerald-500 font-semibold mt-1">
-                  Works out to ~₹166/month • Direct UPI QR Activation
+                  {billingCycle === "monthly"
+                    ? "Billed monthly • Full multi-operator suite"
+                    : "₹1,999 billed annually (Save 52% / Best Value)"}
                 </p>
 
                 <ul className={`mt-6 space-y-3 text-xs ${isDark ? "text-slate-200" : "text-slate-800"}`}>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 size={14} className="text-cyan-500 shrink-0" />
-                    <span><b>Unlimited Staff Counter Logins</b></span>
+                    <span><b>Unlimited Staff Counter Logins</b> (PIN secured)</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 size={14} className="text-cyan-500 shrink-0" />
-                    <span><b>Shift Cash Drawer Reconciliation</b></span>
+                    <span><b>Shift Cash Drawer Handover Tally</b> (EOD)</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 size={14} className="text-cyan-500 shrink-0" />
@@ -1481,7 +1487,7 @@ export default function LandingPage() {
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 size={14} className="text-cyan-500 shrink-0" />
-                    <span>FCFS Queue Token & Call System</span>
+                    <span>FCFS Queue Token & Call Screen</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 size={14} className="text-cyan-500 shrink-0" />
@@ -1493,20 +1499,20 @@ export default function LandingPage() {
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 size={14} className="text-cyan-500 shrink-0" />
-                    <span>Direct WhatsApp Priority Support</span>
+                    <span>Priority WhatsApp Help & Support</span>
                   </li>
                 </ul>
               </div>
 
               <Link
-                href="/signup?plan=annual"
+                href="/signup?plan=pro"
                 className="mt-8 block text-center rounded-xl bg-gradient-to-r from-cyan-400 to-teal-400 py-3 text-xs font-black text-slate-950 hover:brightness-110 transition shadow-lg shadow-cyan-400/25"
               >
                 Claim 14-Day Free Trial
               </Link>
             </div>
 
-            {/* Enterprise Multi-Branch */}
+            {/* Tier 3: Multi-Branch Network */}
             <div
               className={`rounded-3xl border p-7 flex flex-col justify-between transition-all ${
                 isDark
@@ -1519,20 +1525,24 @@ export default function LandingPage() {
                   Multi-Branch Network
                 </h3>
                 <p className={`text-xs mt-1 ${isDark ? "text-slate-400" : "text-slate-600"}`}>
-                  For operators running multiple branches or franchise kiosks.
+                  For entrepreneurs running multiple center locations or kiosks.
                 </p>
                 <div className="mt-6 flex items-baseline gap-1">
-                  <span className={`text-4xl font-black ${isDark ? "text-white" : "text-slate-950"}`}>₹4,999</span>
-                  <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>/ year</span>
+                  <span className={`text-4xl font-black ${isDark ? "text-white" : "text-slate-950"}`}>
+                    {billingCycle === "monthly" ? "₹699" : "₹416"}
+                  </span>
+                  <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>/ month</span>
                 </div>
                 <p className={`text-[11px] font-semibold mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                  Up to 5 Branches Included
+                  {billingCycle === "monthly"
+                    ? "Billed monthly • Up to 5 Center Locations"
+                    : "₹4,999 billed annually (Save 40%)"}
                 </p>
 
                 <ul className={`mt-6 space-y-3 text-xs ${isDark ? "text-slate-300" : "text-slate-700"}`}>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 size={14} className="text-cyan-500 shrink-0" />
-                    <span>Up to 5 Center Locations</span>
+                    <span><b>Up to 5 Center Locations</b> Included</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 size={14} className="text-cyan-500 shrink-0" />
@@ -1540,11 +1550,15 @@ export default function LandingPage() {
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 size={14} className="text-cyan-500 shrink-0" />
-                    <span>Custom Center Branding & Headers</span>
+                    <span>Custom Center Branding & Receipts</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 size={14} className="text-cyan-500 shrink-0" />
-                    <span>Dedicated Relationship Manager</span>
+                    <span>Dedicated Account Manager</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 size={14} className="text-cyan-500 shrink-0" />
+                    <span>Branch-to-Branch Cash Transfer Tracking</span>
                   </li>
                 </ul>
               </div>
