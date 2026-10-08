@@ -9,6 +9,7 @@ import {
   Receipt,
   FileText,
   Clock,
+  Clock3,
   CheckCircle2,
   AlertCircle,
   Search,
@@ -1391,6 +1392,118 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
     printWindow.document.close();
   }
 
+  function printShiftTallySlip() {
+    const printWindow = window.open("", "_blank", "width=420,height=650");
+    if (!printWindow) {
+      window.print();
+      return;
+    }
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Shift Closing Tally Slip - ${centerProfile.name}</title>
+          <style>
+            @page { size: 80mm auto; margin: 3mm; }
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace; margin: 8px; font-size: 11px; color: #111; line-height: 1.35; }
+            .center { text-align: center; }
+            .bold { font-weight: bold; }
+            .right { text-align: right; }
+            .shop-title { font-size: 13px; font-weight: 800; text-transform: uppercase; margin-bottom: 2px; }
+            .sub { font-size: 9.5px; color: #555; }
+            .divider { border-bottom: 1px dashed #777; margin: 7px 0; }
+            .divider-double { border-bottom: 2px double #333; margin: 8px 0; }
+            .row { display: flex; justify-content: space-between; margin: 3.5px 0; }
+            .cash-box { border: 1.5px solid #111; padding: 6px; margin: 8px 0; background: #fafafa; border-radius: 4px; }
+            .footer-sig { margin-top: 24px; padding-top: 8px; display: flex; justify-content: space-between; font-size: 9px; }
+            @media print {
+              .no-print { display: none !important; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="center">
+            <div class="shop-title">${centerProfile.name}</div>
+            <div class="sub">SHIFT CLOSING TALLY & CASH RECONCILIATION</div>
+            <div class="sub">Date: ${new Date().toLocaleDateString("en-IN")} • ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
+            <div class="sub">Operator: <strong>${session?.employeeName || "Front Desk Staff"}</strong> (${session?.role || "Staff"})</div>
+          </div>
+
+          <div class="divider-double"></div>
+
+          <div class="row">
+            <span>Total Bills Issued:</span>
+            <span class="bold">${shiftSummary.billCount}</span>
+          </div>
+          <div class="row">
+            <span>Physical Cash Collected:</span>
+            <span class="bold">+ ₹ ${shiftSummary.totalCash.toFixed(2)}</span>
+          </div>
+          ${
+            shiftSummary.cashExpense > 0
+              ? `<div class="row" style="color: #b91c1c;">
+                   <span>Less: Cash Expenses (Drawer):</span>
+                   <span class="bold">- ₹ ${shiftSummary.cashExpense.toFixed(2)}</span>
+                 </div>`
+              : ""
+          }
+          <div class="row">
+            <span>Online / UPI Collected:</span>
+            <span>₹ ${shiftSummary.totalUpi.toFixed(2)}</span>
+          </div>
+          ${
+            shiftSummary.upiExpense > 0
+              ? `<div class="row">
+                   <span>UPI / Online Expenses:</span>
+                   <span>- ₹ ${shiftSummary.upiExpense.toFixed(2)}</span>
+                 </div>`
+              : ""
+          }
+          <div class="row">
+            <span>Pending Customer Credit (Khata):</span>
+            <span>₹ ${shiftSummary.totalCredit.toFixed(2)}</span>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="cash-box">
+            <div class="row bold" style="font-size: 13px;">
+              <span>PHYSICAL CASH IN DRAWER:</span>
+              <span>₹ ${shiftSummary.netCashInHand.toFixed(2)}</span>
+            </div>
+            <div style="font-size: 8.5px; color: #555; margin-top: 2px;">
+              Physical cash amount to be verified and handed over.
+            </div>
+          </div>
+
+          <div class="footer-sig">
+            <div>
+              Handed Over By:<br/><br/>
+              <strong>${session?.employeeName || "Staff"}</strong>
+            </div>
+            <div class="right">
+              Received By / Shop Owner:<br/><br/>
+              ____________________
+            </div>
+          </div>
+
+          <div class="divider" style="margin-top: 14px;"></div>
+          <div class="center sub" style="font-size: 8px;">
+            Powered by DenBooks 360
+          </div>
+
+          <script>
+            window.onload = function() {
+              setTimeout(function() { window.print(); }, 200);
+            };
+          </script>
+        </body>
+      </html>
+    `;
+    printWindow.document.write(html);
+    printWindow.document.close();
+  }
+
   if (loadingSession) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-[#070b13] text-slate-300 gap-3 px-4">
@@ -2500,103 +2613,214 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
 
         {/* TAB 4: SHIFT DRAWER TALLY */}
         {activeTab === "drawer" && (
-          <div className="max-w-xl mx-auto space-y-4">
-            <div className="rounded-2xl border border-slate-800 bg-[#0c1322] p-6 space-y-4 shadow-xl">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <div>
-                  <h3 className="text-base font-bold text-white">Shift Drawer Reconciliation</h3>
-                  <p className="text-xs text-slate-400">Cash in drawer report to hand over to shop owner.</p>
+          <div className="max-w-6xl mx-auto space-y-6">
+            {/* Top 4 Quick Shift Summary Metric Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+              <div className="rounded-2xl border border-emerald-500/40 bg-gradient-to-br from-[#0c1322] to-[#0f241d] p-4 shadow-lg flex flex-col justify-between">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">Cash in Drawer</span>
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400">
+                    <Banknote size={15} />
+                  </div>
                 </div>
-                <div className="text-right text-xs">
-                  <span className="text-slate-400">Operator:</span>
-                  <div className="font-bold text-cyan-300">{session?.employeeName}</div>
+                <div className="mt-2">
+                  <p className="font-mono text-2xl font-black text-emerald-300">
+                    ₹ {shiftSummary.netCashInHand.toFixed(2)}
+                  </p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Physical cash ready for handover</p>
                 </div>
               </div>
 
-              <div className="space-y-3 font-mono text-sm">
-                <div className="flex justify-between py-2 border-b border-slate-800/80">
-                  <span className="text-slate-400 font-sans">Total Bills Issued:</span>
-                  <span className="font-bold text-white">{shiftSummary.billCount}</span>
-                </div>
-                <div className="flex justify-between py-2 border-b border-slate-800/80">
-                  <span className="text-slate-400 font-sans">Physical Cash Collected:</span>
-                  <span className="font-bold text-emerald-300">₹ {shiftSummary.totalCash.toFixed(2)}</span>
-                </div>
-                {shiftSummary.cashExpense > 0 && (
-                  <div className="flex justify-between py-2 border-b border-slate-800/80">
-                    <span className="text-red-400 font-sans">Less: Cash Expenses Paid:</span>
-                    <span className="font-bold text-red-400">- ₹ {shiftSummary.cashExpense.toFixed(2)}</span>
+              <div className="rounded-2xl border border-cyan-500/30 bg-gradient-to-br from-[#0c1322] to-[#102236] p-4 shadow-lg flex flex-col justify-between">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-400">UPI / Online</span>
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-500/20 text-cyan-400">
+                    <Smartphone size={15} />
                   </div>
-                )}
-                <div className="flex justify-between py-2 border-b border-slate-800/80">
-                  <span className="text-slate-400 font-sans">Online / UPI Collected:</span>
-                  <span className="font-bold text-cyan-300">₹ {shiftSummary.totalUpi.toFixed(2)}</span>
                 </div>
-                {shiftSummary.upiExpense > 0 && (
-                  <div className="flex justify-between py-2 border-b border-slate-800/80">
-                    <span className="text-slate-400 font-sans">UPI / Online Expenses:</span>
-                    <span className="font-bold text-slate-300">₹ {shiftSummary.upiExpense.toFixed(2)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between py-2 border-b border-slate-800/80">
-                  <span className="text-slate-400 font-sans">Pending Customer Credit:</span>
-                  <span className="font-bold text-amber-300">₹ {shiftSummary.totalCredit.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between py-3 border-t-2 border-slate-700 text-base">
-                  <span className="font-sans font-bold text-white">PHYSICAL CASH IN DRAWER:</span>
-                  <span className="font-bold text-emerald-400 text-lg">₹ {shiftSummary.netCashInHand.toFixed(2)}</span>
+                <div className="mt-2">
+                  <p className="font-mono text-2xl font-black text-white">
+                    ₹ {shiftSummary.totalUpi.toFixed(2)}
+                  </p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">QR & online settlements</p>
                 </div>
               </div>
 
-              <div className="pt-2 flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => window.print()}
-                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 py-3 text-xs font-bold text-slate-950"
-                >
-                  <Printer size={15} />
-                  <span>Print Shift Closing Tally Slip</span>
-                </button>
+              <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-[#0c1322] to-[#261f12] p-4 shadow-lg flex flex-col justify-between">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-amber-400">Customer Dues</span>
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/20 text-amber-400">
+                    <Clock3 size={15} />
+                  </div>
+                </div>
+                <div className="mt-2">
+                  <p className="font-mono text-2xl font-black text-amber-300">
+                    ₹ {shiftSummary.totalCredit.toFixed(2)}
+                  </p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Pending khata balances</p>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-800 bg-gradient-to-br from-[#0c1322] to-[#161c2c] p-4 shadow-lg flex flex-col justify-between">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-300">Bills Issued</span>
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-800 text-slate-300">
+                    <Receipt size={15} />
+                  </div>
+                </div>
+                <div className="mt-2">
+                  <p className="font-mono text-2xl font-black text-white">
+                    {shiftSummary.billCount}
+                  </p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Completed transactions</p>
+                </div>
               </div>
             </div>
 
-            {/* Live Portal Wallets Standing */}
-            <div className="rounded-2xl border border-slate-800 bg-[#0c1322] p-6 space-y-4 shadow-xl">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-400">
-                    <Wallet size={16} />
+            {/* Main 2-Column Side-by-Side Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+              {/* Left Column: Shift Drawer Reconciliation & Breakdown (7 cols) */}
+              <div className="lg:col-span-7 rounded-2xl border border-slate-800 bg-[#0c1322] p-5 md:p-6 space-y-4 shadow-xl">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                      <Receipt size={17} />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-white">Shift Drawer Reconciliation</h3>
+                      <p className="text-xs text-slate-400">Cash in drawer report to hand over to shop owner</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-white">Portal & Bank Wallets Standing</h3>
-                    <p className="text-xs text-slate-400">Current online portal balances available for service processing</p>
+                  <div className="text-right text-xs">
+                    <span className="text-slate-500">Operator:</span>
+                    <div className="font-bold text-cyan-300">{session?.employeeName}</div>
+                    <span className="text-[10px] text-slate-400 font-mono">{session?.role}</span>
                   </div>
                 </div>
-                <span className="text-xs font-mono font-bold text-emerald-400">
-                  Total ₹{wallets.reduce((s, w) => s + (w.balance || 0), 0).toLocaleString("en-IN")}
-                </span>
+
+                <div className="space-y-2.5 font-mono text-xs">
+                  <div className="flex justify-between py-2 border-b border-slate-800/80">
+                    <span className="text-slate-400 font-sans">Total Bills / Invoices Issued:</span>
+                    <span className="font-bold text-white">{shiftSummary.billCount} bills</span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-slate-800/80">
+                    <span className="text-slate-400 font-sans">Physical Cash Collected:</span>
+                    <span className="font-bold text-emerald-300">+ ₹ {shiftSummary.totalCash.toFixed(2)}</span>
+                  </div>
+                  {shiftSummary.cashExpense > 0 && (
+                    <div className="flex justify-between py-2 border-b border-slate-800/80">
+                      <span className="text-rose-400 font-sans">Less: Cash Drawer Expenses Paid:</span>
+                      <span className="font-bold text-rose-400">- ₹ {shiftSummary.cashExpense.toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between py-2 border-b border-slate-800/80">
+                    <span className="text-slate-400 font-sans">Online / UPI Collected:</span>
+                    <span className="font-bold text-cyan-300">₹ {shiftSummary.totalUpi.toFixed(2)}</span>
+                  </div>
+                  {shiftSummary.upiExpense > 0 && (
+                    <div className="flex justify-between py-2 border-b border-slate-800/80">
+                      <span className="text-slate-400 font-sans">Online / UPI Expenses Paid:</span>
+                      <span className="font-bold text-slate-300">- ₹ {shiftSummary.upiExpense.toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between py-2 border-b border-slate-800/80">
+                    <span className="text-slate-400 font-sans">Pending Customer Credit (Khata):</span>
+                    <span className="font-bold text-amber-300">₹ {shiftSummary.totalCredit.toFixed(2)}</span>
+                  </div>
+                </div>
+
+                {/* Net Physical Cash Box */}
+                <div className="rounded-xl border border-emerald-500/40 bg-gradient-to-r from-emerald-950/40 to-teal-950/20 p-4 flex items-center justify-between shadow-inner">
+                  <div>
+                    <span className="font-sans font-black text-xs uppercase tracking-wider text-emerald-400 block">
+                      Physical Cash In Drawer
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-sans">
+                      Verified count to physically deposit or hand over
+                    </span>
+                  </div>
+                  <span className="font-mono font-black text-emerald-300 text-2xl">
+                    ₹ {shiftSummary.netCashInHand.toFixed(2)}
+                  </span>
+                </div>
+
+                <div className="pt-2 flex flex-wrap gap-2.5">
+                  <button
+                    type="button"
+                    onClick={printShiftTallySlip}
+                    className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-400 to-teal-400 py-3 px-4 text-xs font-bold text-slate-950 hover:brightness-110 active:scale-95 transition shadow-lg shadow-cyan-400/20"
+                  >
+                    <Printer size={15} />
+                    <span>Print Shift Closing Tally Slip</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowExpenseModal(true)}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-xs font-bold text-rose-300 hover:bg-rose-500/20 active:scale-95 transition"
+                  >
+                    <ArrowDownRight size={14} />
+                    <span>+ Add Expense</span>
+                  </button>
+                </div>
               </div>
 
-              <div className="space-y-2">
-                {wallets.map((w) => {
-                  const isLow = (w.balance || 0) <= (w.min_alert_balance || 1000);
-                  return (
-                    <div
-                      key={w.id}
-                      className="flex items-center justify-between rounded-xl border border-slate-800/80 bg-slate-900/50 px-3.5 py-2.5 text-xs"
-                    >
-                      <div>
-                        <div className="font-bold text-slate-200">{w.name}</div>
-                        <div className="text-[10px] text-slate-500">Min Alert: ₹{w.min_alert_balance || 1000}</div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className={`font-mono text-sm font-bold ${isLow ? "text-rose-400" : "text-emerald-300"}`}>
-                          ₹{(w.balance || 0).toLocaleString("en-IN")}
-                        </span>
-                      </div>
+              {/* Right Column: Bank & Portal Accounts Standing (5 cols) */}
+              <div className="lg:col-span-5 rounded-2xl border border-slate-800 bg-[#0c1322] p-5 md:p-6 space-y-4 shadow-xl">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                      <Landmark size={17} />
                     </div>
-                  );
-                })}
+                    <div>
+                      <h3 className="text-base font-bold text-white">Bank & Portal Accounts</h3>
+                      <p className="text-xs text-slate-400">Live balances available for service processing</p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-mono font-bold text-cyan-300 bg-cyan-950/70 border border-cyan-800/60 px-2.5 py-1 rounded-full">
+                    Total: ₹{wallets.reduce((s, w) => s + (w.balance || 0), 0).toLocaleString("en-IN")}
+                  </span>
+                </div>
+
+                <div className="space-y-2.5">
+                  {wallets.map((w) => {
+                    const isLow = (w.balance || 0) <= (w.min_alert_balance || 1000);
+                    return (
+                      <div
+                        key={w.id}
+                        className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-3.5 flex items-center justify-between hover:border-slate-700 transition"
+                      >
+                        <div className="min-w-0 pr-2">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-slate-200 text-xs truncate" title={w.name}>
+                              {w.name}
+                            </span>
+                            {isLow && (
+                              <span className="rounded bg-rose-950/80 border border-rose-800/60 px-1.5 py-0.5 text-[9.5px] font-bold text-rose-300 flex items-center gap-1">
+                                <span className="h-1.5 w-1.5 rounded-full bg-rose-400 animate-pulse" />
+                                <span>Low</span>
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-1">
+                            <span>{w.category}</span>
+                            <span>•</span>
+                            <span>Min Alert: ₹{(w.min_alert_balance || 1000).toLocaleString("en-IN")}</span>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className={`font-mono text-sm font-black ${isLow ? "text-rose-400" : "text-emerald-300"}`}>
+                            ₹ {(w.balance || 0).toLocaleString("en-IN")}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="rounded-xl border border-slate-800/80 bg-slate-900/30 p-3 text-[11px] text-slate-400">
+                  <span className="text-cyan-400 font-semibold">💡 Automatic Deductions:</span> Official fees for online applications (e.g. Passport, e-District, PAN) deduct directly from these portal balances.
+                </div>
               </div>
             </div>
           </div>
