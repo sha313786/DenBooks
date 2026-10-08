@@ -45,15 +45,17 @@ export const DEFAULT_EMPLOYEES: Employee[] = [];
 
 const STORAGE_KEY_EMPLOYEES = "dd_staff_employees_v2"; // v2 = production clean start (no sample data)
 const STORAGE_KEY_EMPLOYEES_LEGACY = "dd_staff_employees_v1";
-const STORAGE_KEY_STAFF_SESSION = "dd_staff_session_v1";
+const STORAGE_KEY_STAFF_SESSION = "dd_staff_session_v2"; // v2 = clean production session (purges stale demo logins)
+const STORAGE_KEY_STAFF_SESSION_LEGACY = "dd_staff_session_v1";
 
 let memoryEmployees: Employee[] = [...DEFAULT_EMPLOYEES];
 
 function loadFromStorage(): Employee[] {
   if (typeof window === "undefined") return memoryEmployees;
   try {
-    // Purge old v1 key that had hardcoded sample employees
+    // Purge old v1 keys that had hardcoded sample employees and mock sessions
     localStorage.removeItem(STORAGE_KEY_EMPLOYEES_LEGACY);
+    localStorage.removeItem(STORAGE_KEY_STAFF_SESSION_LEGACY);
 
     const raw = localStorage.getItem(STORAGE_KEY_EMPLOYEES);
     if (raw) {
@@ -275,10 +277,24 @@ export async function staffLogin(
 export function getStaffSession(): StaffSession | null {
   if (typeof window === "undefined") return null;
   try {
+    // Purge legacy session key from previous test builds
+    if (localStorage.getItem(STORAGE_KEY_STAFF_SESSION_LEGACY)) {
+      localStorage.removeItem(STORAGE_KEY_STAFF_SESSION_LEGACY);
+    }
+
     const raw = localStorage.getItem(STORAGE_KEY_STAFF_SESSION);
     if (raw) {
       const sess = JSON.parse(raw);
       if (sess) {
+        // Discard any session carrying synthetic demo names
+        if (
+          sess.employeeName?.includes("Anjali") ||
+          sess.employeeName?.includes("Rahul")
+        ) {
+          staffLogout();
+          return null;
+        }
+
         const isRecOrAdmin =
           sess.role === "Receptionist" ||
           sess.employeeId === "emp-admin-owner" ||
@@ -303,6 +319,7 @@ export function staffLogout(): void {
   if (typeof window !== "undefined") {
     try {
       localStorage.removeItem(STORAGE_KEY_STAFF_SESSION);
+      localStorage.removeItem(STORAGE_KEY_STAFF_SESSION_LEGACY);
       document.cookie = "dd_staff_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
     } catch {}
   }

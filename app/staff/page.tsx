@@ -252,7 +252,8 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
         },
       };
       try {
-        localStorage.setItem("dd_staff_session_v1", JSON.stringify(ownerSession));
+        localStorage.removeItem("dd_staff_session_v1");
+        localStorage.setItem("dd_staff_session_v2", JSON.stringify(ownerSession));
         document.cookie = `dd_staff_session=${encodeURIComponent(
           JSON.stringify(ownerSession)
         )}; path=/; max-age=86400; SameSite=Lax`;
