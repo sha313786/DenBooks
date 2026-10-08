@@ -231,11 +231,9 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
       return;
     }
 
-    // Check if user is an Admin / Owner previewing the staff counter desk
+    // Check if user is an Admin / Owner logged in via Supabase previewing the staff counter desk
     const isDevAdmin =
-      typeof document !== "undefined" &&
-      (document.cookie.includes("dd_dev_admin=true") ||
-        document.cookie.includes("sb-"));
+      typeof document !== "undefined" && document.cookie.includes("sb-");
 
     if (isDevAdmin) {
       const ownerSession: StaffSession = {

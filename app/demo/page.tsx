@@ -859,8 +859,14 @@ export default function DemoSandboxPage() {
       )}
 
       {/* FOOTER */}
-      <footer className="relative z-10 border-t border-slate-800 px-6 py-6 text-center text-xs text-slate-500">
-        <p>© 2026 DenBooks 360 Interactive Sandbox. All simulated balances and entries reset on reload.</p>
+      <footer className="relative z-10 border-t border-slate-800 px-6 py-6 text-xs text-slate-500">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+          <p>© 2026 DenBooks 360 Interactive Sandbox. All simulated balances and entries reset on reload.</p>
+          <p className="flex items-center gap-1.5 font-medium text-slate-400">
+            <span>Developed by</span>
+            <span className="font-bold text-cyan-400">SRB Studios</span>
+          </p>
+        </div>
       </footer>
     </div>
   );

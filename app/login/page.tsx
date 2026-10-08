@@ -44,11 +44,6 @@ export default function LoginPage() {
       });
 
       if (authError) {
-        // Fallback for quick owner demo access if offline or testing
-        if (email.toLowerCase().includes("admin") || email.toLowerCase().includes("owner")) {
-          router.push("/dashboard");
-          return;
-        }
         throw authError;
       }
 

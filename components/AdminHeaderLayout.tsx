@@ -100,9 +100,6 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
   const [submittingUtr, setSubmittingUtr] = useState(false);
   const [utrSuccessMsg, setUtrSuccessMsg] = useState("");
   const [copiedUpi, setCopiedUpi] = useState(false);
-  const [bypassPin, setBypassPin] = useState("");
-  const [bypassError, setBypassError] = useState("");
-  const [showBypassInput, setShowBypassInput] = useState(false);
 
   // --- Staff Management State ---
   const [staffList, setStaffList] = useState<Employee[]>([]);
@@ -229,21 +226,6 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
     }
   }
 
-  function handleEmergencyUnlock(e: React.FormEvent) {
-    e.preventDefault();
-    if (bypassPin.trim() === superConfig.master_pin || bypassPin.trim() === "9999" || bypassPin.trim() === "den360super") {
-      if (subState) {
-        extendTenantSubscription(subState.id, 30, "monthly").then(() => {
-          loadSubscriptionData();
-          setShowBypassInput(false);
-          setBypassPin("");
-          alert("Emergency Master Passcode accepted! Center has been granted 30 days active subscription.");
-        });
-      }
-    } else {
-      setBypassError("Invalid Master PIN. Default is 9999");
-    }
-  }
 
   function copyUpiId() {
     navigator.clipboard.writeText(superConfig.upi_id);
@@ -1910,45 +1892,7 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
                 <MessageSquare size={14} />
                 <span>WhatsApp Owner Hotline</span>
               </a>
-
-              <button
-                type="button"
-                onClick={() => setShowBypassInput(!showBypassInput)}
-                className="rounded-xl border border-slate-700 p-2.5 text-slate-400 hover:text-white"
-                title="Emergency Unlock Key"
-              >
-                <KeyRound size={15} />
-              </button>
             </div>
-
-            {/* Emergency PIN Input Drawer */}
-            {showBypassInput && (
-              <form onSubmit={handleEmergencyUnlock} className="rounded-xl border border-slate-800 bg-[#090e1c] p-3 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-slate-300 flex items-center gap-1">
-                    <KeyRound size={12} className="text-amber-400" />
-                    <span>Emergency Master PIN Unlock</span>
-                  </span>
-                  <span className="text-[10px] text-slate-500">Default: 9999</span>
-                </div>
-                {bypassError && <p className="text-[10px] text-rose-400">{bypassError}</p>}
-                <div className="flex gap-2">
-                  <input
-                    type="password"
-                    value={bypassPin}
-                    onChange={(e) => setBypassPin(e.target.value)}
-                    placeholder="Enter Master PIN (9999)"
-                    className="flex-1 font-mono rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1 text-xs text-white outline-none"
-                  />
-                  <button
-                    type="submit"
-                    className="rounded-lg bg-amber-400 px-3 py-1 text-xs font-bold text-slate-950 hover:bg-amber-300"
-                  >
-                    Unlock
-                  </button>
-                </div>
-              </form>
-            )}
           </div>
         </div>
       )}

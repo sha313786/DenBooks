@@ -38,6 +38,7 @@ import {
   Award,
   Sun,
   Moon,
+  Heart,
 } from "lucide-react";
 
 export default function LandingPage() {
@@ -400,23 +401,23 @@ export default function LandingPage() {
             }`}
           >
             <div className="p-2">
-              <p className="text-2xl sm:text-3xl font-black text-cyan-500">₹1.5 Cr+</p>
+              <p className="text-2xl sm:text-3xl font-black text-cyan-500">14 Days</p>
               <p
                 className={`text-[11px] font-medium uppercase tracking-wider mt-1 ${
                   isDark ? "text-slate-400" : "text-slate-500"
                 }`}
               >
-                Govt Fees Tracked
+                Full Free Trial
               </p>
             </div>
             <div className="p-2">
-              <p className="text-2xl sm:text-3xl font-black text-emerald-500">75,000+</p>
+              <p className="text-2xl sm:text-3xl font-black text-emerald-500">58 & 80mm</p>
               <p
                 className={`text-[11px] font-medium uppercase tracking-wider mt-1 ${
                   isDark ? "text-slate-400" : "text-slate-500"
                 }`}
               >
-                Thermal Slips Printed
+                Thermal Slip Ready
               </p>
             </div>
             <div className="p-2">
@@ -803,22 +804,21 @@ export default function LandingPage() {
                   >
                     {/* Header */}
                     <div className="text-center border-b border-dashed border-slate-400 pb-3 mb-3">
-                      <p className="font-black text-sm uppercase tracking-wider text-slate-950">APEX DIGITAL SEVA KENDRA</p>
-                      <p className="text-[10px] text-slate-600">VLE Code: CSC-KL-982140</p>
-                      <p className="text-[9.5px] text-slate-500">Bus Stand Junction, Kottayam, Kerala</p>
-                      <p className="text-[9.5px] text-slate-500">Ph: +91 98471 23456</p>
+                      <p className="font-black text-sm uppercase tracking-wider text-slate-950">[YOUR CENTER / SHOP NAME]</p>
+                      <p className="text-[10px] text-slate-600">VLE Code / Reg: [YOUR VLE ID]</p>
+                      <p className="text-[9.5px] text-slate-500">[Center Address & Contact Number]</p>
                       <div className="mt-2 inline-block bg-slate-100 border border-slate-300 px-2 py-0.5 rounded text-[10px] font-bold">
-                        TOKEN #42 • COUNTER 01
+                        TOKEN #01 • COUNTER 01
                       </div>
                     </div>
 
                     {/* Metadata */}
                     <div className="flex justify-between text-[10px] text-slate-600 mb-2">
                       <span>Date: 09/10/2026 11:42 AM</span>
-                      <span>Operator: Anjali</span>
+                      <span>Operator: Staff</span>
                     </div>
                     <div className="text-[10px] text-slate-700 mb-2 font-bold">
-                      Customer: Rajesh Kumar (Ph: 98****3210)
+                      Customer: Walk-in Citizen
                     </div>
 
                     {/* Items table */}
@@ -1048,11 +1048,11 @@ export default function LandingPage() {
                     }`}
                   >
                     <div className="h-9 w-9 rounded-full bg-emerald-600 flex items-center justify-center font-bold text-white text-xs">
-                      RP
+                      C
                     </div>
                     <div>
-                      <p className={`text-xs font-bold ${isDark ? "text-white" : "text-slate-950"}`}>Ramesh Patel (Customer)</p>
-                      <p className="text-[10px] text-emerald-600 font-semibold">+91 98765 43210 • Online</p>
+                      <p className={`text-xs font-bold ${isDark ? "text-white" : "text-slate-950"}`}>Customer / Citizen</p>
+                      <p className="text-[10px] text-emerald-600 font-semibold">[Customer Mobile Number] • WhatsApp</p>
                     </div>
                   </div>
 
@@ -1064,9 +1064,9 @@ export default function LandingPage() {
                         : "bg-white border-emerald-200 text-slate-900 shadow-xs"
                     }`}
                   >
-                    <p className="font-bold text-emerald-600">Namaste Ramesh Ji 🙏</p>
+                    <p className="font-bold text-emerald-600">Namaste [Customer Name] 🙏</p>
                     <p className="text-[11px] leading-relaxed">
-                      This is a gentle reminder from <strong className={isDark ? "text-white" : "text-slate-900"}>Apex Digital Seva Kendra</strong> regarding your pending balance of <strong className={isDark ? "text-white" : "text-slate-900"}>₹320.00</strong> for:
+                      This is a gentle payment reminder from <strong className={isDark ? "text-white" : "text-slate-900"}>[Your Center Name]</strong> regarding your pending balance of <strong className={isDark ? "text-white" : "text-slate-900"}>₹320.00</strong> for:
                     </p>
                     <div
                       className={`p-2.5 rounded-lg border text-[10.5px] font-mono space-y-1 ${
@@ -1083,7 +1083,7 @@ export default function LandingPage() {
                       </div>
                     </div>
                     <p className="text-[11px]">
-                      You can pay instantly via UPI: <strong className="text-cyan-600 font-mono">apexseva@upi</strong>
+                      You can pay instantly via UPI: <strong className="text-cyan-600 font-mono">[your-center-upi@bank]</strong>
                     </p>
                     <p className="text-[10px] text-emerald-600 font-semibold">Thank you for your patronage! Have a great day.</p>
                   </div>
@@ -1578,81 +1578,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* OPERATOR TESTIMONIALS */}
-      <section
-        className={`relative z-10 px-4 sm:px-6 py-20 border-t transition-colors ${
-          isDark ? "border-slate-800/80 bg-slate-950/80" : "border-slate-200 bg-white"
-        }`}
-      >
-        <div className="mx-auto max-w-6xl">
-          <div className="text-center max-w-xl mx-auto mb-14">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-cyan-500">Trusted by Counter Operators</h2>
-            <p className={`mt-2 text-3xl font-black sm:text-4xl ${isDark ? "text-white" : "text-slate-950"}`}>
-              What Center Owners Say
-            </p>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-3">
-            <div
-              className={`rounded-2xl border p-6 space-y-4 ${
-                isDark ? "border-slate-800 bg-[#0e1625]" : "border-slate-200 bg-slate-50 shadow-sm"
-              }`}
-            >
-              <p className={`text-xs leading-relaxed italic ${isDark ? "text-slate-300" : "text-slate-700"}`}>
-                "Earlier I had no idea whether my evening cash had my actual earnings or the customer's ₹1,500 passport portal fee. DenBooks made my daily take-home crystal clear."
-              </p>
-              <div className={`flex items-center gap-3 pt-2 border-t ${isDark ? "border-slate-800" : "border-slate-200"}`}>
-                <div className="h-9 w-9 rounded-full bg-cyan-500/20 text-cyan-500 font-bold flex items-center justify-center text-xs">
-                  MN
-                </div>
-                <div>
-                  <p className={`text-xs font-bold ${isDark ? "text-white" : "text-slate-950"}`}>Manoj Nambiar</p>
-                  <p className={`text-[10px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>Akshaya E-Centre, Kannur (Kerala)</p>
-                </div>
-              </div>
-            </div>
-
-            <div
-              className={`rounded-2xl border p-6 space-y-4 ${
-                isDark ? "border-slate-800 bg-[#0e1625]" : "border-slate-200 bg-slate-50 shadow-sm"
-              }`}
-            >
-              <p className={`text-xs leading-relaxed italic ${isDark ? "text-slate-300" : "text-slate-700"}`}>
-                "The 80mm thermal receipt with the queue token is fantastic. Morning crowds stopped quarreling because everyone gets a numbered slip with their status QR code."
-              </p>
-              <div className={`flex items-center gap-3 pt-2 border-t ${isDark ? "border-slate-800" : "border-slate-200"}`}>
-                <div className="h-9 w-9 rounded-full bg-emerald-500/20 text-emerald-600 font-bold flex items-center justify-center text-xs">
-                  SS
-                </div>
-                <div>
-                  <p className={`text-xs font-bold ${isDark ? "text-white" : "text-slate-950"}`}>Sanjay Sharma</p>
-                  <p className={`text-[10px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>CSC Digital Seva Kendra, Lucknow (UP)</p>
-                </div>
-              </div>
-            </div>
-
-            <div
-              className={`rounded-2xl border p-6 space-y-4 ${
-                isDark ? "border-slate-800 bg-[#0e1625]" : "border-slate-200 bg-slate-50 shadow-sm"
-              }`}
-            >
-              <p className={`text-xs leading-relaxed italic ${isDark ? "text-slate-300" : "text-slate-700"}`}>
-                "The shift drawer tally saved us from daily arguments. My clerks count the cash notes at 7 PM and hand over the exact till with 0 discrepancy."
-              </p>
-              <div className={`flex items-center gap-3 pt-2 border-t ${isDark ? "border-slate-800" : "border-slate-200"}`}>
-                <div className="h-9 w-9 rounded-full bg-teal-500/20 text-teal-600 font-bold flex items-center justify-center text-xs">
-                  PK
-                </div>
-                <div>
-                  <p className={`text-xs font-bold ${isDark ? "text-white" : "text-slate-950"}`}>Pooja Kulkarni</p>
-                  <p className={`text-[10px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>Cyber Hub & Xerox Center, Pune (MH)</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* FAQ ACCORDION SECTION */}
       <section
         id="faq"
@@ -1762,33 +1687,188 @@ export default function LandingPage() {
 
       {/* FOOTER */}
       <footer
-        className={`border-t px-6 py-10 text-center text-xs transition-colors ${
+        className={`border-t transition-colors ${
           isDark
-            ? "border-slate-800 bg-[#060910] text-slate-500"
-            : "border-slate-200 bg-white text-slate-500"
+            ? "border-slate-800/80 bg-[#060911] text-slate-400"
+            : "border-slate-200 bg-slate-50/70 text-slate-600"
         }`}
       >
-        <div className="mx-auto max-w-6xl flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5">
-            <img
-              src="/logo.png"
-              alt="DenBooks 360 Logo"
-              className={`h-7 w-7 rounded-lg object-cover shadow-xs border ${
-                isDark ? "border-slate-700" : "border-slate-200"
-              }`}
-            />
-            <span className={`font-bold ${isDark ? "text-slate-300" : "text-slate-800"}`}>
-              DenBooks 360 SaaS
-            </span>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-16 pb-12">
+          {/* Main Multi-Column Grid */}
+          <div
+            className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b ${
+              isDark ? "border-slate-800/80" : "border-slate-200"
+            }`}
+          >
+            {/* Brand & Studio Attribution Column */}
+            <div className="lg:col-span-2 space-y-4">
+              <div className="flex items-center gap-3">
+                <img
+                  src="/logo.png"
+                  alt="DenBooks 360 Logo"
+                  className={`h-9 w-9 rounded-xl object-cover shadow-sm border ${
+                    isDark ? "border-slate-700 bg-slate-800" : "border-slate-200 bg-white"
+                  }`}
+                />
+                <div>
+                  <span className={`text-base font-black tracking-tight ${isDark ? "text-white" : "text-slate-950"}`}>
+                    DenBooks <span className="text-cyan-400">360</span>
+                  </span>
+                  <span className="block text-[10px] uppercase font-mono font-bold tracking-widest text-cyan-500">
+                    Counter OS for Citizen Centers
+                  </span>
+                </div>
+              </div>
+
+              <p className={`text-xs leading-relaxed max-w-sm ${isDark ? "text-slate-400" : "text-slate-600"}`}>
+                Engineered for CSC, Akshaya, E-Mitra, Jan Seva, Cyber Cafes & Citizen Service Centers across India. 
+                Pure pass-through fee isolation, 58/80mm thermal receipts, offline resilience, and daily shift cash reconciliation.
+              </p>
+
+              {/* DEVELOPED BY SRB STUDIOS BADGE */}
+              <div className="pt-2">
+                <div
+                  className={`inline-flex items-center gap-2.5 rounded-xl border px-3.5 py-2 transition-all ${
+                    isDark
+                      ? "border-cyan-500/30 bg-cyan-950/20 text-cyan-200 hover:border-cyan-500/50"
+                      : "border-cyan-200 bg-cyan-50/80 text-cyan-900 hover:border-cyan-300"
+                  }`}
+                >
+                  <div className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
+                  <span className="text-xs font-medium">
+                    Developed by{" "}
+                    <span className="font-extrabold text-cyan-400 tracking-wide">
+                      SRB Studios
+                    </span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Column 2: Core Platform Capabilities */}
+            <div className="space-y-3">
+              <p className={`text-xs font-bold uppercase tracking-wider ${isDark ? "text-white" : "text-slate-900"}`}>
+                Capabilities
+              </p>
+              <ul className="space-y-2 text-xs">
+                <li>
+                  <a href="#simulator" className="hover:text-cyan-400 transition flex items-center gap-1.5">
+                    <span className="text-cyan-500">•</span> Fee Isolation Engine
+                  </a>
+                </li>
+                <li>
+                  <a href="#simulator" className="hover:text-cyan-400 transition flex items-center gap-1.5">
+                    <span className="text-cyan-500">•</span> 58mm & 80mm Thermal Slips
+                  </a>
+                </li>
+                <li>
+                  <a href="#simulator" className="hover:text-cyan-400 transition flex items-center gap-1.5">
+                    <span className="text-cyan-500">•</span> Evening Drawer Reconciliation
+                  </a>
+                </li>
+                <li>
+                  <a href="#simulator" className="hover:text-cyan-400 transition flex items-center gap-1.5">
+                    <span className="text-cyan-500">•</span> WhatsApp Khata & Due Recovery
+                  </a>
+                </li>
+                <li>
+                  <a href="#simulator" className="hover:text-cyan-400 transition flex items-center gap-1.5">
+                    <span className="text-cyan-500">•</span> Token & Queue Management
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Column 3: Portals & Access */}
+            <div className="space-y-3">
+              <p className={`text-xs font-bold uppercase tracking-wider ${isDark ? "text-white" : "text-slate-900"}`}>
+                Access Portals
+              </p>
+              <ul className="space-y-2 text-xs">
+                <li>
+                  <Link href="/login" className="hover:text-cyan-400 transition flex items-center gap-1.5">
+                    <span className="text-teal-500">•</span> Center Owner Login
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/signup" className="hover:text-cyan-400 transition flex items-center gap-1.5">
+                    <span className="text-teal-500">•</span> Register New Center (Free Trial)
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/staff/login" className="hover:text-cyan-400 transition flex items-center gap-1.5">
+                    <span className="text-teal-500">•</span> Counter Staff Desk
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/demo" className="hover:text-cyan-400 transition flex items-center gap-1.5">
+                    <span className="text-teal-500">•</span> Interactive Sandbox
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/admin/super" className="hover:text-cyan-400 transition flex items-center gap-1.5 opacity-70 hover:opacity-100">
+                    <span className="text-teal-500">•</span> Super Admin Console
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Column 4: Platform Architecture */}
+            <div className="space-y-3">
+              <p className={`text-xs font-bold uppercase tracking-wider ${isDark ? "text-white" : "text-slate-900"}`}>
+                Architecture
+              </p>
+              <ul className="space-y-2 text-xs">
+                <li className="flex items-center gap-1.5">
+                  <CheckCircle2 size={13} className="text-emerald-400 shrink-0" />
+                  <span>100% Offline-Capable Storage</span>
+                </li>
+                <li className="flex items-center gap-1.5">
+                  <CheckCircle2 size={13} className="text-emerald-400 shrink-0" />
+                  <span>Direct UPI (0% Gateway Cut)</span>
+                </li>
+                <li className="flex items-center gap-1.5">
+                  <CheckCircle2 size={13} className="text-emerald-400 shrink-0" />
+                  <span>Row-Level Tenant Isolation</span>
+                </li>
+                <li className="flex items-center gap-1.5">
+                  <CheckCircle2 size={13} className="text-emerald-400 shrink-0" />
+                  <span>Multi-Language WhatsApp Slips</span>
+                </li>
+                <li className="flex items-center gap-1.5">
+                  <CheckCircle2 size={13} className="text-emerald-400 shrink-0" />
+                  <span>Esc/POS USB & Bluetooth Support</span>
+                </li>
+              </ul>
+            </div>
           </div>
-          <div className={`flex items-center gap-6 ${isDark ? "text-slate-400" : "text-slate-600"}`}>
-            <Link href="/demo" className="hover:text-cyan-500 transition">Live Demo</Link>
-            <Link href="/login" className="hover:text-cyan-500 transition">Sign In</Link>
-            <Link href="/signup" className="hover:text-cyan-500 transition">Register Center</Link>
-            <Link href="/staff/login" className="hover:text-cyan-500 transition">Staff Desk</Link>
-            <Link href="/admin/super" className="hover:text-cyan-500 transition opacity-60 hover:opacity-100">Super Admin</Link>
+
+          {/* Bottom Bar */}
+          <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11.5px]">
+            <div className="flex items-center gap-2">
+              <p className={isDark ? "text-slate-500" : "text-slate-600"}>
+                © {new Date().getFullYear()} DenBooks 360. Built for Indian Citizen Service Centers.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-1.5 font-medium">
+              <span className={isDark ? "text-slate-500" : "text-slate-600"}>Designed & Developed by</span>
+              <span className="font-bold text-cyan-400 tracking-wide">
+                SRB Studios
+              </span>
+            </div>
+
+            <div className={`flex items-center gap-4 ${isDark ? "text-slate-500" : "text-slate-600"}`}>
+              <a href="#faq" className="hover:text-cyan-400 transition">FAQ</a>
+              <span>•</span>
+              <a href="#pricing" className="hover:text-cyan-400 transition">Pricing</a>
+              <span>•</span>
+              <span className="inline-flex items-center gap-1 text-emerald-500 font-semibold">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                Operational
+              </span>
+            </div>
           </div>
-          <p>© 2026 DenBooks 360. Built for Indian Citizen Service Centers.</p>
         </div>
       </footer>
     </div>
