@@ -146,14 +146,14 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Quick Demo Bypass */}
+          {/* Demo Sandbox Link */}
           <div className="mt-4 pt-4 border-t border-slate-800 text-center">
             <Link
-              href="/dashboard"
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-cyan-400 hover:underline"
+              href="/demo"
+              className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-cyan-300 transition"
             >
-              <LayoutDashboard size={13} />
-              <span>Or bypass directly to Admin Dashboard &rarr;</span>
+              <span>Explore without signing in?</span>
+              <span className="font-bold text-cyan-400 hover:underline">Try Live Sandbox</span>
             </Link>
           </div>
 
