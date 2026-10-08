@@ -205,7 +205,7 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
                   required
                   value={shopName}
                   onChange={(e) => setShopName(e.target.value)}
-                  placeholder="e.g. Digital Den CSC Center"
+                  placeholder="e.g. Apex Digital Seva Center"
                   className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none"
                 />
               </div>

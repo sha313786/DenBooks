@@ -119,6 +119,29 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
   const [filterType, setFilterType] = useState<TransactionType | "all">("all");
   const [filterMethod, setFilterMethod] = useState<PaymentMethod | "all">("all");
 
+  const [centerProfile, setCenterProfile] = useState<{
+    name: string;
+    phone: string;
+  }>({
+    name: "DenBooks 360",
+    phone: "",
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("denbooks_current_tenant");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          setCenterProfile({
+            name: parsed.name || "DenBooks 360",
+            phone: parsed.phone || "",
+          });
+        }
+      } catch {}
+    }
+  }, []);
+
   // Modals state
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [invMode, setInvMode] = useState<"citizen" | "counter" | "custom">("citizen");
@@ -772,7 +795,7 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
       <html lang="en">
         <head>
           <meta charset="utf-8" />
-          <title>Receipt - ${invNumber} - DIGITAL DEN 360</title>
+          <title>Receipt - ${invNumber} - ${centerProfile.name}</title>
           <style id="dynamic-page-style">
             @page { size: 80mm auto; margin: 3mm; }
             @media print {
@@ -911,7 +934,7 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
 
           <div id="receipt-container" class="receipt-wrap receipt-80mm">
             <div class="center">
-              <div class="title">DIGITAL DEN 360</div>
+              <div class="title">${centerProfile.name}</div>
               <div class="subtitle">E-Services • CSC • Citizen Portals • Xerox & Printing</div>
               <div class="bold" style="font-size: 11px; text-transform: uppercase;">TAX INVOICE / CASH RECEIPT</div>
             </div>
@@ -959,7 +982,7 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
                   <td class="right" style="font-size: 10.5px; padding-top: 2px; padding-bottom: 2px; white-space: nowrap;">₹${finalGovtFee.toFixed(2)}</td>
                 </tr>
                 <tr style="color: #222;">
-                  <td style="padding-left: 10px; font-size: 10.5px; padding-top: 2px; padding-bottom: 2px;">&bull; Digital Den Service Charge</td>
+                  <td style="padding-left: 10px; font-size: 10.5px; padding-top: 2px; padding-bottom: 2px;">&bull; Center Processing Fee</td>
                   <td class="right" style="font-size: 10.5px; padding-top: 2px; padding-bottom: 2px; white-space: nowrap;">₹${finalServiceFee.toFixed(2)}</td>
                 </tr>
                 `
@@ -988,7 +1011,7 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
             <div class="divider"></div>
 
             <div class="footer">
-              <p>Thank you for choosing Digital Den 360!</p>
+              <p>Thank you for choosing ${centerProfile.name}!</p>
               <p style="font-size: 8px; margin-top: 3px;">Computer generated receipt • No signature required</p>
             </div>
           </div>
@@ -1217,7 +1240,7 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
       <html>
         <head>
           <meta charset="utf-8" />
-          <title>Daybook Summary - ${selectedDate} - Digital Den 360</title>
+          <title>Daybook Summary - ${selectedDate} - ${centerProfile.name}</title>
           <style>
             @page { size: A4 portrait; margin: 12mm; }
             body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #0f172a; margin: 0; font-size: 12px; }
@@ -1241,8 +1264,8 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
         <body>
           <div class="header">
             <div class="brand">
-              <h1>DIGITAL DEN 360</h1>
-              <p>Daily Daybook & Cash Register Statement &bull; Ph: +91 70125 84152</p>
+              <h1>${centerProfile.name}</h1>
+              <p>Daily Daybook & Cash Register Statement${centerProfile.phone ? ` &bull; Ph: +91 ${centerProfile.phone}` : ""}</p>
             </div>
             <div style="text-align: right;">
               <div style="font-weight: 800; font-size: 13px;">${formattedDate}</div>
@@ -1286,7 +1309,7 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
           </table>
 
           <div class="footer">
-            <div>Digital Den 360 &bull; Verified Electronic Records</div>
+            <div>${centerProfile.name} &bull; Verified Electronic Records</div>
             <div>Signature / Verified By: ___________________________</div>
           </div>
 
@@ -2190,7 +2213,7 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
                           {tx.customer_phone ? (
                             <a
                               href={`https://wa.me/${tx.customer_phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(
-                                `Hello ${tx.customer_name || "Customer"}, gentle reminder from DIGITAL DEN 360 regarding pending payment of ₹${tx.amount} for "${tx.title}". You can pay via UPI to 7012584152. Thank you!`
+                                `Hello ${tx.customer_name || "Customer"}, gentle reminder from ${centerProfile.name} regarding pending payment of ₹${tx.amount} for "${tx.title}". ${centerProfile.phone ? `You can pay via UPI to ${centerProfile.phone}. ` : ""}Thank you!`
                               )}`}
                               target="_blank"
                               rel="noopener noreferrer"
@@ -2374,7 +2397,7 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
 
                     <div>
                       <label className="text-[11px] font-semibold text-slate-300 block mb-1">
-                        Digital Den Service Charge (₹) *
+                        Shop / Processing Charge (₹) *
                       </label>
                       <input
                         type="number"

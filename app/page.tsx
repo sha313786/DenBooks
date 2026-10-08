@@ -185,7 +185,7 @@ export default function LandingPage() {
                   Live Sync
                 </span>
                 <span className="rounded-lg bg-cyan-950/70 text-cyan-300 border border-cyan-800/60 px-2 py-0.5">
-                  Shop: Digital Den CSC
+                  Demo Center: Apex Digital Seva Kendra
                 </span>
               </div>
             </div>
@@ -205,19 +205,19 @@ export default function LandingPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-2">
-                    <p className="text-[10px] text-slate-400 font-semibold">CSC Digital Seva</p>
+                    <p className="text-[10px] text-slate-400 font-semibold">CSC Digital Seva Portal</p>
                     <p className="font-mono font-bold text-white text-sm mt-0.5">₹ 4,320</p>
                   </div>
                   <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-2">
-                    <p className="text-[10px] text-slate-400 font-semibold">e-District Kerala</p>
+                    <p className="text-[10px] text-slate-400 font-semibold">State e-District Wallet</p>
                     <p className="font-mono font-bold text-white text-sm mt-0.5">₹ 6,150</p>
                   </div>
                   <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-2">
-                    <p className="text-[10px] text-slate-400 font-semibold">UTIITSL / PAN</p>
+                    <p className="text-[10px] text-slate-400 font-semibold">PAN & UTIITSL Wallet</p>
                     <p className="font-mono font-bold text-white text-sm mt-0.5">₹ 1,870</p>
                   </div>
                   <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-2">
-                    <p className="text-[10px] text-slate-400 font-semibold">Shop Current A/c</p>
+                    <p className="text-[10px] text-slate-400 font-semibold">Operating Bank A/c</p>
                     <p className="font-mono font-bold text-white text-sm mt-0.5">₹ 7,500</p>
                   </div>
                 </div>
@@ -251,7 +251,7 @@ export default function LandingPage() {
             {/* Mockup Daybook Rows */}
             <div className="rounded-2xl border border-slate-800 bg-[#0e1625] overflow-hidden text-xs">
               <div className="bg-slate-900/80 px-4 py-2 border-b border-slate-800 flex items-center justify-between text-slate-400 font-semibold text-[11px]">
-                <span>Today's Transactions Sample</span>
+                <span>Sample Daybook Ledger</span>
                 <span className="text-cyan-400 font-mono">14 Entries Reconciled</span>
               </div>
               <div className="divide-y divide-slate-800/60 font-medium">
@@ -259,8 +259,8 @@ export default function LandingPage() {
                   <div className="flex items-center gap-3">
                     <span className="font-mono text-slate-400 text-[11px]">04:12 PM</span>
                     <div>
-                      <p className="text-white font-bold">Passport Application (Fresh) • Suresh K.</p>
-                      <p className="text-[10px] text-slate-400">Official Portal Fee ₹1,500 (e-District Wallet) + Shop Fee ₹250</p>
+                      <p className="text-white font-bold">Fresh Passport Application • Rajesh K.</p>
+                      <p className="text-[10px] text-slate-400">Official Portal Fee ₹1,500 (State Portal Wallet) + Shop Fee ₹250</p>
                     </div>
                   </div>
                   <div className="text-right">
@@ -285,8 +285,8 @@ export default function LandingPage() {
                   <div className="flex items-center gap-3">
                     <span className="font-mono text-slate-400 text-[11px]">02:10 PM</span>
                     <div>
-                      <p className="text-white font-bold">2 Reams A4 JK Copier Paper</p>
-                      <p className="text-[10px] text-slate-400">Shop Operational Expense • Cash Drawer</p>
+                      <p className="text-white font-bold">Premium A4 Copier Paper Bundle (2 Reams)</p>
+                      <p className="text-[10px] text-slate-400">Center Store Supplies • Cash Drawer</p>
                     </div>
                   </div>
                   <div className="text-right">

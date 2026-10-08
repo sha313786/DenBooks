@@ -29,7 +29,7 @@ export type AdminRequest = {
   status: RequestStatus;
   amount?: number | null; // Total amount = govt_fee + service_charge
   govt_fee?: number | null; // Govt / Official department / portal fee (e.g. Passport, Land Tax)
-  service_charge?: number | null; // Digital Den shop processing / service charge
+  service_charge?: number | null; // Shop processing / service charge
   payment_status?: PaymentStatus | null;
   created_at: string;
   updated_at: string;

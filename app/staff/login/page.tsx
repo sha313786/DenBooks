@@ -25,17 +25,28 @@ export default function StaffLoginPage() {
   const [showPin, setShowPin] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [centerName, setCenterName] = useState("DenBooks Counter Desk");
 
   useEffect(() => {
-    if (typeof window !== "undefined" && window.location.search.includes("switch=true")) {
-      staffLogout();
-    } else {
-      // If already logged in, redirect straight to staff workspace
-      const session = getStaffSession();
-      if (session) {
-        router.replace("/staff");
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("denbooks_current_tenant");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed.name) setCenterName(parsed.name);
+        }
+      } catch {}
+
+      if (window.location.search.includes("switch=true")) {
+        staffLogout();
         return;
       }
+    }
+    // If already logged in, redirect straight to staff workspace
+    const session = getStaffSession();
+    if (session) {
+      router.replace("/staff");
+      return;
     }
   }, [router]);
 
@@ -85,7 +96,7 @@ export default function StaffLoginPage() {
             </div>
 
             <h1 className="mt-4 text-xl font-black uppercase tracking-wider text-white">
-              DIGITAL DEN 360
+              {centerName}
             </h1>
             <div className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-cyan-500/10 px-3 py-0.5 text-xs font-semibold text-cyan-300 border border-cyan-400/20">
               <ShieldCheck size={13} />

@@ -276,12 +276,23 @@ export function printQueueTokenSlip(token: QueueToken) {
 
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=110x110&margin=2&data=${encodeURIComponent(trackingUrl)}`;
 
+  let centerName = "DenBooks 360";
+  if (typeof window !== "undefined") {
+    try {
+      const stored = localStorage.getItem("denbooks_current_tenant");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.name) centerName = parsed.name;
+      }
+    } catch {}
+  }
+
   const html = `
     <!DOCTYPE html>
     <html lang="en">
       <head>
         <meta charset="utf-8" />
-        <title>Token - ${token.token_number} - DIGITAL DEN 360</title>
+        <title>Token - ${token.token_number} - ${centerName}</title>
         <style id="dynamic-page-style">
           @page { size: 80mm auto; margin: 3mm; }
           @media print { body { width: 72mm; margin: 0 auto !important; } }
@@ -376,7 +387,7 @@ export function printQueueTokenSlip(token: QueueToken) {
         </div>
 
         <div id="receipt-container" class="receipt-wrap receipt-80mm">
-          <div class="shop-title">DIGITAL DEN 360</div>
+          <div class="shop-title">${centerName}</div>
           <div class="shop-sub">Citizen Services • Online Application Desk</div>
           <div style="font-size: 9px; color: #444; margin-top: 2px;">CSC Digital Seva • Counter Reception</div>
 

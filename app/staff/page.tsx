@@ -117,6 +117,29 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
   const [tokens, setTokens] = useState<QueueToken[]>([]);
   const [loadingData, setLoadingData] = useState(false);
 
+  const [centerProfile, setCenterProfile] = useState<{
+    name: string;
+    phone: string;
+  }>({
+    name: "DenBooks Counter Desk",
+    phone: "",
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("denbooks_current_tenant");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          setCenterProfile({
+            name: parsed.name || "DenBooks Counter Desk",
+            phone: parsed.phone || "",
+          });
+        }
+      } catch {}
+    }
+  }, []);
+
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -696,7 +719,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
       <html lang="en">
         <head>
           <meta charset="utf-8" />
-          <title>Receipt - ${invNumber} - DIGITAL DEN 360</title>
+          <title>Receipt - ${invNumber} - ${centerProfile.name}</title>
           <style id="dynamic-page-style">
             @page { size: 80mm auto; margin: 3mm; }
             @media print {
@@ -793,7 +816,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
 
           <div id="receipt-container" class="receipt-wrap receipt-80mm">
             <div class="center">
-              <div class="title">DIGITAL DEN 360</div>
+              <div class="title">${centerProfile.name}</div>
               <div class="subtitle">E-Services • CSC • Citizen Portals • Xerox & Printing</div>
               <div class="bold" style="font-size: 11px; text-transform: uppercase;">TAX INVOICE / CASH RECEIPT</div>
             </div>
@@ -841,7 +864,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                   <td class="right" style="font-size: 10.5px; padding-top: 2px; padding-bottom: 2px; white-space: nowrap;">₹${finalGovtFee.toFixed(2)}</td>
                 </tr>
                 <tr style="color: #222;">
-                  <td style="padding-left: 10px; font-size: 10.5px; padding-top: 2px; padding-bottom: 2px;">&bull; Digital Den Service Charge</td>
+                  <td style="padding-left: 10px; font-size: 10.5px; padding-top: 2px; padding-bottom: 2px;">&bull; Center Processing Fee</td>
                   <td class="right" style="font-size: 10.5px; padding-top: 2px; padding-bottom: 2px; white-space: nowrap;">₹${finalServiceFee.toFixed(2)}</td>
                 </tr>
                 `
@@ -870,7 +893,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
             <div class="divider"></div>
 
             <div class="footer">
-              <p>Thank you for choosing Digital Den 360!</p>
+              <p>Thank you for choosing ${centerProfile.name}!</p>
               <p style="font-size: 8px; margin-top: 3px;">Computer generated receipt • Counter: ${session?.employeeName || "Staff"}</p>
             </div>
           </div>
@@ -1148,7 +1171,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
       <html>
         <head>
           <meta charset="utf-8" />
-          <title>Job Slip - ${req.request_id} - DIGITAL DEN 360</title>
+          <title>Job Slip - ${req.request_id} - ${centerProfile.name}</title>
           <style id="dynamic-page-style">
             @page { size: 80mm auto; margin: 3mm; }
             @media print { body { width: 72mm; margin: 0 auto !important; } }
@@ -1245,9 +1268,9 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
 
           <div id="receipt-container" class="receipt-wrap receipt-80mm">
             <div class="center">
-              <div class="shop-name">DIGITAL DEN 360</div>
+              <div class="shop-name">${centerProfile.name}</div>
               <div class="tagline">Citizen Services • Online Application Desk</div>
-              <div class="contact-line">Mob: +91 98952 60105 • CSC Digital Seva</div>
+              <div class="contact-line">${centerProfile.phone ? `Mob: +91 ${centerProfile.phone} • ` : ""}CSC & Citizen Services</div>
             </div>
 
             <div class="divider-double"></div>
@@ -1322,7 +1345,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
 
             <div class="footer">
               <p>Please keep this slip safe to collect your documents</p>
-              <p style="font-size: 8px; margin-top: 3px;">Counter: ${session?.employeeName || "Operator"} • Digital Den 360</p>
+              <p style="font-size: 8px; margin-top: 3px;">Counter: ${session?.employeeName || "Operator"} • ${centerProfile.name}</p>
             </div>
           </div>
 
@@ -1362,7 +1385,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
       <div className="flex min-h-screen flex-col items-center justify-center bg-[#070b13] text-slate-300 gap-3 px-4">
         <RefreshCw size={28} className="animate-spin text-cyan-400" />
         <span className="text-sm font-semibold tracking-wide">Loading counter session...</span>
-        <p className="text-xs text-slate-500">Connecting to Digital Den 360 Counter Desk</p>
+        <p className="text-xs text-slate-500">Connecting to {centerProfile.name}</p>
         <a
           href="/staff/login"
           className="mt-3 rounded-xl border border-slate-700 bg-slate-850 px-4 py-2 text-xs font-semibold text-cyan-400 hover:border-cyan-400 hover:text-cyan-300 transition"
@@ -3378,7 +3401,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                   {viewingRequest.customers?.phone && (
                     <a
                       href={`https://wa.me/91${viewingRequest.customers.phone.replace(/\D/g, "").slice(-10)}?text=${encodeURIComponent(
-                        `Hello ${viewingRequest.customers.full_name || "Customer"}, we are contacting you from DIGITAL DEN 360 regarding your request ${viewingRequest.request_id} for ${viewingRequest.service}. Current Status: ${viewingRequest.status}.`
+                        `Hello ${viewingRequest.customers.full_name || "Customer"}, we are contacting you from ${centerProfile.name} regarding your request ${viewingRequest.request_id} for ${viewingRequest.service}. Current Status: ${viewingRequest.status}.`
                       )}`}
                       target="_blank"
                       rel="noopener noreferrer"
