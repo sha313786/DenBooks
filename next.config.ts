@@ -3,9 +3,13 @@ import type { NextConfig } from "next";
 const isGithubActions = process.env.GITHUB_ACTIONS === "true";
 
 const nextConfig: NextConfig = {
-  output: "export",
-  trailingSlash: true,
-  basePath: isGithubActions ? "/DenBooks" : "",
+  ...(isGithubActions
+    ? {
+        output: "export",
+        trailingSlash: true,
+        basePath: "/DenBooks",
+      }
+    : {}),
   images: {
     unoptimized: true,
   },
