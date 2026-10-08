@@ -132,10 +132,23 @@ export default function DemoSandboxPage() {
     const shopFee = 250;
     const total = govtFee + shopFee;
 
+    // Check if amount is 0
+    if (total <= 0) {
+      showToast("❌ Cannot Save: Transaction amount cannot be ₹0.");
+      return;
+    }
+
+    // Check if wallet balance is 0 or insufficient
+    const targetWallet = wallets.find((w) => w.id === "w2");
+    if (!targetWallet || targetWallet.balance <= 0 || targetWallet.balance < govtFee) {
+      showToast(`❌ Cannot Save: State e-District Wallet has ₹${targetWallet?.balance || 0} (less than fee ₹${govtFee}). Top up wallet before recording!`);
+      return;
+    }
+
     // Deduct e-District wallet
     setWallets((prev) =>
       prev.map((w) =>
-        w.id === "w2" ? { ...w, balance: Math.max(0, w.balance - govtFee) } : w
+        w.id === "w2" ? { ...w, balance: w.balance - govtFee } : w
       )
     );
     // Add to Cash Drawer
@@ -158,8 +171,21 @@ export default function DemoSandboxPage() {
     showToast("✅ Passport Recorded: ₹1,500 debited from e-District Wallet & ₹250 net shop profit isolated!");
   }
 
+  function handleSimulateTopup() {
+    setWallets((prev) =>
+      prev.map((w) =>
+        w.id === "w2" ? { ...w, balance: w.balance + 5000 } : w
+      )
+    );
+    showToast("💳 Topped up State e-District Wallet with +₹5,000 balance!");
+  }
+
   function handleSimulatePOSSale() {
     const amount = 95;
+    if (amount <= 0) {
+      showToast("❌ Cannot Save: Transaction amount cannot be ₹0.");
+      return;
+    }
     setUpiTotal((prev) => prev + amount);
 
     const newTx: SandboxTransaction = {
@@ -180,6 +206,14 @@ export default function DemoSandboxPage() {
 
   function handleSimulateExpense() {
     const expenseAmt = 120;
+    if (expenseAmt <= 0) {
+      showToast("❌ Cannot Save: Expense amount cannot be ₹0.");
+      return;
+    }
+    if (cashDrawer < expenseAmt) {
+      showToast("⚠️ Cash Drawer has insufficient cash for this expense!");
+      return;
+    }
     setCashDrawer((prev) => prev - expenseAmt);
 
     const newTx: SandboxTransaction = {
@@ -387,6 +421,13 @@ export default function DemoSandboxPage() {
                   className="rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-3.5 py-2 text-xs font-bold text-cyan-300 hover:bg-cyan-500/20 active:scale-95 transition"
                 >
                   ⚡ Record Fresh Passport (₹1,750)
+                </button>
+                <button
+                  onClick={handleSimulateTopup}
+                  className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-3.5 py-2 text-xs font-bold text-amber-300 hover:bg-amber-500/20 active:scale-95 transition"
+                  title="Replenish wallet advance balance"
+                >
+                  💳 Top Up Wallet (+₹5,000)
                 </button>
                 <button
                   onClick={handleSimulatePOSSale}
@@ -638,9 +679,26 @@ export default function DemoSandboxPage() {
                 </div>
 
                 <button
-                  disabled={cartItems.length === 0}
+                  disabled={cartItems.length === 0 || cartTotal <= 0}
                   onClick={() => {
-                    handleSimulatePOSSale();
+                    if (cartTotal <= 0) {
+                      showToast("❌ Cannot Save: Bill amount cannot be ₹0. Add items to cart.");
+                      return;
+                    }
+                    const newTx: SandboxTransaction = {
+                      id: `tx-${Date.now()}`,
+                      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+                      title: `Counter POS Bill (${cartItems.length} items)`,
+                      category: "Counter POS",
+                      amount: cartTotal,
+                      govtFee: 0,
+                      serviceCharge: cartTotal,
+                      paymentMethod: "Cash",
+                      customerName: "Walk-in Customer",
+                    };
+                    setCashDrawer((prev) => prev + cartTotal);
+                    setTransactions((prev) => [newTx, ...prev]);
+                    showToast(`✅ Counter Bill Saved: +₹${cartTotal} added to cash drawer!`);
                     setCartItems([]);
                   }}
                   className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-teal-400 to-emerald-400 py-3 text-xs font-black text-slate-950 hover:brightness-110 active:scale-95 disabled:opacity-40 transition shadow-lg shadow-teal-500/20"

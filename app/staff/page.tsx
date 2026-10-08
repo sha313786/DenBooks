@@ -571,6 +571,16 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
       serviceCharge = invTotalAmount;
     }
 
+    if (invWalletId && govtFee > 0) {
+      const targetW = wallets.find((w) => w.id === invWalletId);
+      if (targetW && (targetW.balance <= 0 || targetW.balance < govtFee)) {
+        alert(
+          `Cannot save transaction: Selected wallet (${targetW.name}) has insufficient balance (₹${targetW.balance}) to deduct official fee ₹${govtFee}. Please top up the wallet first or choose another payment source.`
+        );
+        return;
+      }
+    }
+
     setSavingInvoice(true);
     try {
       const newTx = await createAccountTransaction({

@@ -632,7 +632,16 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
     let walletName: string | undefined = undefined;
     if (invWalletId) {
       const matchedWallet = wallets.find((w) => w.id === invWalletId);
-      if (matchedWallet) walletName = matchedWallet.name;
+      if (matchedWallet) {
+        walletName = matchedWallet.name;
+        const requestedFee = parseFloat(invGovtFee) || 0;
+        if (requestedFee > 0 && (matchedWallet.balance <= 0 || matchedWallet.balance < requestedFee)) {
+          alert(
+            `Cannot save transaction: Selected wallet (${matchedWallet.name}) has insufficient balance (₹${matchedWallet.balance}) to deduct official fee ₹${requestedFee}. Please top up wallet first or choose another payment source.`
+          );
+          return;
+        }
+      }
     }
 
     if (invMode === "citizen") {

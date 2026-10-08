@@ -481,6 +481,11 @@ export async function getAccountTransactions(filters?: TransactionFilters): Prom
 export async function createAccountTransaction(
   payload: Omit<AccountTransaction, "id" | "created_at">
 ): Promise<AccountTransaction> {
+  const numericAmount = Number(payload.amount);
+  if (isNaN(numericAmount) || Math.abs(numericAmount) === 0) {
+    throw new Error("Transaction amount cannot be zero (₹0). Transaction was not saved.");
+  }
+
   const newTx: AccountTransaction = {
     id: `tx-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
     created_at: new Date().toISOString(),
