@@ -7,6 +7,7 @@ import {
   Users,
   Receipt,
   Wallet,
+  Landmark,
   Clock3,
   ShoppingBag,
   ArrowRight,
@@ -61,8 +62,8 @@ interface SandboxTransaction {
 
 const INITIAL_WALLETS: SandboxWallet[] = [
   { id: "w1", name: "CSC Digital Seva Portal", category: "Govt Portal", balance: 4320 },
-  { id: "w2", name: "State e-District Wallet", category: "Govt Portal", balance: 6150 },
-  { id: "w3", name: "PAN & UTIITSL Wallet", category: "Govt Portal", balance: 1870 },
+  { id: "w2", name: "State e-District Bank / Portal", category: "Govt Portal", balance: 6150 },
+  { id: "w3", name: "PAN & UTIITSL Bank / Portal", category: "Govt Portal", balance: 1870 },
   { id: "w4", name: "Operating Bank A/c", category: "Banking", balance: 7500 },
 ];
 
@@ -76,7 +77,7 @@ const INITIAL_TRANSACTIONS: SandboxTransaction[] = [
     govtFee: 1500,
     serviceCharge: 250,
     paymentMethod: "Cash",
-    walletUsed: "State e-District Wallet",
+    walletUsed: "State e-District Bank",
     customerName: "Rajesh Kumar",
   },
   {
@@ -149,14 +150,14 @@ export default function DemoSandboxPage() {
       return;
     }
 
-    // Check if wallet balance is 0 or insufficient
+    // Check if bank/portal balance is 0 or insufficient
     const targetWallet = wallets.find((w) => w.id === "w2");
     if (!targetWallet || targetWallet.balance <= 0 || targetWallet.balance < govtFee) {
-      showToast(`❌ Cannot Save: State e-District Wallet has ₹${targetWallet?.balance || 0} (less than fee ₹${govtFee}). Top up wallet before recording!`);
+      showToast(`Cannot Save: State e-District Bank Account has ₹${targetWallet?.balance || 0} (less than fee ₹${govtFee}). Top up bank account before recording!`);
       return;
     }
 
-    // Deduct e-District wallet
+    // Deduct e-District bank/portal
     setWallets((prev) =>
       prev.map((w) =>
         w.id === "w2" ? { ...w, balance: w.balance - govtFee } : w
@@ -174,12 +175,12 @@ export default function DemoSandboxPage() {
       govtFee: govtFee,
       serviceCharge: shopFee,
       paymentMethod: "Cash",
-      walletUsed: "State e-District Wallet",
+      walletUsed: "State e-District Bank",
       customerName: "Amit Sharma",
     };
 
     setTransactions((prev) => [newTx, ...prev]);
-    showToast("✅ Passport Recorded: ₹1,500 debited from e-District Wallet & ₹250 net shop profit isolated!");
+    showToast("Passport Recorded: ₹1,500 debited from e-District Bank & ₹250 net shop profit isolated!");
   }
 
   function handleSimulateTopup() {
@@ -188,7 +189,7 @@ export default function DemoSandboxPage() {
         w.id === "w2" ? { ...w, balance: w.balance + 5000 } : w
       )
     );
-    showToast("Topped up State e-District Wallet with +₹5,000 balance!");
+    showToast("Topped up State e-District Bank with +₹5,000 balance!");
   }
 
   function handleSimulatePOSSale() {
@@ -374,8 +375,8 @@ export default function DemoSandboxPage() {
               <div className="lg:col-span-5 rounded-3xl border border-slate-800/90 bg-[#0b1220]/90 p-4 shadow-xl">
                 <div className="flex items-center justify-between border-b border-slate-800 pb-2.5 mb-3">
                   <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-200">
-                    <Wallet size={15} className="text-cyan-400" />
-                    <span>Portal Advance & Bank</span>
+                    <Landmark size={15} className="text-cyan-400" />
+                    <span>Bank & Portal Accounts</span>
                   </div>
                   <span className="font-mono text-xs font-black text-cyan-300 bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-800/60">
                     Total: ₹{totalWallets.toLocaleString()}
@@ -440,10 +441,10 @@ export default function DemoSandboxPage() {
                 <button
                   onClick={handleSimulateTopup}
                   className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3.5 py-2 text-xs font-bold text-amber-300 hover:bg-amber-500/20 active:scale-95 transition"
-                  title="Replenish wallet advance balance"
+                  title="Replenish bank account balance"
                 >
-                  <CreditCard size={14} className="text-amber-400" />
-                  <span>Top Up Wallet (+₹5,000)</span>
+                  <Landmark size={14} className="text-amber-400" />
+                  <span>Top Up Bank (+₹5,000)</span>
                 </button>
                 <button
                   onClick={handleSimulatePOSSale}
@@ -481,7 +482,7 @@ export default function DemoSandboxPage() {
                       <th className="pb-2.5">Time</th>
                       <th className="pb-2.5">Title & Customer</th>
                       <th className="pb-2.5">Category</th>
-                      <th className="pb-2.5">Wallet / Mode</th>
+                      <th className="pb-2.5">Bank / Mode</th>
                       <th className="pb-2.5 text-right">Total Amount</th>
                       <th className="pb-2.5 text-right">Shop Net</th>
                       <th className="pb-2.5 text-center">Actions</th>
@@ -512,7 +513,7 @@ export default function DemoSandboxPage() {
                         </td>
                         <td className="py-3 text-[11px] text-slate-400">
                           {tx.walletUsed ? (
-                            <span className="text-amber-300 font-mono">Deducted: {tx.walletUsed}</span>
+                            <span className="text-amber-300 font-mono">Bank: {tx.walletUsed}</span>
                           ) : (
                             <span>{tx.paymentMethod}</span>
                           )}

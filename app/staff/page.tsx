@@ -34,6 +34,7 @@ import {
   MessageSquare,
   IndianRupee,
   Wallet,
+  Landmark,
   Ticket,
   Megaphone,
   UserCheck,
@@ -575,7 +576,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
       const targetW = wallets.find((w) => w.id === invWalletId);
       if (targetW && (targetW.balance <= 0 || targetW.balance < govtFee)) {
         alert(
-          `Cannot save transaction: Selected wallet (${targetW.name}) has insufficient balance (₹${targetW.balance}) to deduct official fee ₹${govtFee}. Please top up the wallet first or choose another payment source.`
+          `Cannot save transaction: Selected bank/portal account (${targetW.name}) has insufficient balance (₹${targetW.balance}) to deduct official fee ₹${govtFee}. Please deposit funds into bank/portal account first or choose another payment source.`
         );
         return;
       }
@@ -1619,10 +1620,10 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
               <div className="flex items-center justify-between border-b border-slate-800/80 pb-2 mb-2.5">
                 <div className="flex items-center gap-2">
                   <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-cyan-400/10 text-cyan-400 border border-cyan-400/20">
-                    <Wallet size={13} />
+                    <Landmark size={13} />
                   </div>
                   <span className="text-[11px] font-bold uppercase tracking-wider text-white">
-                    Portal & Bank Wallets
+                    Bank & Portal Accounts
                   </span>
                 </div>
                 <span className="font-mono text-xs font-black text-cyan-300 bg-cyan-950/60 border border-cyan-800/60 px-2 py-0.5 rounded-md">
@@ -2934,7 +2935,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                     </div>
                     <div>
                       <label className="text-[11px] font-semibold text-slate-300 block mb-1">
-                        Deduct Portal Wallet
+                        Deduct Bank / Portal
                       </label>
                       <select
                         value={invWalletId}
@@ -2948,7 +2949,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                           </option>
                         ))}
                       </select>
-                      <span className="text-[9.5px] text-slate-500 mt-0.5 block">Portal deducted for fee</span>
+                      <span className="text-[9.5px] text-slate-500 mt-0.5 block">Bank or portal deducted for fee</span>
                     </div>
                   </div>
 

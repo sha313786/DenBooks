@@ -8,6 +8,7 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   Wallet,
+  Landmark,
   Calendar,
   Download,
   Printer,
@@ -386,13 +387,13 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
       const updatedWallets = await resetPortalWalletsToZero();
       setWallets([...updatedWallets]);
       await loadData();
-      setResetSuccessMsg("Portal & Bank wallets reset to ₹0 in Supabase! (Your daybook services were preserved).");
+      setResetSuccessMsg("Bank & portal accounts reset to ₹0 in Supabase! (Your daybook services were preserved).");
       setTimeout(() => {
         setResetSuccessMsg("");
         setShowResetModal(false);
       }, 1800);
     } catch (e: any) {
-      alert("Error resetting wallets: " + (e?.message || e));
+      alert("Error resetting bank accounts: " + (e?.message || e));
     } finally {
       setIsResetting(false);
     }
@@ -405,7 +406,7 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
       const updatedTx = await resetDaybookTransactions();
       setTransactions([...updatedTx]);
       await loadData();
-      setResetSuccessMsg("Daybook transactions cleared from Supabase! (Wallet balances preserved).");
+      setResetSuccessMsg("Daybook transactions cleared from Supabase! (Bank account balances preserved).");
       setTimeout(() => {
         setResetSuccessMsg("");
         setShowResetModal(false);
@@ -425,7 +426,7 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
       setTransactions([...clearedTx]);
       setWallets([...zeroWallets]);
       await loadData();
-      setResetSuccessMsg("Complete reset done! All wallets & daybook cleared in Supabase.");
+      setResetSuccessMsg("Complete reset done! All bank accounts & daybook cleared in Supabase.");
       setTimeout(() => {
         setResetSuccessMsg("");
         setShowResetModal(false);
@@ -637,7 +638,7 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
         const requestedFee = parseFloat(invGovtFee) || 0;
         if (requestedFee > 0 && (matchedWallet.balance <= 0 || matchedWallet.balance < requestedFee)) {
           alert(
-            `Cannot save transaction: Selected wallet (${matchedWallet.name}) has insufficient balance (₹${matchedWallet.balance}) to deduct official fee ₹${requestedFee}. Please top up wallet first or choose another payment source.`
+            `Cannot save transaction: Selected bank/portal account (${matchedWallet.name}) has insufficient balance (₹${matchedWallet.balance}) to deduct official fee ₹${requestedFee}. Please deposit funds into bank/portal account first or choose another payment source.`
           );
           return;
         }
@@ -1505,10 +1506,10 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
           <div className="flex items-center justify-between border-b border-slate-800/80 pb-2 mb-2.5">
             <div className="flex items-center gap-2">
               <div className="flex h-6 w-6 items-center justify-center rounded-lg border border-cyan-400/30 bg-cyan-400/10 text-cyan-300">
-                <Wallet size={13} />
+                <Landmark size={13} />
               </div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-200">
-                Portal Advance & Bank
+                Bank & Portal Accounts
               </h3>
             </div>
             <div className="flex items-center gap-1.5">
@@ -1543,7 +1544,7 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
                       setShowTopupModal(true);
                     }}
                     className="shrink-0 rounded-lg border border-slate-700 bg-slate-800 px-2 py-1 text-[11px] font-bold text-cyan-300 hover:border-cyan-400 hover:bg-cyan-500/10 transition"
-                    title="Top-up wallet"
+                    title="Deposit / Top-up Bank Account"
                   >
                     +Top-up
                   </button>
@@ -2423,7 +2424,7 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
 
                     <div>
                       <label className="text-[11px] font-semibold text-slate-300 block mb-1">
-                        Deduct Portal Wallet
+                        Deduct Bank / Portal
                       </label>
                       <select
                         value={invWalletId}
@@ -2437,7 +2438,7 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
                           </option>
                         ))}
                       </select>
-                      <span className="text-[10px] text-slate-500 mt-0.5 block">Optional portal deduct</span>
+                      <span className="text-[10px] text-slate-500 mt-0.5 block">Bank or portal deducted for fee</span>
                     </div>
                   </div>
 
@@ -2936,10 +2937,10 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
             <div className="flex items-center justify-between border-b border-slate-800 bg-[#162236] px-6 py-4">
               <div className="flex items-center gap-3">
                 <div className="rounded-xl border border-cyan-500/30 bg-cyan-500/15 p-2 text-cyan-300">
-                  <Wallet size={18} />
+                  <Landmark size={18} />
                 </div>
                 <div>
-                  <h3 className="font-bold text-white text-base">Top-up Portal Wallet</h3>
+                  <h3 className="font-bold text-white text-base">Top-up Bank / Portal Account</h3>
                   <p className="text-xs text-slate-400 font-mono">{targetWallet.name}</p>
                 </div>
               </div>
@@ -2954,7 +2955,7 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
 
             <form onSubmit={handleSaveTopup} className="p-6 space-y-4">
               <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3 flex justify-between items-center">
-                <span className="text-xs text-slate-400">Current Wallet Balance:</span>
+                <span className="text-xs text-slate-400">Current Account Balance:</span>
                 <span className="text-lg font-black text-white font-mono">
                   ₹{targetWallet.balance}
                 </span>
