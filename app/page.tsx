@@ -619,7 +619,7 @@ export default function LandingPage() {
 
                 {/* Right: Interactive Isolation Card */}
                 <div
-                  className={`rounded-2xl border p-5 sm:p-6 space-y-5 ${
+                  className={`lg:col-span-7 rounded-2xl border p-5 sm:p-6 space-y-5 ${
                     isDark ? "border-slate-700/80 bg-[#0f172a]" : "border-slate-200 bg-slate-50"
                   }`}
                 >
@@ -1038,7 +1038,7 @@ export default function LandingPage() {
 
                 {/* Right: WhatsApp Message Preview Mockup */}
                 <div
-                  className={`rounded-2xl border p-5 sm:p-6 space-y-4 shadow-xl ${
+                  className={`lg:col-span-7 rounded-2xl border p-5 sm:p-6 space-y-4 shadow-xl ${
                     isDark ? "border-slate-800 bg-[#0b141a]" : "border-slate-200 bg-[#efeae2]"
                   }`}
                 >
@@ -1449,7 +1449,7 @@ export default function LandingPage() {
                   : "border-cyan-500 bg-gradient-to-b from-cyan-50/60 to-white shadow-cyan-500/15"
               }`}
             >
-              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-cyan-400 px-3.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-slate-950 shadow-md">
+              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-cyan-400 px-4 py-1 text-[10px] font-black uppercase tracking-wider text-slate-950 shadow-md">
                 {billingCycle === "annual" ? "Most Popular • Save 52%" : "Most Popular"}
               </div>
 
