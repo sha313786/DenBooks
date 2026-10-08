@@ -1697,8 +1697,18 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
                         </button>
 
                         <a
-                          href={`https://wa.me/${superConfig.whatsapp_number.replace("+", "")}?text=${encodeURIComponent(
-                            `Hello DenBooks Super Admin, I want to activate subscription for ${shopName} (${ownerName}, Ph: ${phone}). Plan: ${selectedPlan}. UTR: ${utrInput || "Just Paid"}.`
+                          href={`https://wa.me/${superConfig.whatsapp_number.replace("+", "").replace(/\s+/g, "")}?text=${encodeURIComponent(
+                            [
+                              `*DenBooks 360 - Subscription Activation Request*`,
+                              ``,
+                              `🏪 *Center Name:* ${shopName}`,
+                              `👤 *Owner Name:* ${ownerName}`,
+                              `📞 *Phone:* ${phone || "Not set"}`,
+                              `📦 *Plan:* ${selectedPlan === "yearly" ? "Annual Pro (₹" + superConfig.yearly_price + ")" : "Monthly Starter (₹" + superConfig.monthly_price + ")"}`,
+                              `🧾 *UTR / Ref No:* ${utrInput.trim() || "Payment Done (Screenshot attached)"}`,
+                              ``,
+                              `Please verify payment and activate my center account. Thank you!`,
+                            ].join("\n")
                           )}`}
                           target="_blank"
                           rel="noreferrer"
@@ -1816,8 +1826,18 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
             {/* WhatsApp Hotline */}
             <div className="flex items-center gap-2">
               <a
-                href={`https://wa.me/${superConfig.whatsapp_number.replace("+", "")}?text=${encodeURIComponent(
-                  `Hello Super Admin, please activate center ${shopName} (Phone: ${phone}). Plan: ${selectedPlan}. I have paid.`
+                href={`https://wa.me/${superConfig.whatsapp_number.replace("+", "").replace(/\s+/g, "")}?text=${encodeURIComponent(
+                  [
+                    `*DenBooks 360 - Unlock & Renewal Request*`,
+                    ``,
+                    `🏪 *Center Name:* ${shopName}`,
+                    `👤 *Owner Name:* ${ownerName}`,
+                    `📞 *Phone:* ${phone || "Not set"}`,
+                    `📦 *Plan:* ${selectedPlan === "yearly" ? "Annual Pro (₹" + superConfig.yearly_price + ")" : "Monthly Starter (₹" + superConfig.monthly_price + ")"}`,
+                    `🧾 *UTR:* ${utrInput.trim() || "Payment Done (Receipt Attached)"}`,
+                    ``,
+                    `My center is locked. Please approve payment and unlock dashboard.`,
+                  ].join("\n")
                 )}`}
                 target="_blank"
                 rel="noreferrer"
