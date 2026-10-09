@@ -41,29 +41,13 @@ import {
   Heart,
 } from "lucide-react";
 
+import { useTheme } from "@/context/ThemeContext";
+
 export default function LandingPage() {
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const { theme, isDark, toggleTheme } = useTheme();
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("annual");
   const [activeTab, setActiveTab] = useState<"isolation" | "thermal" | "drawer" | "khata">("isolation");
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
-
-  // Read saved theme preference on mount
-  useEffect(() => {
-    const saved = localStorage.getItem("denbooks_landing_theme");
-    if (saved === "light" || saved === "dark") {
-      setTheme(saved);
-    }
-  }, []);
-
-  const toggleTheme = () => {
-    const next = theme === "dark" ? "light" : "dark";
-    setTheme(next);
-    try {
-      localStorage.setItem("denbooks_landing_theme", next);
-    } catch (e) {}
-  };
-
-  const isDark = theme === "dark";
 
   // Interactive Simulator State:
   const [selectedService, setSelectedService] = useState<"passport" | "sarathi" | "edistrict" | "kseb">("passport");
@@ -228,18 +212,6 @@ export default function LandingPage() {
             </div>
           </Link>
 
-          {/* Nav Links */}
-          <div
-            className={`hidden lg:flex items-center gap-8 text-xs font-bold ${
-              isDark ? "text-slate-300" : "text-slate-600"
-            }`}
-          >
-            <a href="#simulator" className="hover:text-cyan-500 transition">Interactive Demo</a>
-            <a href="#solutions" className="hover:text-cyan-500 transition">Why DenBooks</a>
-            <a href="#features" className="hover:text-cyan-500 transition">Core Modules</a>
-            <a href="#pricing" className="hover:text-cyan-500 transition">Zero-Fee Pricing</a>
-            <a href="#faq" className="hover:text-cyan-500 transition">FAQ</a>
-          </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
             {/* THEME TOGGLE BUTTON (Dark & Bright) */}
@@ -268,43 +240,14 @@ export default function LandingPage() {
             </button>
 
             <Link
-              href="/demo"
-              className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 sm:py-2 text-xs font-bold transition shadow-xs ${
-                isDark
-                  ? "border-slate-700/80 bg-slate-900/80 text-slate-200 hover:border-cyan-400/50 hover:text-cyan-300"
-                  : "border-slate-300 bg-slate-100 text-slate-700 hover:border-cyan-500 hover:bg-white"
-              }`}
-            >
-              <Play size={12} className="text-cyan-500 fill-cyan-500" />
-              <span className="hidden sm:inline">Sandbox Demo</span>
-              <span className="sm:hidden">Demo</span>
-            </Link>
-
-            <Link
-              href="/staff/login"
-              className={`hidden sm:inline-flex items-center gap-1.5 px-2.5 py-2 text-xs font-bold transition ${
-                isDark ? "text-slate-300 hover:text-white" : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <Store size={13} className="text-emerald-500" />
-              <span>Staff Desk</span>
-            </Link>
-
-            <Link
               href="/login"
-              className={`px-2.5 sm:px-3 py-2 text-xs font-bold transition ${
-                isDark ? "text-slate-300 hover:text-white" : "text-slate-600 hover:text-slate-900"
+              className={`px-3 sm:px-4 py-1.5 rounded-xl text-xs font-bold border transition ${
+                isDark
+                  ? "border-cyan-500/40 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 hover:text-white hover:border-cyan-400"
+                  : "border-cyan-600/30 bg-cyan-50 text-cyan-800 hover:bg-cyan-100 hover:text-cyan-950 shadow-xs"
               }`}
             >
               Sign In
-            </Link>
-
-            <Link
-              href="/signup"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan-400 to-teal-400 px-3.5 sm:px-4 py-2 text-xs font-black text-slate-950 shadow-md shadow-cyan-400/20 hover:brightness-110 active:scale-95 transition"
-            >
-              <span>Start Free</span>
-              <ArrowRight size={13} />
             </Link>
           </div>
         </div>

@@ -15,6 +15,7 @@ import {
   Users,
 } from "lucide-react";
 import { staffLogin, getStaffSession, staffLogout } from "@/lib/services/employee.service";
+import ThemeToggle from "@/components/ThemeToggle";
 
 
 export default function StaffLoginPage() {
@@ -83,6 +84,11 @@ export default function StaffLoginPage() {
 
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#070b13] px-4 py-8 text-slate-100">
+      {/* Top Right Controls */}
+      <div className="absolute top-4 right-4 z-50 flex items-center gap-2">
+        <ThemeToggle />
+      </div>
+
       {/* Background Cyber Grid */}
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(0,220,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,220,255,0.03)_1px,transparent_1px)] bg-[size:45px_45px]" />
       <div className="pointer-events-none absolute left-1/2 top-1/2 h-[450px] w-[450px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-500/10 blur-[100px]" />
@@ -175,9 +181,8 @@ export default function StaffLoginPage() {
             </button>
           </form>
 
-
           {/* Admin Switcher */}
-          <div className="mt-6 text-center">
+          <div className="mt-5 text-center">
             <a
               href="/admin/login"
               className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-cyan-300 transition"

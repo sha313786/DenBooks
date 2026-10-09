@@ -19,6 +19,22 @@ export type AccountCategory =
   | "Other Income"
   | "Other Expense";
 
+export interface CitizenInvoiceItem {
+  id: string;
+  service_name: string;
+  wallet_id?: string;
+  wallet_name?: string;
+  online_payment: number; // pass-through portal/govt fee
+  charges: number;        // shop service charge / profit
+  total: number;          // online_payment + charges
+}
+
+export interface PaymentSplit {
+  cash: number;
+  upi: number;
+  credit: number;
+}
+
 export type AccountTransaction = {
   id: string;
   transaction_date: string; // YYYY-MM-DD
@@ -38,7 +54,42 @@ export type AccountTransaction = {
   wallet_name?: string;
   employee_id?: string;
   employee_name?: string;
+  items?: CitizenInvoiceItem[];
+  payment_split?: PaymentSplit;
+  invoice_number?: string;
 };
+
+export function getNextInvoiceNumber(centerCode: string = "KNR059"): string {
+  if (typeof window === "undefined") {
+    return `INV/${centerCode}/${Math.floor(1000 + Math.random() * 9000)}`;
+  }
+  try {
+    const raw = localStorage.getItem("denbooks_invoice_sequence");
+    let seq = raw ? parseInt(raw, 10) : 6728;
+    if (isNaN(seq) || seq < 1) seq = 6728;
+    seq += 1;
+    localStorage.setItem("denbooks_invoice_sequence", seq.toString());
+    const cleanCode = (centerCode || "KNR059").trim().toUpperCase();
+    return `INV/${cleanCode}/${seq}`;
+  } catch (e) {
+    return `INV/${centerCode}/${Math.floor(1000 + Math.random() * 9000)}`;
+  }
+}
+
+export function peekNextInvoiceNumber(centerCode: string = "KNR059"): string {
+  if (typeof window === "undefined") {
+    return `INV/${centerCode}/6729`;
+  }
+  try {
+    const raw = localStorage.getItem("denbooks_invoice_sequence");
+    let seq = raw ? parseInt(raw, 10) : 6728;
+    if (isNaN(seq) || seq < 1) seq = 6728;
+    const cleanCode = (centerCode || "KNR059").trim().toUpperCase();
+    return `INV/${cleanCode}/${seq + 1}`;
+  } catch (e) {
+    return `INV/${centerCode}/6729`;
+  }
+}
 
 export type PortalWallet = {
   id: string;
@@ -79,19 +130,26 @@ export type ServiceChargeItem = {
 };
 
 export const DEFAULT_SERVICE_CHARGES: ServiceChargeItem[] = [
-  { id: "sc-1", serviceName: "Passport Application Online", defaultCharge: 250, category: "Govt Portals" },
-  { id: "sc-2", serviceName: "PAN Card New / Correction", defaultCharge: 150, category: "Govt Portals" },
+  { id: "sc-1", serviceName: "Passport Seva Online", defaultCharge: 250, category: "Govt Portals" },
+  { id: "sc-2", serviceName: "New PAN Card / Correction", defaultCharge: 150, category: "Govt Portals" },
   { id: "sc-3", serviceName: "Village Land Tax Online Payment", defaultCharge: 50, category: "Govt Portals" },
   { id: "sc-4", serviceName: "KSEB / Water Bill Payment", defaultCharge: 40, category: "Utility Bills" },
-  { id: "sc-5", serviceName: "Caste / Income / Nativity Certificate", defaultCharge: 80, category: "e-District" },
+  { id: "sc-5", serviceName: "Income / Caste Certificate (e-District)", defaultCharge: 80, category: "e-District" },
   { id: "sc-6", serviceName: "Driving License / Learner Slot Booking", defaultCharge: 200, category: "Transport RTO" },
   { id: "sc-7", serviceName: "Voter ID Card Online Registration", defaultCharge: 70, category: "Election Commission" },
-  { id: "sc-8", serviceName: "Employment Exchange Registration", defaultCharge: 100, category: "Govt Portals" },
+  { id: "sc-8", serviceName: "Employment Exchange Renewal", defaultCharge: 50, category: "Govt Portals" },
   { id: "sc-9", serviceName: "PSC / SSC / Govt Exam Application", defaultCharge: 120, category: "Exam Portals" },
-  { id: "sc-10", serviceName: "Scanning & Documents", defaultCharge: 50, category: "Office Services" },
-  { id: "sc-11", serviceName: "Printing Services", defaultCharge: 50, category: "Office Services" },
-  { id: "sc-12", serviceName: "Application Support", defaultCharge: 100, category: "Citizen Services" },
-  { id: "sc-13", serviceName: "Aadhaar / PVC Card Printing", defaultCharge: 70, category: "Citizen Services" },
+  { id: "sc-10", serviceName: "Photocopy / Xerox & Scanning", defaultCharge: 20, category: "Office Services" },
+  { id: "sc-11", serviceName: "Building Tax Online Payment", defaultCharge: 50, category: "Govt Portals" },
+  { id: "sc-12", serviceName: "National / State Scholarship", defaultCharge: 60, category: "Student Services" },
+  { id: "sc-13", serviceName: "Birth / Death / Marriage Certificate", defaultCharge: 60, category: "e-District" },
+  { id: "sc-14", serviceName: "Motor Vehicle e-Challan / Tax", defaultCharge: 50, category: "Transport RTO" },
+  { id: "sc-15", serviceName: "Aadhaar Update & Verification", defaultCharge: 70, category: "Citizen Services" },
+  { id: "sc-16", serviceName: "Jeevan Pramaan Life Certificate", defaultCharge: 50, category: "Citizen Services" },
+  { id: "sc-17", serviceName: "Ration Card Amendment", defaultCharge: 60, category: "Civil Supplies" },
+  { id: "sc-18", serviceName: "Land Tax / Thandapper (Revenue Portal)", defaultCharge: 50, category: "Govt Portals" },
+  { id: "sc-19", serviceName: "CMDRF / Welfare Fund Application", defaultCharge: 50, category: "Govt Portals" },
+  { id: "sc-20", serviceName: "General Citizen Service", defaultCharge: 50, category: "Citizen Services" },
 ];
 
 const STORAGE_KEY_PRODUCTS = "dd_accounts_products_v1";
@@ -486,6 +544,18 @@ export async function createAccountTransaction(
     throw new Error("Transaction amount cannot be zero (₹0). Transaction was not saved.");
   }
 
+  // Credit (Khata / Udhar) transactions strictly require Customer Name & valid Mobile Phone for WhatsApp reminders
+  if (payload.is_settled === false) {
+    const custName = (payload.customer_name || "").trim();
+    if (!custName || custName.toLowerCase() === "walk-in customer" || custName.toLowerCase() === "walk-in") {
+      throw new Error("Customer name is required for Credit (Khata) transactions so account records and WhatsApp reminders can be managed.");
+    }
+    const cleanPhone = (payload.customer_phone || "").trim().replace(/\D/g, "");
+    if (cleanPhone.length < 10) {
+      throw new Error("A valid 10-digit customer mobile phone number is required for Credit (Khata) transactions to enable WhatsApp payment reminders.");
+    }
+  }
+
   const newTx: AccountTransaction = {
     id: `tx-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
     created_at: new Date().toISOString(),
@@ -505,6 +575,9 @@ export async function createAccountTransaction(
     wallet_name: payload.wallet_name || "",
     employee_id: payload.employee_id || "",
     employee_name: payload.employee_name || "",
+    items: payload.items || undefined,
+    payment_split: payload.payment_split || undefined,
+    invoice_number: payload.invoice_number || payload.reference_id || undefined,
   };
 
   let finalTx = newTx;

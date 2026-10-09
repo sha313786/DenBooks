@@ -284,7 +284,7 @@ export default function EmployeeManagementModule() {
             className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 px-4 py-2 text-xs font-bold text-slate-950 hover:brightness-110 transition shadow-md shadow-cyan-500/20"
           >
             <UserPlus size={15} />
-            <span>+ Add New Staff</span>
+            <span>Add New Staff</span>
           </button>
         </div>
       </div>

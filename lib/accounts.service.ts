@@ -19,6 +19,22 @@ export type AccountCategory =
   | "Other Income"
   | "Other Expense";
 
+export interface CitizenInvoiceItem {
+  id: string;
+  service_name: string;
+  wallet_id?: string;
+  wallet_name?: string;
+  online_payment: number;
+  charges: number;
+  total: number;
+}
+
+export interface PaymentSplit {
+  cash: number;
+  upi: number;
+  credit: number;
+}
+
 export type AccountTransaction = {
   id: string;
   transaction_date: string; // YYYY-MM-DD
@@ -38,7 +54,42 @@ export type AccountTransaction = {
   wallet_name?: string;
   employee_id?: string;
   employee_name?: string;
+  items?: CitizenInvoiceItem[];
+  payment_split?: PaymentSplit;
+  invoice_number?: string;
 };
+
+export function getNextInvoiceNumber(centerCode: string = "KNR059"): string {
+  if (typeof window === "undefined") {
+    return `INV/${centerCode}/${Math.floor(1000 + Math.random() * 9000)}`;
+  }
+  try {
+    const raw = localStorage.getItem("denbooks_invoice_sequence");
+    let seq = raw ? parseInt(raw, 10) : 6728;
+    if (isNaN(seq) || seq < 1) seq = 6728;
+    seq += 1;
+    localStorage.setItem("denbooks_invoice_sequence", seq.toString());
+    const cleanCode = (centerCode || "KNR059").trim().toUpperCase();
+    return `INV/${cleanCode}/${seq}`;
+  } catch (e) {
+    return `INV/${centerCode}/${Math.floor(1000 + Math.random() * 9000)}`;
+  }
+}
+
+export function peekNextInvoiceNumber(centerCode: string = "KNR059"): string {
+  if (typeof window === "undefined") {
+    return `INV/${centerCode}/6729`;
+  }
+  try {
+    const raw = localStorage.getItem("denbooks_invoice_sequence");
+    let seq = raw ? parseInt(raw, 10) : 6728;
+    if (isNaN(seq) || seq < 1) seq = 6728;
+    const cleanCode = (centerCode || "KNR059").trim().toUpperCase();
+    return `INV/${cleanCode}/${seq + 1}`;
+  } catch (e) {
+    return `INV/${centerCode}/6729`;
+  }
+}
 
 export type PortalWallet = {
   id: string;
@@ -481,6 +532,23 @@ export async function getAccountTransactions(filters?: TransactionFilters): Prom
 export async function createAccountTransaction(
   payload: Omit<AccountTransaction, "id" | "created_at">
 ): Promise<AccountTransaction> {
+  const numericAmount = Number(payload.amount);
+  if (isNaN(numericAmount) || Math.abs(numericAmount) === 0) {
+    throw new Error("Transaction amount cannot be zero (₹0). Transaction was not saved.");
+  }
+
+  // Credit (Khata / Udhar) transactions strictly require Customer Name & valid Mobile Phone for WhatsApp reminders
+  if (payload.is_settled === false) {
+    const custName = (payload.customer_name || "").trim();
+    if (!custName || custName.toLowerCase() === "walk-in customer" || custName.toLowerCase() === "walk-in") {
+      throw new Error("Customer name is required for Credit (Khata) transactions so account records and WhatsApp reminders can be managed.");
+    }
+    const cleanPhone = (payload.customer_phone || "").trim().replace(/\D/g, "");
+    if (cleanPhone.length < 10) {
+      throw new Error("A valid 10-digit customer mobile phone number is required for Credit (Khata) transactions to enable WhatsApp payment reminders.");
+    }
+  }
+
   const newTx: AccountTransaction = {
     id: `tx-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
     created_at: new Date().toISOString(),
@@ -500,6 +568,9 @@ export async function createAccountTransaction(
     wallet_name: payload.wallet_name || "",
     employee_id: payload.employee_id || "",
     employee_name: payload.employee_name || "",
+    items: payload.items || undefined,
+    payment_split: payload.payment_split || undefined,
+    invoice_number: payload.invoice_number || payload.reference_id || undefined,
   };
 
   let finalTx = newTx;

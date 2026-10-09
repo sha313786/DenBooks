@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import ThemeToggle from "@/components/ThemeToggle";
 import {
   Users,
   LogOut,
@@ -33,6 +34,7 @@ import {
   Check,
   Mail,
   MessageSquare,
+  MessageCircle,
   IndianRupee,
   Wallet,
   Landmark,
@@ -40,6 +42,7 @@ import {
   Megaphone,
   UserCheck,
   Volume2,
+  Trash2,
 } from "lucide-react";
 import {
   StaffSession,
@@ -62,7 +65,18 @@ import {
   PortalWallet,
   getPortalWallets,
   deductPortalWallet,
+  CitizenInvoiceItem,
+  PaymentSplit,
+  getNextInvoiceNumber,
+  peekNextInvoiceNumber,
 } from "@/lib/services/accounts.service";
+import {
+  StaffAttendanceRecord,
+  getTodayAttendanceRecord,
+  punchInStaff,
+  punchOutStaff,
+  getDailyAttendance,
+} from "@/lib/services/attendance.service";
 import {
   AdminRequest,
   getAdminRequests,
@@ -84,7 +98,7 @@ import {
   printQueueTokenSlip,
 } from "@/lib/services/token.service";
 
-export type StaffTab = "tokens" | "invoices" | "requests" | "khata" | "drawer";
+export type StaffTab = "tokens" | "reception" | "invoices" | "requests" | "khata" | "drawer" | "attendance";
 
 interface StaffCounterPageProps {
   initialTab?: StaffTab;
@@ -122,10 +136,16 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
   const [centerProfile, setCenterProfile] = useState<{
     name: string;
     phone: string;
+    centerCode: string;
   }>({
     name: "DenBooks Counter Desk",
     phone: "",
+    centerCode: "KNR059",
   });
+
+  // Staff Attendance State
+  const [todayAttendance, setTodayAttendance] = useState<StaffAttendanceRecord | null>(null);
+  const [attendanceRecords, setAttendanceRecords] = useState<StaffAttendanceRecord[]>([]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -136,6 +156,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
           setCenterProfile({
             name: parsed.name || "DenBooks Counter Desk",
             phone: parsed.phone || "",
+            centerCode: parsed.centerCode || "KNR059",
           });
         }
       } catch {}
@@ -158,6 +179,15 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
   const [savingToken, setSavingToken] = useState(false);
   const [callingToken, setCallingToken] = useState(false);
 
+  // Reception Customer Intake Mode State
+  const [receptionCustName, setReceptionCustName] = useState("");
+  const [receptionCustPhone, setReceptionCustPhone] = useState("");
+  const [receptionSelectedServices, setReceptionSelectedServices] = useState<string[]>([]);
+  const [receptionCustomService, setReceptionCustomService] = useState("");
+  const [receptionPriority, setReceptionPriority] = useState<QueuePriority>("Normal");
+  const [receptionNotes, setReceptionNotes] = useState("");
+  const [receptionSubmitting, setReceptionSubmitting] = useState(false);
+
   // Add Invoice Modal state
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [invMode, setInvMode] = useState<"citizen" | "counter" | "custom">("citizen");
@@ -167,7 +197,24 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
   const [invPaymentMethod, setInvPaymentMethod] = useState<PaymentMethod>("Cash");
   const [invIsCredit, setInvIsCredit] = useState(false);
 
-  // Citizen service inputs
+  // Multi-Item Citizen Invoicing state (matches AceApp)
+  const [invItems, setInvItems] = useState<CitizenInvoiceItem[]>([
+    {
+      id: "it-1",
+      service_name: "Building Tax Online Payment",
+      wallet_id: "",
+      wallet_name: "",
+      online_payment: 0,
+      charges: 100,
+      total: 100,
+    },
+  ]);
+  const [invCashAmount, setInvCashAmount] = useState<string>("");
+  const [invUpiAmount, setInvUpiAmount] = useState<string>("");
+  const [invCreditAmount, setInvCreditAmount] = useState<string>("0");
+  const [invQuickAddServiceId, setInvQuickAddServiceId] = useState<string>("");
+
+  // Legacy single inputs for compatibility
   const [invServiceId, setInvServiceId] = useState("");
   const [invServiceName, setInvServiceName] = useState("");
   const [invGovtFee, setInvGovtFee] = useState("0");
@@ -186,6 +233,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
   const [invCustomCategory, setInvCustomCategory] = useState<AccountCategory>("Service Request");
 
   const [savingInvoice, setSavingInvoice] = useState(false);
+  const [invAutoPrint, setInvAutoPrint] = useState(false);
 
   // New Request Modal state
   const [showRequestModal, setShowRequestModal] = useState(false);
@@ -292,6 +340,19 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
       setTokens(tokenList);
       setProducts(getCounterProducts());
       setServiceCharges(getServiceChargesMaster());
+
+      if (empId) {
+        try {
+          const [myAtt, dailyAtt] = await Promise.all([
+            getTodayAttendanceRecord(empId, today),
+            getDailyAttendance(today),
+          ]);
+          setTodayAttendance(myAtt);
+          setAttendanceRecords(dailyAtt);
+        } catch (attErr) {
+          console.warn("Attendance load error:", attErr);
+        }
+      }
     } catch (e) {
       console.error("Staff data load error:", e);
     } finally {
@@ -304,6 +365,33 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
       loadData();
     }
   }, [session, loadData]);
+
+  async function handlePunchIn() {
+    if (!session) return;
+    try {
+      const rec = await punchInStaff(session.employeeId, session.employeeName, session.role);
+      setTodayAttendance(rec);
+      const today = getTodayDateString();
+      const dailyAtt = await getDailyAttendance(today);
+      setAttendanceRecords(dailyAtt);
+    } catch (e) {
+      console.error("Punch in error:", e);
+    }
+  }
+
+  async function handlePunchOut() {
+    if (!session) return;
+    if (!confirm("Are you sure you want to clock out and end your attendance for today?")) return;
+    try {
+      const rec = await punchOutStaff(session.employeeId);
+      setTodayAttendance(rec);
+      const today = getTodayDateString();
+      const dailyAtt = await getDailyAttendance(today);
+      setAttendanceRecords(dailyAtt);
+    } catch (e) {
+      console.error("Punch out error:", e);
+    }
+  }
 
   function handleLogout() {
     if (confirm("End your shift and logout from Counter Desk?")) {
@@ -423,7 +511,8 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
 
     setInvCustomerName(tok.customer_name);
     setInvCustomerPhone(tok.customer_phone || "");
-    setInvRefId(tok.token_number);
+    const nextSeq = peekNextInvoiceNumber(centerProfile.centerCode || "KNR059");
+    setInvRefId(nextSeq);
     setInvNotes(`Token #${tok.token_number} - ${tok.service_requested}`);
     setInvPaymentMethod("Cash");
     setInvIsCredit(false);
@@ -434,30 +523,60 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
       setInvCart([]);
     } else {
       setInvMode("citizen");
-      const matched = serviceCharges.find(
-        (s) => s.serviceName.toLowerCase() === tok.service_requested.toLowerCase()
-      );
-      if (matched) {
-        setInvServiceId(matched.id);
-        setInvServiceName(matched.serviceName);
-        setInvServiceCharge(String(matched.defaultCharge));
-      } else {
-        setInvServiceId("__custom__");
-        setInvServiceName(tok.service_requested);
-        setInvServiceCharge("100");
-      }
-      setInvGovtFee("0");
+      const serviceParts = tok.service_requested.split(/[,+]/).map((s) => s.trim()).filter(Boolean);
+      const defaultWallet = wallets.length > 0 ? wallets[0] : null;
+      const initialItems: CitizenInvoiceItem[] = serviceParts.length > 0
+        ? serviceParts.map((sName, idx) => {
+            const matched = serviceCharges.find(
+              (sc) => sc.serviceName.toLowerCase() === sName.toLowerCase()
+            );
+            const chg = matched ? matched.defaultCharge : 100;
+            return {
+              id: `it-${Date.now()}-${idx}`,
+              service_name: matched ? matched.serviceName : sName,
+              wallet_id: defaultWallet?.id || "",
+              wallet_name: defaultWallet?.name || "",
+              online_payment: 0,
+              charges: chg,
+              total: chg,
+            };
+          })
+        : [
+            {
+              id: `it-${Date.now()}-0`,
+              service_name: tok.service_requested,
+              wallet_id: defaultWallet?.id || "",
+              wallet_name: defaultWallet?.name || "",
+              online_payment: 0,
+              charges: 100,
+              total: 100,
+            },
+          ];
+      setInvItems(initialItems);
+      const sumTotal = initialItems.reduce((acc, it) => acc + it.total, 0);
+      setInvCashAmount(String(sumTotal));
+      setInvUpiAmount("");
+      setInvCreditAmount("0");
     }
 
     setShowInvoiceModal(true);
   }
 
   // Invoice calculations
+  const invCitizenOnlineTotal = useMemo(() => {
+    return invItems.reduce((acc, it) => acc + (Number(it.online_payment) || 0), 0);
+  }, [invItems]);
+
+  const invCitizenChargesTotal = useMemo(() => {
+    return invItems.reduce((acc, it) => acc + (Number(it.charges) || 0), 0);
+  }, [invItems]);
+
   const invTotalAmount = useMemo(() => {
     if (invMode === "citizen") {
-      const gf = parseFloat(invGovtFee) || 0;
-      const sc = parseFloat(invServiceCharge) || 0;
-      return gf + sc;
+      return invItems.reduce(
+        (sum, item) => sum + (Number(item.online_payment) || 0) + (Number(item.charges) || 0),
+        0
+      );
     }
     if (invMode === "counter") {
       let total = invCart.reduce((sum, item) => sum + item.product.rate * item.qty, 0);
@@ -470,35 +589,235 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
       return parseFloat(invCustomAmount) || 0;
     }
     return 0;
-  }, [invMode, invGovtFee, invServiceCharge, invCart, invCustomItem, invCustomRate, invCustomQty, invCustomAmount]);
+  }, [invMode, invItems, invCart, invCustomItem, invCustomRate, invCustomQty, invCustomAmount]);
+
+  const allocatedCash = parseFloat(invCashAmount) || 0;
+  const allocatedUpi = parseFloat(invUpiAmount) || 0;
+  const allocatedCredit = parseFloat(invCreditAmount) || 0;
+  const totalAllocated = allocatedCash + allocatedUpi + allocatedCredit;
+  const allocationRemaining = invTotalAmount - totalAllocated;
+  const isCreditActive = allocatedCredit > 0;
+
+  function handleAddInvoiceItem(serviceName = "", defaultCharge = 50, onlinePayment = 0) {
+    const defaultWallet = wallets.length > 0 ? wallets[0] : null;
+    const newItem: CitizenInvoiceItem = {
+      id: `it-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      service_name: serviceName || "General Citizen Service",
+      wallet_id: defaultWallet?.id || "",
+      wallet_name: defaultWallet?.name || "",
+      online_payment: onlinePayment,
+      charges: defaultCharge,
+      total: onlinePayment + defaultCharge,
+    };
+    const next = [...invItems, newItem];
+    setInvItems(next);
+    const newTotal = next.reduce((acc, it) => acc + (Number(it.online_payment) || 0) + (Number(it.charges) || 0), 0);
+    if (allocatedCredit === 0 && allocatedUpi === 0) {
+      setInvCashAmount(String(newTotal));
+    }
+  }
+
+  function handleUpdateInvoiceItem(id: string, updates: Partial<CitizenInvoiceItem>) {
+    setInvItems((prev) => {
+      const next = prev.map((item) => {
+        if (item.id !== id) return item;
+        const updated = { ...item, ...updates };
+        if (updates.wallet_id !== undefined) {
+          const w = wallets.find((wal) => wal.id === updates.wallet_id);
+          updated.wallet_name = w ? w.name : "";
+        }
+        const op = Number(updated.online_payment) || 0;
+        const ch = Number(updated.charges) || 0;
+        updated.total = op + ch;
+        return updated;
+      });
+      const newTotal = next.reduce(
+        (acc, it) => acc + (Number(it.online_payment) || 0) + (Number(it.charges) || 0),
+        0
+      );
+      if (allocatedCredit === 0 && allocatedUpi === 0) {
+        setInvCashAmount(String(newTotal));
+      }
+      return next;
+    });
+  }
+
+  function handleRemoveInvoiceItem(id: string) {
+    if (invItems.length <= 1) return;
+    setInvItems((prev) => {
+      const next = prev.filter((it) => it.id !== id);
+      const newTotal = next.reduce(
+        (acc, it) => acc + (Number(it.online_payment) || 0) + (Number(it.charges) || 0),
+        0
+      );
+      if (allocatedCredit === 0 && allocatedUpi === 0) {
+        setInvCashAmount(String(newTotal));
+      }
+      return next;
+    });
+  }
+
+  function handleSetAllCash() {
+    setInvCashAmount(String(invTotalAmount));
+    setInvUpiAmount("");
+    setInvCreditAmount("0");
+    setInvPaymentMethod("Cash");
+    setInvIsCredit(false);
+  }
+
+  function handleSetAllUpi() {
+    setInvCashAmount("");
+    setInvUpiAmount(String(invTotalAmount));
+    setInvCreditAmount("0");
+    setInvPaymentMethod("UPI");
+    setInvIsCredit(false);
+  }
+
+  function handleSetAllCredit() {
+    setInvCashAmount("");
+    setInvUpiAmount("");
+    setInvCreditAmount(String(invTotalAmount));
+    setInvPaymentMethod("Cash");
+    setInvIsCredit(true);
+  }
 
   function openInvoiceModalDialog() {
     setInvMode("citizen");
     setInvLinkedRequestId(null);
     setInvCustomerName("");
     setInvCustomerPhone("");
-    setInvRefId(`INV-${Date.now().toString().slice(-6)}`);
+    const nextSeq = peekNextInvoiceNumber(centerProfile.centerCode || "KNR059");
+    setInvRefId(nextSeq);
     setInvPaymentMethod("Cash");
     setInvIsCredit(false);
     setInvNotes("");
     const services = getServiceChargesMaster();
-    if (services.length > 0) {
-      setInvServiceId(services[0].id);
-      setInvServiceName(services[0].serviceName);
-      setInvServiceCharge(String(services[0].defaultCharge));
-    } else {
-      setInvServiceId("__custom__");
-      setInvServiceName("");
-      setInvServiceCharge("100");
-    }
+    const defaultWallet = wallets.length > 0 ? wallets[0] : null;
+    const initialCharge = services.length > 0 ? services[0].defaultCharge : 100;
+    const initialService = services.length > 0 ? services[0].serviceName : "Building Tax Online Payment";
+    setInvItems([
+      {
+        id: `it-${Date.now()}-1`,
+        service_name: initialService,
+        wallet_id: defaultWallet?.id || "",
+        wallet_name: defaultWallet?.name || "",
+        online_payment: 0,
+        charges: initialCharge,
+        total: initialCharge,
+      },
+    ]);
+    setInvCashAmount(String(initialCharge));
+    setInvUpiAmount("");
+    setInvCreditAmount("0");
+    setInvServiceId(services[0]?.id || "");
+    setInvServiceName(initialService);
+    setInvServiceCharge(String(initialCharge));
     setInvGovtFee("0");
-    setInvWalletId("");
+    setInvWalletId(defaultWallet?.id || "");
     setInvCart([]);
     setInvCustomItem("");
     setInvCustomRate("");
     setInvCustomQty("1");
     setInvCustomTitle("");
     setInvCustomAmount("");
+    setShowInvoiceModal(true);
+  }
+
+  // Reception Customer Intake Mode Handlers
+  async function handleReceptionIssueToken(printSlip: boolean = false) {
+    if (!receptionCustName.trim()) {
+      alert("Please enter customer name.");
+      return;
+    }
+    const selected = [...receptionSelectedServices];
+    if (receptionCustomService.trim()) selected.push(receptionCustomService.trim());
+    const serviceName = selected.length > 0 ? selected.join(", ") : "General Citizen Consultation";
+
+    setReceptionSubmitting(true);
+    try {
+      const created = await issueQueueToken({
+        customer_name: receptionCustName.trim(),
+        customer_phone: receptionCustPhone.trim() || undefined,
+        service_requested: serviceName,
+        priority: receptionPriority,
+        counter_assigned: "Counter 1",
+        notes: receptionNotes.trim() || undefined,
+        employee_name: session?.employeeName || "Reception Desk",
+      });
+
+      setTokens((prev) => [created, ...prev.filter((t) => t.id !== created.id)]);
+      setReceptionCustName("");
+      setReceptionCustPhone("");
+      setReceptionSelectedServices([]);
+      setReceptionCustomService("");
+      setReceptionNotes("");
+
+      if (printSlip) {
+        printQueueTokenSlip(created);
+      } else {
+        alert(`Token #${created.token_number} issued for ${created.customer_name}!`);
+      }
+    } catch (e: any) {
+      alert("Error issuing token: " + (e?.message || e));
+    } finally {
+      setReceptionSubmitting(false);
+    }
+  }
+
+  function handleReceptionDirectBill() {
+    if (!receptionCustName.trim()) {
+      alert("Please enter customer name.");
+      return;
+    }
+    const selected = [...receptionSelectedServices];
+    if (receptionCustomService.trim()) selected.push(receptionCustomService.trim());
+    const defaultWallet = wallets.length > 0 ? wallets[0] : null;
+
+    const itemsToBill: CitizenInvoiceItem[] = selected.length > 0
+      ? selected.map((sName, idx) => {
+          const clean = sName.trim().toLowerCase();
+          const matched = serviceCharges.find(
+            (sc) => {
+              const scName = sc.serviceName.trim().toLowerCase();
+              return scName === clean || scName.includes(clean) || clean.includes(scName);
+            }
+          );
+          const chg = matched ? matched.defaultCharge : 50;
+          return {
+            id: `it-${Date.now()}-${idx}`,
+            service_name: matched ? matched.serviceName : sName,
+            wallet_id: defaultWallet?.id || "",
+            wallet_name: defaultWallet?.name || "",
+            online_payment: 0,
+            charges: chg,
+            total: chg,
+          };
+        })
+      : [
+          {
+            id: `it-${Date.now()}-0`,
+            service_name: "General Citizen Service",
+            wallet_id: defaultWallet?.id || "",
+            wallet_name: defaultWallet?.name || "",
+            online_payment: 0,
+            charges: 50,
+            total: 50,
+          },
+        ];
+
+    setInvMode("citizen");
+    setInvCustomerName(receptionCustName.trim());
+    setInvCustomerPhone(receptionCustPhone.trim());
+    const nextSeq = peekNextInvoiceNumber(centerProfile.centerCode || "KNR059");
+    setInvRefId(nextSeq);
+    setInvNotes(receptionNotes.trim());
+    setInvItems(itemsToBill);
+    const sumTotal = itemsToBill.reduce((acc, it) => acc + it.total, 0);
+    setInvCashAmount(String(sumTotal));
+    setInvUpiAmount("");
+    setInvCreditAmount("0");
+    setInvPaymentMethod("Cash");
+    setInvIsCredit(false);
     setShowInvoiceModal(true);
   }
 
@@ -529,21 +848,84 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
       return;
     }
 
+    const cashVal = parseFloat(invCashAmount) || 0;
+    const upiVal = parseFloat(invUpiAmount) || 0;
+    const creditVal = parseFloat(invCreditAmount) || 0;
+    const sumAllocated = cashVal + upiVal + creditVal;
+
+    // Check payment split allocation matches total bill
+    if (Math.abs(sumAllocated - invTotalAmount) > 0.01) {
+      alert(
+        `Payment breakdown (₹${sumAllocated.toFixed(2)}) does not match Total Payable (₹${invTotalAmount.toFixed(2)}). Please allocate remaining ₹${(
+          invTotalAmount - sumAllocated
+        ).toFixed(2)} to Cash, UPI, or Khata.`
+      );
+      return;
+    }
+
+    // Credit (Khata) transactions strictly require Customer Name & valid Mobile Phone for WhatsApp reminders
+    if (creditVal > 0) {
+      const trimmedName = invCustomerName.trim();
+      if (!trimmedName || trimmedName.toLowerCase() === "walk-in customer" || trimmedName.toLowerCase() === "walk-in") {
+        alert("Customer Name is required for Credit (Khata) transactions so customer accounts and WhatsApp payment reminders can be tracked.");
+        return;
+      }
+      const cleanPhone = invCustomerPhone.trim().replace(/\D/g, "");
+      if (cleanPhone.length < 10) {
+        alert("A valid 10-digit Customer Mobile Phone number is required for Credit (Khata) transactions to send WhatsApp payment reminders.");
+        return;
+      }
+    }
+
     let title = "";
     let description = "";
     let category: AccountCategory = "Service Request";
     let govtFee = 0;
     let serviceCharge = 0;
+    let savedItems: CitizenInvoiceItem[] | undefined = undefined;
 
     if (invMode === "citizen") {
-      if (!invServiceName.trim()) {
-        alert("Please select or enter a service name.");
-        return;
+      // Validate all items have a title
+      for (let i = 0; i < invItems.length; i++) {
+        if (!invItems[i].service_name.trim()) {
+          alert(`Item #${i + 1} is missing a Service Name. Please enter or select a service.`);
+          return;
+        }
       }
-      title = invServiceName.trim();
-      govtFee = parseFloat(invGovtFee) || 0;
-      serviceCharge = parseFloat(invServiceCharge) || 0;
-      description = invNotes.trim();
+
+      // Check wallet balances for online_payment
+      const walletRequirements: Record<string, { name: string; amount: number }> = {};
+      for (const it of invItems) {
+        const op = Number(it.online_payment) || 0;
+        if (op > 0 && it.wallet_id) {
+          if (!walletRequirements[it.wallet_id]) {
+            const w = wallets.find((wal) => wal.id === it.wallet_id);
+            walletRequirements[it.wallet_id] = { name: w?.name || "Selected Wallet", amount: 0 };
+          }
+          walletRequirements[it.wallet_id].amount += op;
+        }
+      }
+
+      for (const [wId, req] of Object.entries(walletRequirements)) {
+        const w = wallets.find((wal) => wal.id === wId);
+        if (w && (w.balance <= 0 || w.balance < req.amount)) {
+          alert(
+            `Cannot save transaction: Wallet account "${req.name}" has balance ₹${w.balance.toLocaleString("en-IN")}, but items require ₹${req.amount.toLocaleString("en-IN")} for Online Payments. Please deposit funds or choose another wallet.`
+          );
+          return;
+        }
+      }
+
+      govtFee = invItems.reduce((acc, it) => acc + (Number(it.online_payment) || 0), 0);
+      serviceCharge = invItems.reduce((acc, it) => acc + (Number(it.charges) || 0), 0);
+      title = invItems.length === 1 ? invItems[0].service_name : `Citizen Services (${invItems.length} items)`;
+      description = invItems.map((it) => `${it.service_name} (Fee: ₹${it.online_payment}, Chg: ₹${it.charges})`).join(" | ") + (invNotes.trim() ? ` | Notes: ${invNotes.trim()}` : "");
+      savedItems = invItems.map((it) => ({
+        ...it,
+        online_payment: Number(it.online_payment) || 0,
+        charges: Number(it.charges) || 0,
+        total: (Number(it.online_payment) || 0) + (Number(it.charges) || 0),
+      }));
     } else if (invMode === "counter") {
       if (invCart.length === 0 && (!invCustomItem.trim() || !invCustomRate)) {
         alert("Please add at least one item to the cart.");
@@ -572,18 +954,18 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
       serviceCharge = invTotalAmount;
     }
 
-    if (invWalletId && govtFee > 0) {
-      const targetW = wallets.find((w) => w.id === invWalletId);
-      if (targetW && (targetW.balance <= 0 || targetW.balance < govtFee)) {
-        alert(
-          `Cannot save transaction: Selected bank/portal account (${targetW.name}) has insufficient balance (₹${targetW.balance}) to deduct official fee ₹${govtFee}. Please deposit funds into bank/portal account first or choose another payment source.`
-        );
-        return;
-      }
-    }
-
     setSavingInvoice(true);
     try {
+      const centerCode = centerProfile.centerCode || "KNR059";
+      const actualInvNumber = getNextInvoiceNumber(centerCode);
+
+      const paymentMethod: PaymentMethod =
+        creditVal > 0 && cashVal === 0 && upiVal === 0
+          ? "Cash"
+          : upiVal > 0 && cashVal === 0 && creditVal === 0
+          ? "UPI"
+          : "Cash";
+
       const newTx = await createAccountTransaction({
         transaction_date: getTodayDateString(),
         type: "income",
@@ -593,32 +975,44 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
         amount: invTotalAmount,
         govt_fee: govtFee,
         service_charge: serviceCharge,
-        payment_method: invPaymentMethod,
-        reference_id: invRefId.trim() || `INV-${Date.now().toString().slice(-6)}`,
+        payment_method: paymentMethod,
+        reference_id: actualInvNumber,
         customer_name: invCustomerName.trim() || "Walk-in Customer",
         customer_phone: invCustomerPhone.trim() || undefined,
-        is_settled: !invIsCredit,
+        is_settled: creditVal <= 0,
         employee_id: session?.employeeId || "emp-1",
         employee_name: session?.employeeName || "Counter Staff",
+        items: savedItems,
+        payment_split: { cash: cashVal, upi: upiVal, credit: creditVal },
+        invoice_number: actualInvNumber,
       });
 
       setTransactions((prev) => [newTx, ...prev]);
       setShowInvoiceModal(false);
 
-      if (invWalletId && govtFee > 0) {
-        try {
-          await deductPortalWallet(invWalletId, govtFee);
-          const updatedWallets = await getPortalWallets();
-          setWallets(updatedWallets);
-        } catch (e) {
-          console.warn("Wallet deduction warning:", e);
+      // Deduct wallets for multi-item citizen billing
+      if (invMode === "citizen" && savedItems) {
+        const walletDeductions: Record<string, number> = {};
+        for (const it of savedItems) {
+          if (it.wallet_id && it.online_payment > 0) {
+            walletDeductions[it.wallet_id] = (walletDeductions[it.wallet_id] || 0) + it.online_payment;
+          }
         }
+        for (const [wId, amt] of Object.entries(walletDeductions)) {
+          try {
+            await deductPortalWallet(wId, amt);
+          } catch (e) {
+            console.warn("Wallet deduction failed for", wId, e);
+          }
+        }
+        const updatedWallets = await getPortalWallets();
+        setWallets(updatedWallets);
       }
 
       // If this invoice was linked to a citizen service request, synchronize billing & payment
       if (invLinkedRequestId) {
         try {
-          const payStatus = invIsCredit ? "Unpaid" : "Paid";
+          const payStatus = creditVal > 0 ? "Unpaid" : "Paid";
           await updateRequestBilling(
             invLinkedRequestId,
             invTotalAmount,
@@ -853,6 +1247,71 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
 
             <div class="divider"></div>
 
+            ${
+              tx.items && tx.items.length > 0
+                ? `
+            <table class="items-table">
+              <thead>
+                <tr>
+                  <th style="width: 18px;">#</th>
+                  <th>Service / Item</th>
+                  <th class="right">Online Fee</th>
+                  <th class="right">Charges</th>
+                  <th class="right">Total (₹)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${tx.items
+                  .map(
+                    (it, idx) => `
+                <tr style="border-bottom: 0.5px solid #eee;">
+                  <td style="font-weight: bold; color: #555; vertical-align: top;">${idx + 1}</td>
+                  <td>
+                    <div class="bold" style="font-size: 10.5px; color: #000;">${it.service_name}</div>
+                    ${it.wallet_name ? `<div style="font-size: 8px; color: #666;">Wallet: ${it.wallet_name}</div>` : ""}
+                  </td>
+                  <td class="right" style="font-size: 10px; color: #333; vertical-align: top;">₹${(it.online_payment || 0).toFixed(2)}</td>
+                  <td class="right" style="font-size: 10px; color: #333; vertical-align: top;">₹${(it.charges || 0).toFixed(2)}</td>
+                  <td class="right bold" style="font-size: 10.5px; vertical-align: top;">₹${(it.total || ((it.online_payment || 0) + (it.charges || 0))).toFixed(2)}</td>
+                </tr>
+                `
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+
+            <div class="divider-double"></div>
+
+            <table style="width: 100%; font-size: 10.5px;">
+              ${numGovtFee > 0 ? `
+              <tr>
+                <td>Official / Online Fee (Pass-through):</td>
+                <td class="right">₹${numGovtFee.toFixed(2)}</td>
+              </tr>
+              ` : ""}
+              <tr>
+                <td>Center Processing Charges:</td>
+                <td class="right">₹${numServiceCharge.toFixed(2)}</td>
+              </tr>
+              <tr class="total-row" style="font-size: 13px; font-weight: 900;">
+                <td style="padding-top: 4px;">NET TOTAL:</td>
+                <td class="right" style="padding-top: 4px;">₹${tx.amount.toFixed(2)}</td>
+              </tr>
+            </table>
+
+            ${tx.payment_split ? `
+            <div class="divider"></div>
+            <table style="width: 100%; font-size: 10px; margin-top: 2px;">
+              <tr style="font-weight: bold; color: #333; text-transform: uppercase;">
+                <td colspan="2">Payment Details:</td>
+              </tr>
+              ${tx.payment_split.cash > 0 ? `<tr><td>&bull; Cash Paid:</td><td class="right font-mono">₹${tx.payment_split.cash.toFixed(2)}</td></tr>` : ""}
+              ${tx.payment_split.upi > 0 ? `<tr><td>&bull; UPI / Online:</td><td class="right font-mono">₹${tx.payment_split.upi.toFixed(2)}</td></tr>` : ""}
+              ${tx.payment_split.credit > 0 ? `<tr style="color: #b91c1c; font-weight: bold;"><td>&bull; Khata Due:</td><td class="right font-mono">₹${tx.payment_split.credit.toFixed(2)}</td></tr>` : ""}
+            </table>
+            ` : ""}
+            `
+                : `
             <table class="items-table">
               <thead>
                 <tr>
@@ -900,6 +1359,8 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                 <td class="right">₹${tx.amount.toFixed(2)}</td>
               </tr>
             </table>
+            `
+            }
 
             <div class="divider"></div>
 
@@ -1535,9 +1996,19 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-black text-sm tracking-tight text-white">DenBooks Front Desk</span>
-                <span className="rounded-full bg-teal-950/70 text-teal-300 border border-teal-800/60 px-2 py-0.5 text-[10px] font-bold">
-                  Active Shift
-                </span>
+                {todayAttendance && todayAttendance.punch_in && !todayAttendance.punch_out ? (
+                  <span className="rounded-full bg-teal-950/70 text-teal-300 border border-teal-800/60 px-2 py-0.5 text-[10px] font-bold">
+                    🟢 Active Shift
+                  </span>
+                ) : todayAttendance && todayAttendance.punch_out ? (
+                  <span className="rounded-full bg-slate-800 text-slate-300 border border-slate-700 px-2 py-0.5 text-[10px] font-bold">
+                    🏁 Shift Ended
+                  </span>
+                ) : (
+                  <span className="rounded-full bg-amber-950/70 text-amber-300 border border-amber-800/60 px-2 py-0.5 text-[10px] font-bold">
+                    ⏳ Not Clocked In
+                  </span>
+                )}
               </div>
               <p className="text-[11px] text-slate-400 font-medium">Citizen Services • Counter Billing • Xerox & Applications</p>
             </div>
@@ -1545,6 +2016,42 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
 
           {/* Active Employee Info & Actions */}
           <div className="flex items-center gap-2 sm:gap-2.5">
+            {/* Center Code Badge */}
+            <span className="hidden md:inline-flex items-center gap-1 rounded-xl bg-slate-900 border border-slate-750 px-2.5 py-1 text-xs font-mono font-bold text-cyan-300" title="Akshaya Center Audit Code">
+              🏢 {centerProfile.centerCode || "KNR059"}
+            </span>
+
+            {/* Attendance Punch In / Punch Out Widget (hidden on Attendance tab where dedicated banner exists) */}
+            {activeTab !== "attendance" && (
+              todayAttendance && todayAttendance.punch_in && !todayAttendance.punch_out ? (
+                <div className="flex items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1">
+                  <span className="text-[11px] font-bold text-emerald-300">🟢 In: {todayAttendance.punch_in}</span>
+                  <button
+                    type="button"
+                    onClick={handlePunchOut}
+                    className="rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 px-2 py-0.5 text-[10px] font-bold text-emerald-200 transition"
+                    title="Punch out from shift"
+                  >
+                    Clock Out
+                  </button>
+                </div>
+              ) : todayAttendance && todayAttendance.punch_out ? (
+                <div className="flex items-center gap-1 rounded-xl border border-slate-700 bg-slate-800/60 px-2.5 py-1 text-[11px] text-slate-400 font-medium">
+                  <span>🏁 Shift Done ({todayAttendance.punch_in} - {todayAttendance.punch_out})</span>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handlePunchIn}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 px-2.5 py-1 text-xs font-bold text-emerald-300 transition shadow-sm"
+                  title="Punch in to record shift attendance"
+                >
+                  <UserCheck size={13} />
+                  <span>Clock In</span>
+                </button>
+              )
+            )}
+
             {/* Quick Admin Dashboard switch if admin/supervisor */}
             {(session?.role === "Branch Supervisor" || session?.employeeId === "emp-admin-owner") && (
               <Link
@@ -1565,6 +2072,8 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
               </div>
             </div>
 
+            <ThemeToggle />
+
             <button
               type="button"
               onClick={handleLogout}
@@ -1583,7 +2092,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
         {/* Modern Segmented Front Desk Navigation Bar */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 rounded-2xl border border-slate-800/80 bg-[#0e1526] p-2.5 shadow-md">
           {/* Module Tabs */}
-          <div className="flex items-center gap-1 overflow-x-auto p-0.5 rounded-xl bg-[#090d16]/70 border border-slate-800/60">
+          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar p-0.5 rounded-xl bg-[#090d16]/70 border border-slate-800/60">
             <Link
               href="/staff/tokens"
               className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition whitespace-nowrap flex items-center gap-1.5 ${
@@ -1599,6 +2108,18 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                   {queueStats.waitingCount}
                 </span>
               )}
+            </Link>
+
+            <Link
+              href="/staff/reception"
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition whitespace-nowrap flex items-center gap-1.5 ${
+                activeTab === "reception"
+                  ? "bg-violet-500/20 text-violet-300 border border-violet-500/40 font-bold shadow-sm"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
+              }`}
+            >
+              <Sparkles size={13} className={activeTab === "reception" ? "text-violet-400" : "text-slate-500"} />
+              <span>Reception Intake</span>
             </Link>
 
             <Link
@@ -1659,6 +2180,23 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
               <Banknote size={13} className={activeTab === "drawer" ? "text-emerald-400" : "text-slate-500"} />
               <span>Shift Drawer</span>
             </Link>
+
+            <Link
+              href="/staff/attendance"
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition whitespace-nowrap flex items-center gap-1.5 ${
+                activeTab === "attendance"
+                  ? "bg-teal-500/20 text-teal-300 border border-teal-500/40 font-bold shadow-sm"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
+              }`}
+            >
+              <UserCheck size={13} className={activeTab === "attendance" ? "text-teal-400" : "text-slate-500"} />
+              <span>Attendance</span>
+              {todayAttendance && (
+                <span className="rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-1.5 py-0.2 text-[10px] font-bold">
+                  {todayAttendance.punch_out ? "Done" : "In"}
+                </span>
+              )}
+            </Link>
           </div>
 
           {/* Quick Action Buttons */}
@@ -1675,11 +2213,11 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                   setTokNotes("");
                   setShowTokenModal(true);
                 }}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-pink-500/30 bg-pink-500/10 px-3 py-1.5 text-xs font-bold text-pink-300 hover:bg-pink-500/20 transition shadow-sm"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-pink-500/30 bg-pink-500/10 px-3 py-1.5 text-xs font-bold text-pink-700 dark:text-pink-300 hover:bg-pink-500/20 transition shadow-sm"
                 title="Issue sequential queue token for arriving citizen (First-Come, First-Served)"
               >
                 <Ticket size={13} />
-                <span>+ Issue Token</span>
+                <span>Issue Token</span>
               </button>
             )}
 
@@ -1690,7 +2228,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                 className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700/80 bg-slate-800/70 px-3 py-1.5 text-xs font-bold text-slate-200 hover:border-slate-500 hover:text-white transition shadow-sm"
               >
                 <Plus size={13} />
-                <span>+ New Request</span>
+                <span>New Request</span>
               </button>
             )}
 
@@ -1705,11 +2243,11 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                   setExpMethod("Cash");
                   setShowExpenseModal(true);
                 }}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-xs font-bold text-red-300 hover:bg-red-500/20 hover:border-red-400 transition shadow-sm"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-xs font-bold text-red-700 dark:text-red-300 hover:bg-red-500/20 hover:border-red-400 transition shadow-sm"
                 title="Record shop expense paid from cash drawer or staff UPI"
               >
                 <ArrowDownRight size={13} />
-                <span>+ Add Expense</span>
+                <span>Add Expense</span>
               </button>
             )}
 
@@ -1719,7 +2257,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
               className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan-400 to-teal-400 px-3.5 py-1.5 text-xs font-black text-slate-950 hover:brightness-110 transition shadow-md shadow-cyan-400/20"
             >
               <Receipt size={14} />
-              <span>+ Add Invoice</span>
+              <span>Add Invoice</span>
             </button>
           </div>
         </div>
@@ -2144,7 +2682,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                                     title="Create Citizen Application / Service Request from Token"
                                   >
                                     <FileText size={11} />
-                                    <span>+ Request</span>
+                                    <span>Request</span>
                                   </button>
                                 )}
 
@@ -2156,7 +2694,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                                   title="Bill for Counter POS / Xerox / Printing"
                                 >
                                   <Receipt size={11} />
-                                  <span>+ Bill</span>
+                                  <span>Bill</span>
                                 </button>
 
                                 {/* Thermal Slip Print */}
@@ -2203,6 +2741,194 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                     )}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 0.5: RECEPTION CITIZEN INTAKE DESK */}
+        {activeTab === "reception" && (
+          <div className="max-w-5xl mx-auto space-y-6">
+            <div className="rounded-2xl border border-violet-500/30 bg-gradient-to-r from-[#141226] via-[#161b33] to-[#0c1626] p-5 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-violet-500/20 text-violet-300 border border-violet-500/30">
+                  <Sparkles size={24} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-white text-base tracking-wide">
+                      Reception Citizen Intake Desk
+                    </span>
+                    <span className="rounded-full bg-violet-500/20 px-2 py-0.5 text-[10px] font-bold text-violet-300 border border-violet-500/30">
+                      Front-Desk Express
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-300 mt-0.5">
+                    Fast citizen registration with multi-service chip selection. Issue sequential queue tokens or jump directly to multi-item billing.
+                  </p>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Reception Form Card */}
+            <div className="rounded-2xl border border-slate-800 bg-[#0e1526] p-5 sm:p-6 shadow-md space-y-5">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="text-xs font-bold text-slate-200 block mb-1">
+                    Citizen Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Abdul Rahman / Deepa K"
+                    value={receptionCustName}
+                    onChange={(e) => setReceptionCustName(e.target.value)}
+                    className="w-full rounded-xl border border-slate-750 bg-slate-900 px-3.5 py-2.5 text-xs font-medium text-white outline-none focus:border-violet-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-200 block mb-1">
+                    Mobile Phone Number (WhatsApp Reminders)
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="e.g. 9847012345 (10-digit)"
+                    value={receptionCustPhone}
+                    onChange={(e) => setReceptionCustPhone(e.target.value)}
+                    className="w-full rounded-xl border border-slate-750 bg-slate-900 px-3.5 py-2.5 text-xs font-medium text-white outline-none focus:border-violet-400"
+                  />
+                </div>
+              </div>
+
+              {/* Multi-Service Chips Selection */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-bold text-slate-200">
+                    Select Required Services (Multi-Select Chips)
+                  </label>
+                  <span className="text-[11px] text-violet-400 font-semibold">
+                    {receptionSelectedServices.length} service{receptionSelectedServices.length === 1 ? "" : "s"} selected
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    "Building Tax Online Payment",
+                    "National / State Scholarship",
+                    "Motor Vehicle e-Challan / Tax",
+                    "Passport Seva Online",
+                    "Income / Caste Certificate (e-District)",
+                    "Birth / Death / Marriage Certificate",
+                    "Aadhaar Update & Verification",
+                    "Jeevan Pramaan Life Certificate",
+                    "Ration Card Amendment",
+                    "KSEB / Water Bill Payment",
+                    "Photocopy / Xerox & Scanning",
+                    "New PAN Card / Correction",
+                    "Employment Exchange Renewal",
+                    "Land Tax / Thandapper (Revenue Portal)",
+                    "CMDRF / Welfare Fund Application",
+                  ].map((serviceName) => {
+                    const isSelected = receptionSelectedServices.includes(serviceName);
+                    return (
+                      <button
+                        key={serviceName}
+                        type="button"
+                        onClick={() => {
+                          setReceptionSelectedServices((prev) =>
+                            isSelected ? prev.filter((s) => s !== serviceName) : [...prev, serviceName]
+                          );
+                        }}
+                        className={`rounded-xl px-3 py-2 text-xs font-semibold transition border flex items-center gap-1.5 ${
+                          isSelected
+                            ? "bg-violet-600 text-white keep-white border-violet-500 shadow-sm font-bold"
+                            : "bg-slate-900/90 text-slate-300 border-slate-750 hover:border-slate-600 hover:text-white"
+                        }`}
+                      >
+                        <span>{isSelected ? "✓" : "+"}</span>
+                        <span>{serviceName}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Custom Service & Priority */}
+              <div className="grid gap-4 sm:grid-cols-3 pt-1">
+                <div className="sm:col-span-2">
+                  <label className="text-xs font-semibold text-slate-300 block mb-1">
+                    Other / Custom Service Not In List
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Legal Affidavit, PSC Profile Update"
+                    value={receptionCustomService}
+                    onChange={(e) => setReceptionCustomService(e.target.value)}
+                    className="w-full rounded-xl border border-slate-750 bg-slate-900 px-3.5 py-2.5 text-xs text-white outline-none focus:border-violet-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1">
+                    Priority Level
+                  </label>
+                  <select
+                    value={receptionPriority}
+                    onChange={(e) => setReceptionPriority(e.target.value as QueuePriority)}
+                    className="w-full rounded-xl border border-slate-750 bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-violet-400"
+                  >
+                    <option value="Normal">Normal Queue</option>
+                    <option value="Urgent">⚡ Urgent Priority</option>
+                    <option value="Senior Citizen / PWD">🧓 Senior Citizen / PWD</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-300 block mb-1">
+                  Intake Notes / Token Remarks (Optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Brought old ration card and Aadhaar original"
+                  value={receptionNotes}
+                  onChange={(e) => setReceptionNotes(e.target.value)}
+                  className="w-full rounded-xl border border-slate-750 bg-slate-900 px-3.5 py-2.5 text-xs text-white outline-none focus:border-violet-400"
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="pt-2 flex flex-col sm:flex-row gap-3">
+                <button
+                  type="button"
+                  disabled={receptionSubmitting}
+                  onClick={() => handleReceptionIssueToken(true)}
+                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-pink-500 hover:bg-pink-400 py-3 text-xs font-bold text-slate-950 transition shadow-md shadow-pink-500/20 disabled:opacity-50"
+                >
+                  <Printer size={15} />
+                  <span>Issue & Print Queue Token</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={receptionSubmitting}
+                  onClick={() => handleReceptionIssueToken(false)}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-pink-500/40 bg-pink-500/15 hover:bg-pink-500/25 px-5 py-3 text-xs font-bold text-pink-700 dark:text-pink-200 transition shadow-sm"
+                >
+                  <Ticket size={15} />
+                  <span>Issue Digital Token</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleReceptionDirectBill}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-400 to-teal-400 hover:brightness-110 px-6 py-3 text-xs font-black text-slate-950 transition shadow-md shadow-cyan-400/20"
+                >
+                  <Receipt size={15} />
+                  <span>Proceed to Invoicing &rarr;</span>
+                </button>
               </div>
             </div>
           </div>
@@ -2357,7 +3083,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                   className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 px-3.5 py-2 text-xs font-bold text-slate-950 hover:brightness-110 shadow-md shadow-cyan-500/20 transition self-start sm:self-auto"
                 >
                   <Plus size={14} />
-                  <span>+ New Service Request</span>
+                  <span>New Service Request</span>
                 </button>
               )}
             </div>
@@ -2499,7 +3225,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                           title="Generate bill & invoice for this citizen application"
                         >
                           <Receipt size={13} />
-                          <span>+ Invoice</span>
+                          <span>Invoice</span>
                         </button>
 
                         <button
@@ -2578,27 +3304,48 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                             ₹ {tx.amount.toFixed(2)}
                           </td>
                           <td className="px-4 py-3 text-right">
-                            {session?.role === "Receptionist" || (session?.permissions && !session.permissions.canSettleCredit) ? (
-                              <span
-                                className="inline-block text-[10.5px] text-slate-500 font-semibold px-2 py-1 rounded-lg bg-slate-900/80 border border-slate-800"
-                                title="Settling customer debt/khata is restricted to counter operators & supervisors"
-                              >
-                                🔒 Cashier Only
-                              </span>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  alert(`Collected ₹${tx.amount} from ${tx.customer_name}. Marked settled.`);
-                                  setTransactions((prev) =>
-                                    prev.map((t) => (t.id === tx.id ? { ...t, is_settled: true } : t))
-                                  );
-                                }}
-                                className="rounded-lg bg-emerald-500/20 border border-emerald-500/40 px-2.5 py-1 text-xs font-bold text-emerald-300 hover:bg-emerald-500/30 transition"
-                              >
-                                Collect & Settle
-                              </button>
-                            )}
+                            <div className="flex items-center justify-end gap-1.5">
+                              {tx.customer_phone ? (
+                                <a
+                                  href={`https://wa.me/${
+                                    tx.customer_phone.replace(/\D/g, "").length === 10
+                                      ? `91${tx.customer_phone.replace(/\D/g, "")}`
+                                      : tx.customer_phone.replace(/\D/g, "")
+                                  }?text=${encodeURIComponent(
+                                    `Namaste ${tx.customer_name || "Customer"} 🙏\nThis is a gentle payment reminder from ${centerProfile.name} regarding your pending balance of ₹${tx.amount.toFixed(2)} for "${tx.title}".\n${centerProfile.phone ? `You can pay via UPI to ${centerProfile.phone}.\n` : ""}Thank you!`
+                                  )}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-2 py-1 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/20 transition"
+                                  title="Send WhatsApp Payment Reminder"
+                                >
+                                  <MessageCircle size={12} />
+                                  <span>Remind</span>
+                                </a>
+                              ) : null}
+
+                              {session?.role === "Receptionist" || (session?.permissions && !session.permissions.canSettleCredit) ? (
+                                <span
+                                  className="inline-block text-[10.5px] text-slate-500 font-semibold px-2 py-1 rounded-lg bg-slate-900/80 border border-slate-800"
+                                  title="Settling customer debt/khata is restricted to counter operators & supervisors"
+                                >
+                                  🔒 Cashier Only
+                                </span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    alert(`Collected ₹${tx.amount} from ${tx.customer_name}. Marked settled.`);
+                                    setTransactions((prev) =>
+                                      prev.map((t) => (t.id === tx.id ? { ...t, is_settled: true } : t))
+                                    );
+                                  }}
+                                  className="rounded-lg bg-emerald-500/20 border border-emerald-500/40 px-2.5 py-1 text-xs font-bold text-emerald-300 hover:bg-emerald-500/30 transition"
+                                >
+                                  Collect & Settle
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))
@@ -2759,7 +3506,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                     className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-xs font-bold text-rose-300 hover:bg-rose-500/20 active:scale-95 transition"
                   >
                     <ArrowDownRight size={14} />
-                    <span>+ Add Expense</span>
+                    <span>Add Expense</span>
                   </button>
                 </div>
               </div>
@@ -2820,6 +3567,162 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                 <div className="rounded-xl border border-slate-800/80 bg-slate-900/30 p-3 text-[11px] text-slate-400">
                   <span className="text-cyan-400 font-semibold">💡 Automatic Deductions:</span> Official fees for online applications (e.g. Passport, e-District, PAN) deduct directly from these portal balances.
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 5: STAFF ATTENDANCE REGISTER */}
+        {activeTab === "attendance" && (
+          <div className="max-w-6xl mx-auto space-y-6">
+            {/* Attendance Top Banner */}
+            <div className="rounded-2xl border border-teal-500/30 bg-gradient-to-r from-[#0c1f24] via-[#0f2420] to-[#0d1626] p-5 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-500/20 text-teal-300 border border-teal-500/30">
+                  <UserCheck size={24} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-white text-base tracking-wide">
+                      Staff Daily Attendance Register
+                    </span>
+                    <span className="rounded-full bg-teal-500/20 px-2 py-0.5 text-[10px] font-bold text-teal-300 border border-teal-500/30 font-mono">
+                      Center: {centerProfile.centerCode || "KNR059"}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-300 mt-0.5">
+                    Live clock-in and clock-out shift logging, timestamps, and staff daily attendance tracking.
+                  </p>
+                </div>
+              </div>
+
+              {/* Personal Punch Status Widget */}
+              <div className="flex items-center gap-2.5">
+                {todayAttendance && todayAttendance.punch_in && !todayAttendance.punch_out ? (
+                  <button
+                    type="button"
+                    onClick={handlePunchOut}
+                    className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 px-4 py-2.5 text-xs font-bold text-slate-950 transition shadow-md shadow-amber-500/20"
+                  >
+                    <LogOut size={14} />
+                    <span>Clock Out (In: {todayAttendance.punch_in})</span>
+                  </button>
+                ) : todayAttendance && todayAttendance.punch_out ? (
+                  <div className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-xs font-semibold text-slate-300">
+                    ✅ Shift Completed ({todayAttendance.punch_in} &rarr; {todayAttendance.punch_out})
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handlePunchIn}
+                    className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 px-4 py-2.5 text-xs font-black text-slate-950 transition shadow-md shadow-emerald-500/20"
+                  >
+                    <UserCheck size={15} />
+                    <span>Clock In for Today</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Attendance Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+              <div className="rounded-2xl border border-slate-800 bg-[#0e1526] p-4 shadow-sm">
+                <span className="text-[11px] font-bold uppercase text-slate-400">Total Staff Punched In</span>
+                <p className="mt-1 font-mono text-2xl font-black text-emerald-400">
+                  {attendanceRecords.filter((r) => r.punch_in && !r.punch_out).length}
+                </p>
+                <p className="text-[10px] text-slate-400 mt-0.5">Currently on active duty</p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-800 bg-[#0e1526] p-4 shadow-sm">
+                <span className="text-[11px] font-bold uppercase text-slate-400">Completed Shifts</span>
+                <p className="mt-1 font-mono text-2xl font-black text-cyan-400">
+                  {attendanceRecords.filter((r) => r.punch_out).length}
+                </p>
+                <p className="text-[10px] text-slate-400 mt-0.5">Punched out successfully</p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-800 bg-[#0e1526] p-4 shadow-sm">
+                <span className="text-[11px] font-bold uppercase text-slate-400">Today's Date</span>
+                <p className="mt-1 font-mono text-xl font-black text-slate-200">
+                  {getTodayDateString()}
+                </p>
+                <p className="text-[10px] text-slate-400 mt-0.5">Branch attendance register</p>
+              </div>
+            </div>
+
+            {/* Today's Staff Register Table */}
+            <div className="rounded-2xl border border-slate-800 bg-[#0e1526] overflow-hidden shadow-md">
+              <div className="border-b border-slate-800 bg-[#121b2f] px-5 py-3.5 flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-bold text-white">Today's Branch Attendance Records</h3>
+                  <p className="text-[11px] text-slate-400">All staff clock-ins and clock-outs recorded for today</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const today = getTodayDateString();
+                    const all = await getDailyAttendance(today);
+                    setAttendanceRecords(all);
+                  }}
+                  className="rounded-lg border border-slate-700 bg-slate-850 px-2.5 py-1 text-xs font-semibold text-slate-300 hover:text-white transition flex items-center gap-1"
+                >
+                  <RefreshCw size={12} />
+                  <span>Refresh</span>
+                </button>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-800 bg-slate-900/80 text-[10.5px] uppercase font-bold text-slate-400">
+                      <th className="py-2.5 px-4">#</th>
+                      <th className="py-2.5 px-4">Employee</th>
+                      <th className="py-2.5 px-4">Role</th>
+                      <th className="py-2.5 px-4">Punch In</th>
+                      <th className="py-2.5 px-4">Punch Out</th>
+                      <th className="py-2.5 px-4">Shift Hours</th>
+                      <th className="py-2.5 px-4">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60">
+                    {attendanceRecords.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="py-8 text-center text-slate-400">
+                          No attendance records found for today yet. Use the Clock In button to punch in!
+                        </td>
+                      </tr>
+                    ) : (
+                      attendanceRecords.map((att, idx) => (
+                        <tr key={att.id} className="hover:bg-slate-900/40 transition">
+                          <td className="py-3 px-4 font-bold text-slate-500">{idx + 1}</td>
+                          <td className="py-3 px-4 font-bold text-white">{att.employee_name}</td>
+                          <td className="py-3 px-4 text-slate-400">{att.role}</td>
+                          <td className="py-3 px-4 font-mono font-semibold text-emerald-400">
+                            {att.punch_in || "—"}
+                          </td>
+                          <td className="py-3 px-4 font-mono font-semibold text-slate-300">
+                            {att.punch_out || <span className="text-amber-400 text-[11px]">Active</span>}
+                          </td>
+                          <td className="py-3 px-4 font-mono text-slate-300">
+                            {att.shift_hours ? `${att.shift_hours} hrs` : "—"}
+                          </td>
+                          <td className="py-3 px-4">
+                            <span
+                              className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                att.punch_out
+                                  ? "bg-slate-800 text-slate-300"
+                                  : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                              }`}
+                            >
+                              {att.punch_out ? "Completed" : "On Duty"}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
@@ -2984,7 +3887,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
             if (e.target === e.currentTarget) setShowInvoiceModal(false);
           }}
         >
-          <div className="relative w-full max-w-xl max-h-[92vh] flex flex-col rounded-2xl border border-slate-700/80 bg-[#0e1526] shadow-2xl overflow-hidden">
+          <div className="relative w-full max-w-3xl max-h-[92vh] flex flex-col rounded-2xl border border-slate-700/80 bg-[#0e1526] shadow-2xl overflow-hidden">
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-slate-800 bg-[#121b2f] px-5 py-3.5">
               <div className="flex items-center gap-2.5">
@@ -2992,8 +3895,13 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                   <Receipt size={16} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-white">New Counter Invoice</h3>
-                  <p className="text-[11px] text-slate-400">Record transaction, deduct wallet & print thermal slip</p>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-white">New Counter Invoice</h3>
+                    <span className="font-mono text-[11px] text-cyan-400 font-bold bg-cyan-950/60 border border-cyan-800/60 px-2 py-0.5 rounded-full">
+                      {invRefId}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400">Multi-service billing, automated wallet deductions & split payments</p>
                 </div>
               </div>
               <button
@@ -3016,7 +3924,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                     : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
                 }`}
               >
-                <span>🏛️ Citizen Service</span>
+                <span>🏛️ Citizen Invoicing (Multi-Item)</span>
               </button>
               <button
                 type="button"
@@ -3027,7 +3935,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                     : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
                 }`}
               >
-                <span>🖨️ Counter Xerox</span>
+                <span>🖨️ Counter Xerox POS</span>
               </button>
               <button
                 type="button"
@@ -3046,13 +3954,13 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                handleSaveInvoice(false);
+                handleSaveInvoice(invAutoPrint);
               }}
               className="flex-1 overflow-y-auto p-5 space-y-4 text-xs"
             >
-              {/* Tab 1: Citizen */}
+              {/* Tab 1: Citizen Multi-Item Invoicing */}
               {invMode === "citizen" && (
-                <div className="space-y-3 rounded-xl border border-slate-800 bg-[#0e1625] p-3.5">
+                <div className="space-y-3.5 rounded-xl border border-slate-800 bg-[#0e1625] p-3.5">
                   {/* Linked Request Notification Banner */}
                   {invLinkedRequestId && (
                     <div className="flex items-center justify-between rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-3 py-2 text-xs text-cyan-300">
@@ -3064,128 +3972,170 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                     </div>
                   )}
 
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-[11px] font-semibold text-slate-300">Citizen / Portal Service *</label>
-                      <span className="text-[10px] text-slate-400">Select preset or type custom</span>
-                    </div>
-
-                    <div className="space-y-2">
+                  {/* Quick Preset Selector & Add Row */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/70 pb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-bold text-slate-200">Quick Add Service Preset:</span>
                       <select
-                        value={invServiceId}
+                        value={invQuickAddServiceId}
                         onChange={(e) => {
                           const sid = e.target.value;
-                          setInvServiceId(sid);
-                          if (sid !== "__custom__") {
-                            const match = serviceCharges.find((s) => s.id === sid);
+                          setInvQuickAddServiceId(sid);
+                          if (sid) {
+                            const match = serviceCharges.find((sc) => sc.id === sid);
                             if (match) {
-                              setInvServiceName(match.serviceName);
-                              setInvServiceCharge(String(match.defaultCharge));
+                              handleAddInvoiceItem(match.serviceName, match.defaultCharge, 0);
                             }
+                            setInvQuickAddServiceId("");
                           }
                         }}
-                        className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400"
+                        className="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1 text-xs text-white outline-none focus:border-cyan-400 max-w-[220px]"
                       >
-                        {invServiceId === "__custom__" && invServiceName && (
-                          <option value="__custom__">
-                            📋 {invServiceName} (Custom / Request Service)
-                          </option>
-                        )}
-                        <optgroup label="Popular Citizen Services">
-                          {serviceCharges.map((sc) => (
-                            <option key={sc.id} value={sc.id}>
-                              {sc.serviceName} (Charge: ₹{sc.defaultCharge})
-                            </option>
-                          ))}
-                        </optgroup>
-                        <option value="__custom__">✍️ Other / Custom Service...</option>
-                      </select>
-
-                      <div>
-                        <label className="text-[10px] font-medium text-slate-400 block mb-0.5">
-                          Service Title (Printed on Receipt & Recorded to Daybook) *
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="e.g. Scanning & Documents, Passport Application"
-                          value={invServiceName}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setInvServiceName(val);
-                            const match = serviceCharges.find(
-                              (s) => s.serviceName.trim().toLowerCase() === val.trim().toLowerCase()
-                            );
-                            if (match) {
-                              setInvServiceId(match.id);
-                            } else {
-                              setInvServiceId("__custom__");
-                            }
-                          }}
-                          className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-bold text-cyan-300 outline-none focus:border-cyan-400"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    <div>
-                      <label className="text-[11px] font-semibold text-slate-300 block mb-1">Official Fee (₹)</label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="any"
-                        placeholder="0"
-                        value={invGovtFee}
-                        onChange={(e) => setInvGovtFee(e.target.value)}
-                        className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-mono font-bold text-slate-300 outline-none focus:border-cyan-400"
-                      />
-                      <span className="text-[9.5px] text-slate-500 mt-0.5 block">Official portal fee</span>
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-semibold text-slate-300 block mb-1">Service Charge (₹) *</label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="any"
-                        required
-                        placeholder="100"
-                        value={invServiceCharge}
-                        onChange={(e) => setInvServiceCharge(e.target.value)}
-                        className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-mono font-bold text-cyan-300 outline-none focus:border-cyan-400"
-                      />
-                      <span className="text-[9.5px] text-slate-500 mt-0.5 block">Center processing fee</span>
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-semibold text-slate-300 block mb-1">
-                        Deduct Bank / Portal
-                      </label>
-                      <select
-                        value={invWalletId}
-                        onChange={(e) => setInvWalletId(e.target.value)}
-                        className="w-full rounded-xl border border-slate-700 bg-slate-900 px-2.5 py-2 text-xs text-white outline-none focus:border-cyan-400"
-                      >
-                        <option value="">None / External Cash</option>
-                        {wallets.map((w) => (
-                          <option key={w.id} value={w.id}>
-                            {w.name} (Bal: ₹{w.balance.toLocaleString("en-IN")})
+                        <option value="">-- Choose Preset Service --</option>
+                        {serviceCharges.map((sc) => (
+                          <option key={sc.id} value={sc.id}>
+                            {sc.serviceName} (₹{sc.defaultCharge})
                           </option>
                         ))}
                       </select>
-                      <span className="text-[9.5px] text-slate-500 mt-0.5 block">Bank or portal deducted for fee</span>
                     </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleAddInvoiceItem("General Citizen Service", 50, 0)}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs font-bold text-cyan-300 hover:bg-cyan-500/20 transition shrink-0"
+                    >
+                      <Plus size={13} />
+                      <span>Add Row</span>
+                    </button>
+                  </div>
+
+                  {/* Multi-Item Table (AceApp standard) */}
+                  <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/60">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="border-b border-slate-800 bg-slate-900/80 text-[10.5px] uppercase font-bold text-slate-400">
+                          <th className="py-2 px-2.5 w-8 text-center">#</th>
+                          <th className="py-2 px-2.5 min-w-[180px]">Service Name *</th>
+                          <th className="py-2 px-2.5 w-40">Wallet (Deduct)</th>
+                          <th className="py-2 px-2 w-28 text-right">Online Pay (₹)</th>
+                          <th className="py-2 px-2 w-24 text-right">Charges (₹)</th>
+                          <th className="py-2 px-2.5 w-24 text-right">Total (₹)</th>
+                          <th className="py-2 px-1 w-8 text-center"></th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/60">
+                        {invItems.map((item, idx) => (
+                          <tr key={item.id} className="hover:bg-slate-900/40 transition">
+                            <td className="py-2 px-2.5 text-center font-bold text-slate-500">
+                              {idx + 1}
+                            </td>
+                            <td className="py-2 px-2.5">
+                              <input
+                                type="text"
+                                required
+                                placeholder="Service description..."
+                                value={item.service_name}
+                                onChange={(e) =>
+                                  handleUpdateInvoiceItem(item.id, { service_name: e.target.value })
+                                }
+                                className="w-full rounded-lg border border-slate-750 bg-slate-900 px-2.5 py-1 text-xs font-semibold text-slate-100 outline-none focus:border-cyan-400"
+                              />
+                            </td>
+                            <td className="py-2 px-2.5">
+                              <select
+                                value={item.wallet_id}
+                                onChange={(e) =>
+                                  handleUpdateInvoiceItem(item.id, { wallet_id: e.target.value })
+                                }
+                                className="w-full rounded-lg border border-slate-750 bg-slate-900 px-2 py-1 text-[11px] text-slate-200 outline-none focus:border-cyan-400"
+                              >
+                                <option value="">External / None</option>
+                                {wallets.map((w) => (
+                                  <option key={w.id} value={w.id}>
+                                    {w.name} (₹{w.balance.toLocaleString("en-IN")})
+                                  </option>
+                                ))}
+                              </select>
+                            </td>
+                            <td className="py-2 px-2 text-right">
+                              <input
+                                type="number"
+                                min="0"
+                                step="any"
+                                placeholder="0"
+                                value={item.online_payment}
+                                onChange={(e) =>
+                                  handleUpdateInvoiceItem(item.id, {
+                                    online_payment: parseFloat(e.target.value) || 0,
+                                  })
+                                }
+                                className="w-24 rounded-lg border border-slate-750 bg-slate-900 px-2 py-1 text-xs font-mono font-bold text-right text-slate-200 outline-none focus:border-cyan-400"
+                              />
+                            </td>
+                            <td className="py-2 px-2 text-right">
+                              <input
+                                type="number"
+                                min="0"
+                                step="any"
+                                placeholder="100"
+                                value={item.charges}
+                                onChange={(e) =>
+                                  handleUpdateInvoiceItem(item.id, {
+                                    charges: parseFloat(e.target.value) || 0,
+                                  })
+                                }
+                                className="w-20 rounded-lg border border-slate-750 bg-slate-900 px-2 py-1 text-xs font-mono font-bold text-right text-cyan-300 outline-none focus:border-cyan-400"
+                              />
+                            </td>
+                            <td className="py-2 px-2.5 text-right font-mono font-black text-emerald-400 text-xs">
+                              ₹{(Number(item.online_payment || 0) + Number(item.charges || 0)).toFixed(0)}
+                            </td>
+                            <td className="py-2 px-1 text-center">
+                              {invItems.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveInvoiceItem(item.id)}
+                                  className="text-slate-500 hover:text-red-400 transition p-1"
+                                  title="Delete line item"
+                                >
+                                  <Trash2 size={13} />
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr className="border-t border-slate-750 bg-slate-900/90 text-xs font-bold text-slate-300">
+                          <td colSpan={3} className="py-2 px-3 text-left">
+                            <span className="text-slate-400">Total Items:</span> {invItems.length}
+                          </td>
+                          <td className="py-2 px-2 text-right font-mono text-slate-300">
+                            ₹{invCitizenOnlineTotal.toFixed(0)}
+                          </td>
+                          <td className="py-2 px-2 text-right font-mono text-cyan-300">
+                            ₹{invCitizenChargesTotal.toFixed(0)}
+                          </td>
+                          <td className="py-2 px-2.5 text-right font-mono text-emerald-400 font-black">
+                            ₹{invTotalAmount.toFixed(0)}
+                          </td>
+                          <td></td>
+                        </tr>
+                      </tfoot>
+                    </table>
                   </div>
 
                   <div>
                     <label className="text-[11px] font-semibold text-slate-300 block mb-1">
-                      Notes / Application Remarks (optional)
+                      Invoice Notes / Application Reference (Optional)
                     </label>
                     <input
                       type="text"
-                      placeholder="e.g. Application No. 8923048, Tatkal"
+                      placeholder="e.g. Application No. 8923048, Tatkal verification"
                       value={invNotes}
                       onChange={(e) => setInvNotes(e.target.value)}
-                      className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400"
+                      className="w-full rounded-xl border border-slate-750 bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400"
                     />
                   </div>
                 </div>
@@ -3272,118 +4222,214 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                 </div>
               )}
 
-              {/* Customer & Settlement Row */}
-              <div className="rounded-xl border border-slate-800 bg-[#0e1625] p-3.5 space-y-3">
+              {/* Customer & Split Payment Allocation Section */}
+              <div className="rounded-xl border border-slate-800 bg-[#0e1625] p-3.5 space-y-3.5">
+                {/* Customer Details */}
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
-                    <label className="text-[11px] font-semibold text-slate-300 block mb-1">Customer Name</label>
+                    <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                      Customer Name{" "}
+                      {isCreditActive ? (
+                        <span className="text-amber-400 font-bold">* (Required for WhatsApp Khata)</span>
+                      ) : (
+                        <span className="text-slate-500">(Optional for cash)</span>
+                      )}
+                    </label>
                     <input
                       type="text"
-                      placeholder="Walk-in Customer"
+                      placeholder={isCreditActive ? "Enter Customer Full Name *" : "Walk-in Customer"}
                       value={invCustomerName}
                       onChange={(e) => setInvCustomerName(e.target.value)}
-                      className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400"
+                      className={`w-full rounded-xl border bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400 ${
+                        isCreditActive && (!invCustomerName.trim() || invCustomerName.trim().toLowerCase() === "walk-in customer" || invCustomerName.trim().toLowerCase() === "walk-in")
+                          ? "border-amber-500 ring-1 ring-amber-500/50"
+                          : "border-slate-700"
+                      }`}
                     />
                   </div>
                   <div>
-                    <label className="text-[11px] font-semibold text-slate-300 block mb-1">Mobile Phone (optional)</label>
+                    <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                      Mobile Phone{" "}
+                      {isCreditActive ? (
+                        <span className="text-amber-400 font-bold">* (10-Digit Mobile Required)</span>
+                      ) : (
+                        <span className="text-slate-500">(Optional)</span>
+                      )}
+                    </label>
                     <input
                       type="tel"
-                      placeholder="e.g. 9876543210"
+                      placeholder={isCreditActive ? "10-digit mobile number *" : "e.g. 9876543210"}
                       value={invCustomerPhone}
                       onChange={(e) => setInvCustomerPhone(e.target.value)}
-                      className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400"
+                      className={`w-full rounded-xl border bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400 ${
+                        isCreditActive && (!invCustomerPhone.trim() || invCustomerPhone.trim().replace(/\D/g, "").length < 10)
+                          ? "border-amber-500 ring-1 ring-amber-500/50"
+                          : "border-slate-700"
+                      }`}
                     />
                   </div>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-2 pt-1">
-                  <div>
-                    <label className="text-[11px] font-semibold text-slate-300 block mb-1">Payment Method</label>
-                    <div className="grid grid-cols-2 gap-1.5">
+                {isCreditActive && (
+                  <div className="flex items-center gap-2 rounded-xl bg-amber-500/10 border border-amber-500/30 p-2.5 text-[11px] text-amber-300">
+                    <MessageSquare size={15} className="shrink-0 text-emerald-400" />
+                    <span>Customer Name & 10-digit phone number are strictly required for Credit/Khata so WhatsApp payment reminders can be triggered automatically.</span>
+                  </div>
+                )}
+
+                {/* Split Payment Allocation Inputs */}
+                <div className="space-y-2 pt-1 border-t border-slate-800">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                    <label className="text-[11px] font-bold text-slate-200">
+                      Payment Allocation (Cash / UPI / Khata Split):
+                    </label>
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <button
                         type="button"
-                        onClick={() => setInvPaymentMethod("Cash")}
-                        className={`rounded-lg py-1.5 text-xs font-bold border transition ${
-                          invPaymentMethod === "Cash"
-                            ? "bg-cyan-500/20 text-cyan-300 border-cyan-400/40"
-                            : "bg-slate-900 border-slate-700 text-slate-400"
-                        }`}
+                        onClick={handleSetAllCash}
+                        className="rounded-lg bg-slate-850 hover:bg-slate-800 border border-slate-700 px-2 py-0.5 text-[10px] font-bold text-slate-200 transition"
                       >
-                        💵 Cash
+                        💵 All Cash
                       </button>
                       <button
                         type="button"
-                        onClick={() => setInvPaymentMethod("UPI")}
-                        className={`rounded-lg py-1.5 text-xs font-bold border transition ${
-                          invPaymentMethod === "UPI"
-                            ? "bg-cyan-500/20 text-cyan-300 border-cyan-400/40"
-                            : "bg-slate-900 border-slate-700 text-slate-400"
-                        }`}
+                        onClick={handleSetAllUpi}
+                        className="rounded-lg bg-slate-850 hover:bg-slate-800 border border-slate-700 px-2 py-0.5 text-[10px] font-bold text-cyan-300 transition"
                       >
-                        📱 UPI / Scanner
+                        📱 All UPI
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSetAllCredit}
+                        className="rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 px-2 py-0.5 text-[10px] font-bold text-amber-300 transition"
+                      >
+                        ⏳ All Khata
                       </button>
                     </div>
                   </div>
 
-                  <div>
-                    <label className="text-[11px] font-semibold text-slate-300 block mb-1">Payment Status</label>
-                    <div className="grid grid-cols-2 gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => setInvIsCredit(false)}
-                        className={`rounded-lg py-1.5 text-xs font-bold border transition ${
-                          !invIsCredit
-                            ? "bg-emerald-500/20 text-emerald-300 border-emerald-400/40"
-                            : "bg-slate-900 border-slate-700 text-slate-400"
-                        }`}
-                      >
-                        ✅ Paid
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setInvIsCredit(true)}
-                        className={`rounded-lg py-1.5 text-xs font-bold border transition ${
-                          invIsCredit
-                            ? "bg-amber-500/20 text-amber-300 border-amber-400/40"
-                            : "bg-slate-900 border-slate-700 text-slate-400"
-                        }`}
-                      >
-                        ⏳ Due / Khata
-                      </button>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    {/* Cash */}
+                    <div className="rounded-xl border border-slate-750 bg-slate-900/90 p-2.5">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[11px] font-bold text-slate-300">💵 Cash Paid</span>
+                        <span className="text-[10px] text-slate-500">Drawer</span>
+                      </div>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        placeholder="0"
+                        value={invCashAmount}
+                        onChange={(e) => setInvCashAmount(e.target.value)}
+                        className="w-full rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs font-mono font-bold text-slate-100 outline-none focus:border-cyan-400"
+                      />
+                    </div>
+
+                    {/* UPI */}
+                    <div className="rounded-xl border border-cyan-500/30 bg-cyan-950/20 p-2.5">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[11px] font-bold text-cyan-300">📱 UPI / QR</span>
+                        <span className="text-[10px] text-cyan-400/80">Online</span>
+                      </div>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        placeholder="0"
+                        value={invUpiAmount}
+                        onChange={(e) => setInvUpiAmount(e.target.value)}
+                        className="w-full rounded-lg border border-cyan-500/40 bg-slate-950 px-2.5 py-1.5 text-xs font-mono font-bold text-cyan-300 outline-none focus:border-cyan-400"
+                      />
+                    </div>
+
+                    {/* Credit / Khata */}
+                    <div className="rounded-xl border border-amber-500/30 bg-amber-950/20 p-2.5">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[11px] font-bold text-amber-300">⏳ Credit / Khata</span>
+                        <span className="text-[10px] text-amber-400/80">Due debt</span>
+                      </div>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        placeholder="0"
+                        value={invCreditAmount}
+                        onChange={(e) => setInvCreditAmount(e.target.value)}
+                        className="w-full rounded-lg border border-amber-500/40 bg-slate-950 px-2.5 py-1.5 text-xs font-mono font-bold text-amber-300 outline-none focus:border-amber-400"
+                      />
                     </div>
                   </div>
+
+                  {/* Allocation Status Indicator */}
+                  {Math.abs(allocationRemaining) < 0.01 ? (
+                    <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-300 flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <CheckCircle2 size={13} className="text-emerald-400" />
+                        <span>Exact bill amount allocated: <strong>₹{totalAllocated.toFixed(2)}</strong></span>
+                      </div>
+                      <span className="font-mono text-[11px] font-bold text-emerald-400">100% Balanced</span>
+                    </div>
+                  ) : allocationRemaining > 0.01 ? (
+                    <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-300 flex items-center justify-between">
+                      <span>⚠️ <strong>₹{allocationRemaining.toFixed(2)}</strong> remaining to allocate</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const rem = Math.max(0, allocationRemaining);
+                          setInvCashAmount(String(allocatedCash + rem));
+                        }}
+                        className="rounded bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold hover:bg-amber-500/30 transition"
+                      >
+                        + Add to Cash
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-xs text-red-300 flex items-center justify-between">
+                      <span>⚠️ Overallocated by <strong>₹{(-allocationRemaining).toFixed(2)}</strong>! Please adjust amounts.</span>
+                      <span className="font-mono text-[11px] font-bold">Exceeds Total</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Total Banner & Payment Details */}
-              <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-[#121b2f] p-3.5 shadow-sm">
+              {/* Total Banner & Payment Breakdown */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between rounded-xl border border-slate-800 bg-[#121b2f] p-3.5 shadow-sm gap-2">
                 <div>
-                  <span className="text-xs uppercase font-bold text-slate-300">Total Payable</span>
-                  <div className="text-[11px] text-slate-400 mt-0.5">
-                    {invPaymentMethod} • {invIsCredit ? <span className="text-amber-400 font-semibold">Credit (Due in Khata)</span> : <span className="text-emerald-400 font-semibold">Settled</span>}
+                  <span className="text-xs uppercase font-bold text-slate-300">Total Invoice Amount</span>
+                  <div className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-2 flex-wrap">
+                    <span>Cash: <strong className="text-slate-200">₹{allocatedCash.toFixed(0)}</strong></span>
+                    <span>• UPI: <strong className="text-cyan-300">₹{allocatedUpi.toFixed(0)}</strong></span>
+                    {allocatedCredit > 0 && (
+                      <span>• Khata Due: <strong className="text-amber-300">₹{allocatedCredit.toFixed(0)}</strong></span>
+                    )}
                   </div>
                 </div>
-                <div className="font-mono text-2xl font-black text-cyan-300">₹{invTotalAmount.toFixed(2)}</div>
+                <div className="font-mono text-2xl font-black text-cyan-300 text-right">
+                  ₹{invTotalAmount.toFixed(2)}
+                </div>
               </div>
 
               {/* Actions */}
-              <div className="pt-1 flex gap-2.5">
+              <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-800">
+                <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-300 font-medium select-none">
+                  <input
+                    type="checkbox"
+                    checked={invAutoPrint}
+                    onChange={(e) => setInvAutoPrint(e.target.checked)}
+                    className="h-4 w-4 rounded border-slate-700 bg-slate-900 text-cyan-400 focus:ring-cyan-400 cursor-pointer"
+                  />
+                  <Printer size={14} className="text-cyan-400" />
+                  <span>Auto-print receipt slip upon saving</span>
+                </label>
+
                 <button
                   type="submit"
-                  disabled={savingInvoice}
-                  className="flex-1 rounded-xl bg-cyan-500 hover:bg-cyan-400 py-3 text-xs font-bold text-slate-950 transition shadow-md shadow-cyan-500/20 disabled:opacity-50"
+                  disabled={savingInvoice || Math.abs(allocationRemaining) > 0.01}
+                  className="w-full sm:w-auto sm:min-w-[220px] rounded-xl bg-gradient-to-r from-cyan-400 to-teal-400 hover:brightness-110 py-3 px-6 text-xs font-black text-slate-950 transition shadow-md shadow-cyan-400/20 disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  {savingInvoice ? "Recording..." : `Save Bill (₹${invTotalAmount.toFixed(0)})`}
-                </button>
-                <button
-                  type="button"
-                  disabled={savingInvoice}
-                  onClick={() => handleSaveInvoice(true)}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-750 bg-slate-800/90 hover:bg-slate-700/80 px-4 py-3 text-xs font-bold text-slate-100 transition shadow-sm disabled:opacity-50"
-                >
-                  <Printer size={15} className="text-cyan-400" />
-                  <span>Print Slip & Save</span>
+                  <Receipt size={14} />
+                  <span>{savingInvoice ? "Recording..." : `Save Invoice (₹${invTotalAmount.toFixed(0)})`}</span>
                 </button>
               </div>
             </form>
@@ -3722,7 +4768,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                   className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 px-4 py-2.5 text-xs font-bold text-slate-950 hover:brightness-110 shadow-md shadow-cyan-500/20 transition"
                 >
                   <Receipt size={14} />
-                  <span>+ Add Invoice & Bill</span>
+                  <span>Add Invoice & Bill</span>
                 </button>
 
                 <button

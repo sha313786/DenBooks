@@ -35,7 +35,10 @@ import {
   RotateCcw,
   Check,
   Users,
+  Smartphone,
+  Monitor,
 } from "lucide-react";
+import OwnerMobileSnapshot from "@/components/OwnerMobileSnapshot";
 import {
   AccountTransaction,
   PortalWallet,
@@ -128,6 +131,22 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
     phone: "",
   });
 
+  // Owner Mobile Snapshot vs Detailed Desktop Tables
+  const [viewMode, setViewMode] = useState<"auto" | "snapshot" | "desktop">("auto");
+  const [isMobileScreen, setIsMobileScreen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const checkMobile = () => {
+      setIsMobileScreen(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  const showMobileSnapshot = viewMode === "snapshot" || (viewMode === "auto" && isMobileScreen);
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       try {
@@ -153,6 +172,7 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
   const [invPaymentMethod, setInvPaymentMethod] = useState<PaymentMethod>("Cash");
   const [invIsCredit, setInvIsCredit] = useState(false);
   const [savingInvoice, setSavingInvoice] = useState(false);
+  const [adminInvAutoPrint, setAdminInvAutoPrint] = useState(false);
 
   // Citizen Service Invoice inputs
   const [invServiceId, setInvServiceId] = useState("");
@@ -687,6 +707,20 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
       serviceCharge = invTotalAmount;
     }
 
+    // Credit (Khata) transactions strictly require Customer Name & valid Mobile Phone for WhatsApp reminders
+    if (invIsCredit) {
+      const trimmedName = invCustomerName.trim();
+      if (!trimmedName || trimmedName.toLowerCase() === "walk-in customer" || trimmedName.toLowerCase() === "walk-in") {
+        alert("Customer Name is required for Credit (Khata) transactions so customer accounts and WhatsApp payment reminders can be tracked.");
+        return;
+      }
+      const cleanPhone = invCustomerPhone.trim().replace(/\D/g, "");
+      if (cleanPhone.length < 10) {
+        alert("A valid 10-digit Customer Mobile Phone number is required for Credit (Khata) transactions to send WhatsApp payment reminders.");
+        return;
+      }
+    }
+
     setSavingInvoice(true);
     try {
       const newTx = await createAccountTransaction({
@@ -970,6 +1004,71 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
 
             <div class="divider"></div>
 
+            ${
+              tx.items && tx.items.length > 0
+                ? `
+            <table class="items-table">
+              <thead>
+                <tr>
+                  <th style="width: 18px;">#</th>
+                  <th>Service / Item</th>
+                  <th class="right">Online Fee</th>
+                  <th class="right">Charges</th>
+                  <th class="right">Total (₹)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${tx.items
+                  .map(
+                    (it, idx) => `
+                <tr style="border-bottom: 0.5px solid #eee;">
+                  <td style="font-weight: bold; color: #555; vertical-align: top;">${idx + 1}</td>
+                  <td>
+                    <div class="bold" style="font-size: 10.5px; color: #000;">${it.service_name}</div>
+                    ${it.wallet_name ? `<div style="font-size: 8px; color: #666;">Wallet: ${it.wallet_name}</div>` : ""}
+                  </td>
+                  <td class="right" style="font-size: 10px; color: #333; vertical-align: top;">₹${(it.online_payment || 0).toFixed(2)}</td>
+                  <td class="right" style="font-size: 10px; color: #333; vertical-align: top;">₹${(it.charges || 0).toFixed(2)}</td>
+                  <td class="right bold" style="font-size: 10.5px; vertical-align: top;">₹${(it.total || ((it.online_payment || 0) + (it.charges || 0))).toFixed(2)}</td>
+                </tr>
+                `
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+
+            <div class="divider-double"></div>
+
+            <table style="width: 100%; font-size: 10.5px;">
+              ${extractedGovtFee > 0 ? `
+              <tr>
+                <td>Official / Online Fee (Pass-through):</td>
+                <td class="right">₹${extractedGovtFee.toFixed(2)}</td>
+              </tr>
+              ` : ""}
+              <tr>
+                <td>Center Processing Charges:</td>
+                <td class="right">₹${extractedServiceFee.toFixed(2)}</td>
+              </tr>
+              <tr class="total-row" style="font-size: 13px; font-weight: 900;">
+                <td style="padding-top: 4px;">NET TOTAL:</td>
+                <td class="right" style="padding-top: 4px;">₹${tx.amount.toFixed(2)}</td>
+              </tr>
+            </table>
+
+            ${tx.payment_split ? `
+            <div class="divider"></div>
+            <table style="width: 100%; font-size: 10px; margin-top: 2px;">
+              <tr style="font-weight: bold; color: #333; text-transform: uppercase;">
+                <td colspan="2">Payment Details:</td>
+              </tr>
+              ${tx.payment_split.cash > 0 ? `<tr><td>&bull; Cash Paid:</td><td class="right font-mono">₹${tx.payment_split.cash.toFixed(2)}</td></tr>` : ""}
+              ${tx.payment_split.upi > 0 ? `<tr><td>&bull; UPI / Online:</td><td class="right font-mono">₹${tx.payment_split.upi.toFixed(2)}</td></tr>` : ""}
+              ${tx.payment_split.credit > 0 ? `<tr style="color: #b91c1c; font-weight: bold;"><td>&bull; Khata Due:</td><td class="right font-mono">₹${tx.payment_split.credit.toFixed(2)}</td></tr>` : ""}
+            </table>
+            ` : ""}
+            `
+                : `
             <table class="items-table">
               <thead>
                 <tr>
@@ -1017,6 +1116,8 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
                 <td class="right">₹${tx.amount.toFixed(2)}</td>
               </tr>
             </table>
+            `
+            }
 
             <div class="divider"></div>
 
@@ -1110,6 +1211,21 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
       alert("Please add at least one item to the cart.");
       return;
     }
+
+    // Credit (Khata / Udhar) transactions strictly require Customer Name & valid Mobile Phone for WhatsApp reminders
+    if (posIsCredit) {
+      const trimmedName = posCustomerName.trim();
+      if (!trimmedName || trimmedName.toLowerCase() === "walk-in customer" || trimmedName.toLowerCase() === "walk-in") {
+        alert("Customer Name is required for Credit / Udhar (Khata) sales so customer accounts and WhatsApp payment reminders can be tracked.");
+        return;
+      }
+      const cleanPhone = posCustomerPhone.trim().replace(/\D/g, "");
+      if (cleanPhone.length < 10) {
+        alert("A valid 10-digit Customer Mobile Phone number is required for Credit / Udhar (Khata) sales to send WhatsApp payment reminders.");
+        return;
+      }
+    }
+
     setSavingPos(true);
     try {
       const itemsDesc = posCart
@@ -1427,6 +1543,36 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
           </button>
         </div>
 
+        {/* View Mode Toggle Pill (Mobile Snapshot vs Detailed Desktop Tables) */}
+        <div className="flex items-center gap-1 rounded-xl border border-slate-750 bg-slate-900/90 p-1 text-xs">
+          <button
+            type="button"
+            onClick={() => setViewMode("snapshot")}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-bold transition text-xs cursor-pointer ${
+              showMobileSnapshot
+                ? "bg-cyan-500 text-slate-950 shadow-sm"
+                : "text-slate-400 hover:text-white"
+            }`}
+            title="Owner Evening Mobile Snapshot"
+          >
+            <Smartphone size={13} />
+            <span>Snapshot</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode("desktop")}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-bold transition text-xs cursor-pointer ${
+              !showMobileSnapshot
+                ? "bg-cyan-500 text-slate-950 shadow-sm"
+                : "text-slate-400 hover:text-white"
+            }`}
+            title="Full Detailed Desktop Ledger & Tables"
+          >
+            <Monitor size={13} />
+            <span>Tables</span>
+          </button>
+        </div>
+
         {/* Primary Actions & Utilities Cluster */}
         <div className="flex flex-wrap items-center gap-2">
           {/* Add Invoice & Record Transaction Button */}
@@ -1437,7 +1583,7 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
             title="Create and record an invoice for citizen service, counter POS, or custom bill"
           >
             <Receipt size={14} />
-            <span>+ Add Invoice</span>
+            <span>Add Invoice</span>
           </button>
 
           {/* Quick Add Expense Button */}
@@ -1447,7 +1593,7 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
             className="inline-flex items-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-bold text-red-300 hover:bg-red-500/20 transition"
           >
             <ArrowDownRight size={14} />
-            <span>+ Add Expense</span>
+            <span>Add Expense</span>
           </button>
 
           <div className="h-5 w-px bg-slate-800 mx-1 hidden sm:block" />
@@ -1498,7 +1644,21 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
         </div>
       </div>
 
-      {/* 2. Combined Single-Screen Command Bar: Wallets (Left) + Financial KPIs (Right) */}
+      {showMobileSnapshot ? (
+        <OwnerMobileSnapshot
+          summary={summary}
+          wallets={wallets}
+          transactions={transactions}
+          selectedDate={selectedDate}
+          centerCode="KNR059"
+          centerName={centerProfile.name}
+          onSwitchToDesktop={() => setViewMode("desktop")}
+          onOpenInvoiceModal={() => openInvoiceModal()}
+          onOpenExpenseModal={() => setShowExpenseModal(true)}
+        />
+      ) : (
+        <>
+          {/* 2. Combined Single-Screen Command Bar: Wallets (Left) + Financial KPIs (Right) */}
       {!hideHeaderWidgets && (
         <div className="grid gap-3.5 lg:grid-cols-12">
         {/* Left: Compact Portal Advance Wallets (5 cols) */}
@@ -1879,7 +2039,7 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
                   className="inline-flex items-center gap-1.5 rounded-lg border border-cyan-500/40 bg-cyan-500/15 px-2.5 py-1 text-xs font-bold text-cyan-300 hover:bg-cyan-500/25 transition shadow-sm"
                 >
                   <Plus size={13} />
-                  <span>+ Add Product</span>
+                  <span>Add Product</span>
                 </button>
                 <button
                   type="button"
@@ -2092,36 +2252,57 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
                 </button>
               </div>
 
-              {/* Customer Name & Phone (Optional) */}
+              {/* Customer Name & Phone */}
               <div className="space-y-2">
-                <input
-                  type="text"
-                  placeholder="Customer Name (optional)"
-                  value={posCustomerName}
-                  onChange={(e) => setPosCustomerName(e.target.value)}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-white placeholder:text-slate-500 outline-none focus:border-cyan-400 font-medium"
-                />
-                <input
-                  type="text"
-                  placeholder="Customer Phone (for WhatsApp slip)"
-                  value={posCustomerPhone}
-                  onChange={(e) => setPosCustomerPhone(e.target.value)}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-white placeholder:text-slate-500 outline-none focus:border-cyan-400 font-medium"
-                />
+                <div>
+                  <input
+                    type="text"
+                    placeholder={posIsCredit ? "Customer Full Name * (Required for Khata)" : "Customer Name (optional)"}
+                    value={posCustomerName}
+                    onChange={(e) => setPosCustomerName(e.target.value)}
+                    className={`w-full rounded-xl border bg-slate-900 px-4 py-3 text-sm text-white placeholder:text-slate-500 outline-none focus:border-cyan-400 font-medium ${
+                      posIsCredit && (!posCustomerName.trim() || posCustomerName.trim().toLowerCase() === "walk-in customer")
+                        ? "border-amber-500/70"
+                        : "border-slate-700"
+                    }`}
+                  />
+                </div>
+                <div>
+                  <input
+                    type="tel"
+                    placeholder={posIsCredit ? "10-Digit Mobile Number * (WhatsApp Required)" : "Customer Phone (for WhatsApp slip)"}
+                    value={posCustomerPhone}
+                    onChange={(e) => setPosCustomerPhone(e.target.value)}
+                    className={`w-full rounded-xl border bg-slate-900 px-4 py-3 text-sm text-white placeholder:text-slate-500 outline-none focus:border-cyan-400 font-medium ${
+                      posIsCredit && (!posCustomerPhone.trim() || posCustomerPhone.trim().replace(/\D/g, "").length < 10)
+                        ? "border-amber-500/70"
+                        : "border-slate-700"
+                    }`}
+                  />
+                </div>
               </div>
 
               {/* Due / Khata Toggle */}
-              <label className="flex items-center gap-2.5 text-sm text-slate-300 cursor-pointer pt-1">
-                <input
-                  type="checkbox"
-                  checked={posIsCredit}
-                  onChange={(e) => setPosIsCredit(e.target.checked)}
-                  className="h-4 w-4 rounded border-slate-700 bg-slate-900 text-amber-500 focus:ring-0"
-                />
-                <span className={posIsCredit ? "font-bold text-amber-300" : "font-medium"}>
-                  Mark as Credit / Udhar (Pay Later)
-                </span>
-              </label>
+              <div className="space-y-2 pt-1">
+                <label className="flex items-center gap-2.5 text-sm text-slate-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={posIsCredit}
+                    onChange={(e) => setPosIsCredit(e.target.checked)}
+                    className="h-4 w-4 rounded border-slate-700 bg-slate-900 text-amber-500 focus:ring-0"
+                  />
+                  <span className={posIsCredit ? "font-bold text-amber-300" : "font-medium"}>
+                    Mark as Credit / Udhar (Pay Later)
+                  </span>
+                </label>
+
+                {posIsCredit && (
+                  <div className="flex items-center gap-2 rounded-lg bg-amber-500/10 border border-amber-500/30 p-2.5 text-xs text-amber-300">
+                    <MessageCircle size={14} className="shrink-0 text-emerald-400" />
+                    <span>Customer Name & 10-digit mobile number are required to track pending debt and send WhatsApp payment reminders.</span>
+                  </div>
+                )}
+              </div>
 
               <button
                 type="submit"
@@ -2222,8 +2403,12 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
                         <td className="px-4 py-3.5 text-center">
                           {tx.customer_phone ? (
                             <a
-                              href={`https://wa.me/${tx.customer_phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(
-                                `Hello ${tx.customer_name || "Customer"}, gentle reminder from ${centerProfile.name} regarding pending payment of ₹${tx.amount} for "${tx.title}". ${centerProfile.phone ? `You can pay via UPI to ${centerProfile.phone}. ` : ""}Thank you!`
+                              href={`https://wa.me/${
+                                tx.customer_phone.replace(/\D/g, "").length === 10
+                                  ? `91${tx.customer_phone.replace(/\D/g, "")}`
+                                  : tx.customer_phone.replace(/\D/g, "")
+                              }?text=${encodeURIComponent(
+                                `Namaste ${tx.customer_name || "Customer"} 🙏\nThis is a gentle payment reminder from ${centerProfile.name} regarding your pending balance of ₹${tx.amount} for "${tx.title}".\n${centerProfile.phone ? `You can pay via UPI to ${centerProfile.phone}.\n` : ""}Thank you!`
                               )}`}
                               target="_blank"
                               rel="noopener noreferrer"
@@ -2244,6 +2429,8 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
             </div>
           </div>
         </div>
+      )}
+        </>
       )}
 
       {/* MODAL 0: ADD INVOICE & RECORD TRANSACTION */}
@@ -2318,7 +2505,7 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                handleSaveInvoice(false);
+                handleSaveInvoice(adminInvAutoPrint);
               }}
               className="flex-1 overflow-y-auto p-6 space-y-4"
             >
@@ -2636,27 +2823,45 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
                 <div className="grid gap-3 sm:grid-cols-3">
                   <div>
                     <label className="text-[11px] font-semibold text-slate-300 block mb-1">
-                      Customer Name
+                      Customer Name{" "}
+                      {invIsCredit ? (
+                        <span className="text-amber-400 font-bold">* (Required for Khata)</span>
+                      ) : (
+                        <span className="text-slate-500">(Optional)</span>
+                      )}
                     </label>
                     <input
                       type="text"
-                      placeholder="Walk-in Customer"
+                      placeholder={invIsCredit ? "Customer Full Name *" : "Walk-in Customer"}
                       value={invCustomerName}
                       onChange={(e) => setInvCustomerName(e.target.value)}
-                      className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400"
+                      className={`w-full rounded-xl border bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400 ${
+                        invIsCredit && (!invCustomerName.trim() || invCustomerName.trim().toLowerCase() === "walk-in customer")
+                          ? "border-amber-500/70"
+                          : "border-slate-700"
+                      }`}
                     />
                   </div>
 
                   <div>
                     <label className="text-[11px] font-semibold text-slate-300 block mb-1">
-                      Phone Number (optional)
+                      Phone Number{" "}
+                      {invIsCredit ? (
+                        <span className="text-amber-400 font-bold">* (WhatsApp Required)</span>
+                      ) : (
+                        <span className="text-slate-500">(Optional)</span>
+                      )}
                     </label>
                     <input
                       type="tel"
-                      placeholder="e.g. 9876543210"
+                      placeholder={invIsCredit ? "10-digit mobile number *" : "e.g. 9876543210"}
                       value={invCustomerPhone}
                       onChange={(e) => setInvCustomerPhone(e.target.value)}
-                      className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400"
+                      className={`w-full rounded-xl border bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400 ${
+                        invIsCredit && (!invCustomerPhone.trim() || invCustomerPhone.trim().replace(/\D/g, "").length < 10)
+                          ? "border-amber-500/70"
+                          : "border-slate-700"
+                      }`}
                     />
                   </div>
 
@@ -2672,6 +2877,13 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
                     />
                   </div>
                 </div>
+
+                {invIsCredit && (
+                  <div className="flex items-center gap-2 rounded-lg bg-amber-500/10 border border-amber-500/30 p-2.5 text-xs text-amber-300">
+                    <MessageCircle size={14} className="shrink-0 text-emerald-400" />
+                    <span>Customer Name & 10-digit mobile number are required for Credit (Khata) to track customer debt and send WhatsApp payment reminders.</span>
+                  </div>
+                )}
 
                 <div className="grid gap-3 sm:grid-cols-2 pt-1">
                   <div>
@@ -2744,31 +2956,35 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
               </div>
 
               {/* Modal Buttons */}
-              <div className="pt-2 flex flex-wrap gap-2">
-                <button
-                  type="submit"
-                  disabled={savingInvoice}
-                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 py-2.5 text-xs font-bold text-slate-950 hover:brightness-110 transition shadow-md shadow-cyan-500/20"
-                >
-                  {savingInvoice ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
-                  <span>Save & Record Invoice (₹{invTotalAmount.toFixed(0)})</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={savingInvoice}
-                  onClick={() => handleSaveInvoice(true)}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-cyan-500/40 bg-cyan-500/15 px-4 py-2.5 text-xs font-bold text-cyan-300 hover:bg-cyan-500/25 transition"
-                >
-                  <Printer size={14} />
-                  <span>Save & Print Slip</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowInvoiceModal(false)}
-                  className="rounded-xl border border-slate-700 px-4 py-2.5 text-xs text-slate-400 hover:text-white"
-                >
-                  Cancel
-                </button>
+              <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-800">
+                <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-300 font-medium select-none">
+                  <input
+                    type="checkbox"
+                    checked={adminInvAutoPrint}
+                    onChange={(e) => setAdminInvAutoPrint(e.target.checked)}
+                    className="h-4 w-4 rounded border-slate-700 bg-slate-900 text-cyan-400 focus:ring-cyan-400 cursor-pointer"
+                  />
+                  <Printer size={14} className="text-cyan-400" />
+                  <span>Auto-print receipt slip upon saving</span>
+                </label>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <button
+                    type="button"
+                    onClick={() => setShowInvoiceModal(false)}
+                    className="rounded-xl border border-slate-700 px-4 py-2.5 text-xs text-slate-400 hover:text-white transition"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={savingInvoice}
+                    className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 py-2.5 px-6 text-xs font-bold text-slate-950 hover:brightness-110 transition shadow-md shadow-cyan-500/20"
+                  >
+                    {savingInvoice ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                    <span>Save & Record Invoice (₹{invTotalAmount.toFixed(0)})</span>
+                  </button>
+                </div>
               </div>
             </form>
           </div>
@@ -3264,7 +3480,7 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
                           className="inline-flex items-center gap-1 text-[10px] font-bold text-cyan-400 hover:text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/30 transition"
                         >
                           <Plus size={11} />
-                          <span>+ Add Option</span>
+                          <span>Add Option</span>
                         </button>
                       )}
                     </div>
@@ -3417,7 +3633,7 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
                           className="inline-flex items-center gap-1 text-[10px] font-bold text-cyan-400 hover:text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/30 transition"
                         >
                           <Plus size={11} />
-                          <span>+ Add Option</span>
+                          <span>Add Option</span>
                         </button>
                       )}
                     </div>

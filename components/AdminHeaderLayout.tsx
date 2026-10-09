@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import ThemeToggle from "@/components/ThemeToggle";
 import {
   Receipt,
   LogOut,
@@ -72,6 +73,10 @@ import {
   getDaysRemaining,
   extendTenantSubscription,
 } from "@/lib/services/subscription.service";
+import {
+  StaffAttendanceRecord,
+  getDailyAttendance,
+} from "@/lib/services/attendance.service";
 
 interface AdminHeaderLayoutProps {
   children: React.ReactNode;
@@ -88,8 +93,14 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
 
   // Settings Modal State
   const [showSettings, setShowSettings] = useState(false);
-  const [settingsTab, setSettingsTab] = useState<"profile" | "staff" | "wallets" | "subscription">("profile");
+  const [settingsTab, setSettingsTab] = useState<"profile" | "staff" | "attendance" | "wallets" | "subscription">("profile");
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [centerCode, setCenterCode] = useState("KNR059");
+
+  // --- Attendance State ---
+  const [attendanceList, setAttendanceList] = useState<StaffAttendanceRecord[]>([]);
+  const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().slice(0, 10));
+  const [loadingAttendance, setLoadingAttendance] = useState(false);
 
   // --- Subscription & Payment State ---
   const [subState, setSubState] = useState<TenantSubscription | null>(null);
@@ -152,9 +163,22 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
           if (parsed.phone) setPhone(parsed.phone);
           if (parsed.address) setAddress(parsed.address);
           if (parsed.state) setStateName(parsed.state);
+          if (parsed.centerCode) setCenterCode(parsed.centerCode);
           if (parsed.trialDaysLeft !== undefined) setTrialDaysLeft(parsed.trialDaysLeft);
         } catch {}
       }
+    }
+  }
+
+  async function loadAttendanceData(dateStr?: string) {
+    setLoadingAttendance(true);
+    try {
+      const records = await getDailyAttendance(dateStr || attendanceDate);
+      setAttendanceList(records);
+    } catch (e) {
+      console.warn("Attendance load error:", e);
+    } finally {
+      setLoadingAttendance(false);
     }
   }
 
@@ -275,6 +299,7 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
       phone: cleanPhone,
       address: cleanAddress,
       state: cleanState,
+      centerCode: (centerCode || "KNR059").trim().toUpperCase(),
       trialDaysLeft,
     };
 
@@ -626,6 +651,9 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
             <span>Front Desk &rarr;</span>
           </Link>
 
+          {/* Theme Toggle Button */}
+          <ThemeToggle />
+
           {/* Settings Button */}
           <button
             type="button"
@@ -672,6 +700,7 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-400/10 text-cyan-400 border border-cyan-400/20">
                   {settingsTab === "profile" && <Settings size={18} />}
                   {settingsTab === "staff" && <Users size={18} />}
+                  {settingsTab === "attendance" && <Clock3 size={18} />}
                   {settingsTab === "wallets" && <Landmark size={18} />}
                   {settingsTab === "subscription" && <CreditCard size={18} />}
                 </div>
@@ -679,12 +708,14 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
                   <h2 className="text-base font-bold text-white flex items-center gap-2">
                     {settingsTab === "profile" && "Center Profile & Settings"}
                     {settingsTab === "staff" && "Staff & Operator Management"}
+                    {settingsTab === "attendance" && "Staff Daily Attendance Register"}
                     {settingsTab === "wallets" && "Bank & Portal Accounts"}
                     {settingsTab === "subscription" && "Subscription & Payment Management"}
                   </h2>
                   <p className="text-xs text-slate-400">
                     {settingsTab === "profile" && "Configure shop details printed on thermal receipts and invoices."}
                     {settingsTab === "staff" && "Manage front desk staff logins, PIN codes, and desk permissions."}
+                    {settingsTab === "attendance" && "View operator punch-in/out timestamps, shift hours, and daily attendance."}
                     {settingsTab === "wallets" && "Monitor and configure digital portal balances and bank accounts."}
                     {settingsTab === "subscription" && "Direct UPI QR payment, plan selection, and UTR verification status."}
                   </p>
@@ -732,6 +763,21 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
                 <span className="rounded-full bg-slate-800 border border-slate-700 px-1.5 py-0.5 text-[10px] text-slate-300 font-mono">
                   {staffList.length}
                 </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSettingsTab("attendance");
+                  loadAttendanceData();
+                }}
+                className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-bold transition whitespace-nowrap ${
+                  settingsTab === "attendance"
+                    ? "border-cyan-400 text-cyan-400 bg-cyan-950/20"
+                    : "border-transparent text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                <Clock3 size={14} />
+                <span>Daily Attendance</span>
               </button>
               <button
                 type="button"
@@ -870,6 +916,29 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
                           className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none"
                         />
                       </div>
+                    </div>
+
+                    {/* Center Identifier / Invoice Prefix Code */}
+                    <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3.5">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                          <Sparkles size={14} className="text-cyan-400" />
+                          <span>Center Audit Code / Invoice Prefix *</span>
+                        </label>
+                        <span className="font-mono text-[11px] font-bold text-cyan-300 bg-cyan-950/80 border border-cyan-800/60 px-2 py-0.5 rounded">
+                          Preview: INV/{centerCode || "KNR059"}/6728
+                        </span>
+                      </div>
+                      <input
+                        type="text"
+                        value={centerCode}
+                        onChange={(e) => setCenterCode(e.target.value.toUpperCase())}
+                        placeholder="e.g. KNR059, CSC4821, AKSHAYA-01"
+                        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-xs font-mono font-bold text-cyan-300 placeholder-slate-500 focus:border-cyan-400 focus:outline-none uppercase"
+                      />
+                      <p className="text-[10px] text-slate-400 mt-1.5">
+                        Matches your official government center code (like Akshaya or CSC). Printed on all citizen bills and thermal receipts.
+                      </p>
                     </div>
 
                     <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-800">
@@ -1195,6 +1264,86 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
                       <ExternalLink size={12} />
                     </Link>
                   </div>
+                </div>
+              )}
+
+              {/* TAB: DAILY ATTENDANCE REGISTER */}
+              {settingsTab === "attendance" && (
+                <div className="space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-white">Daily Staff Attendance</span>
+                      <span className="text-xs font-mono text-cyan-400 font-bold bg-cyan-950/60 border border-cyan-800/60 px-2 py-0.5 rounded-full">
+                        {attendanceList.length} Punched Today
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="date"
+                        value={attendanceDate}
+                        onChange={(e) => {
+                          setAttendanceDate(e.target.value);
+                          loadAttendanceData(e.target.value);
+                        }}
+                        className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs font-bold text-white outline-none focus:border-cyan-400"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => loadAttendanceData(attendanceDate)}
+                        className="p-1.5 rounded-xl border border-slate-700 bg-slate-800 text-slate-300 hover:text-white"
+                        title="Refresh attendance"
+                      >
+                        <RefreshCw size={13} className={loadingAttendance ? "animate-spin" : ""} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {loadingAttendance ? (
+                    <div className="py-8 text-center text-slate-400 flex items-center justify-center gap-2">
+                      <RefreshCw size={16} className="animate-spin text-cyan-400" />
+                      <span>Loading attendance records...</span>
+                    </div>
+                  ) : attendanceList.length === 0 ? (
+                    <div className="py-8 text-center rounded-2xl border border-slate-800/80 bg-slate-900/40 p-6">
+                      <Clock3 size={28} className="mx-auto text-slate-600 mb-2" />
+                      <p className="text-xs font-semibold text-slate-300">No punch records found for {attendanceDate}</p>
+                      <p className="text-[11px] text-slate-500 mt-1">Staff punch in automatically via the Front Desk counter interface.</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-900/60">
+                      <table className="w-full text-left text-xs">
+                        <thead className="border-b border-slate-800 bg-[#121b2f] text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                          <tr>
+                            <th className="px-3 py-2.5">Staff Name</th>
+                            <th className="px-3 py-2.5">Role</th>
+                            <th className="px-3 py-2.5">Punch In</th>
+                            <th className="px-3 py-2.5">Punch Out</th>
+                            <th className="px-3 py-2.5">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-800/60 text-slate-200">
+                          {attendanceList.map((rec) => (
+                            <tr key={rec.id} className="hover:bg-slate-800/40">
+                              <td className="px-3 py-2 font-bold text-white">{rec.employee_name}</td>
+                              <td className="px-3 py-2 text-slate-400">{rec.role}</td>
+                              <td className="px-3 py-2 font-mono text-emerald-400 font-semibold">{rec.punch_in || "—"}</td>
+                              <td className="px-3 py-2 font-mono text-cyan-400">{rec.punch_out || "Active"}</td>
+                              <td className="px-3 py-2">
+                                <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                  rec.status === "Present"
+                                    ? "bg-emerald-950 text-emerald-300 border border-emerald-800"
+                                    : "bg-amber-950 text-amber-300 border border-amber-800"
+                                }`}>
+                                  {rec.status}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
               )}
 

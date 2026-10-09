@@ -21,9 +21,11 @@ import {
   saveTenantSubscription,
   TenantSubscription,
 } from "@/lib/services/subscription.service";
+import { useTheme } from "@/context/ThemeContext";
 
 export default function SignupPage() {
   const router = useRouter();
+  const { isDark, toggleTheme } = useTheme();
 
   const [shopName, setShopName] = useState("");
   const [ownerName, setOwnerName] = useState("");
@@ -33,21 +35,6 @@ export default function SignupPage() {
   const [stateName, setStateName] = useState("Kerala");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [isDark, setIsDark] = useState(true);
-
-  // Sync theme with landing page preference
-  useEffect(() => {
-    const saved = localStorage.getItem("denbooks_landing_theme");
-    if (saved === "light") {
-      setIsDark(false);
-    }
-  }, []);
-
-  const toggleTheme = () => {
-    const next = !isDark;
-    setIsDark(next);
-    localStorage.setItem("denbooks_landing_theme", next ? "dark" : "light");
-  };
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();

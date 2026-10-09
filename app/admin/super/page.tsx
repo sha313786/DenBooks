@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import ThemeToggle from "@/components/ThemeToggle";
 import {
   ShieldCheck,
   Lock,
@@ -343,6 +344,8 @@ export default function SuperAdminPage() {
             <ArrowLeft size={13} />
             <span>Shop Panel</span>
           </Link>
+
+          <ThemeToggle />
 
           <button
             type="button"
