@@ -1899,6 +1899,16 @@ export default function LandingPage() {
                   </a>
                 </li>
                 <li>
+                  <Link href="/akshaya-billing-software" className="hover:text-cyan-400 transition flex items-center gap-2 text-cyan-300 font-medium">
+                    <span className="text-cyan-400 font-bold">•</span> Akshaya Kerala Suite
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/csc-billing-software" className="hover:text-cyan-400 transition flex items-center gap-2 text-cyan-300 font-medium">
+                    <span className="text-cyan-400 font-bold">•</span> CSC Digital Seva POS
+                  </Link>
+                </li>
+                <li>
                   <Link href="/signup" className="hover:text-cyan-400 transition flex items-center gap-2">
                     <span className="text-cyan-500 font-bold">•</span> 14-Day Free Trial
                   </Link>
