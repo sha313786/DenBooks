@@ -14,8 +14,40 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DenBooks 360 — Smart Daybook & POS for Citizen Service Centers",
-  description: "All-in-one accounts manager, portal wallet tracker, and counter POS for CSC, Cyber Cafés, and Akshaya Centers.",
+  metadataBase: new URL("https://denbooks.in"),
+  title: "DenBooks — Operating Suite for Citizen Service Centers",
+  description: "All-in-one accounts manager, portal wallet tracker, thermal POS billing, and cash drawer reconciliation for CSC, Cyber Cafés, and Akshaya Centers.",
+  keywords: [
+    "DenBooks",
+    "Akshaya center software",
+    "CSC Digital Seva billing",
+    "Cyber Cafe POS",
+    "Citizen Service Center",
+    "e-District Kerala daybook",
+    "Thermal receipt printer software",
+  ],
+  openGraph: {
+    title: "DenBooks — Operating Suite for Citizen Service Centers",
+    description: "All-in-one accounts manager, portal wallet tracker, thermal POS billing, and cash drawer reconciliation for CSC, Cyber Cafés, and Akshaya Centers.",
+    url: "https://denbooks.in",
+    siteName: "DenBooks",
+    images: [
+      {
+        url: "/brand-poster.png",
+        width: 1200,
+        height: 630,
+        alt: "DenBooks Official Operating Suite",
+      },
+    ],
+    locale: "en_IN",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "DenBooks — Operating Suite for Citizen Service Centers",
+    description: "All-in-one accounts manager, portal wallet tracker, thermal POS billing, and cash drawer reconciliation for CSC, Cyber Cafés, and Akshaya Centers.",
+    images: ["/brand-poster.png"],
+  },
   icons: {
     icon: [
       { url: "/favicon.ico" },
