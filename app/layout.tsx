@@ -17,8 +17,11 @@ export const metadata: Metadata = {
   title: "DenBooks 360 — Smart Daybook & POS for Citizen Service Centers",
   description: "All-in-one accounts manager, portal wallet tracker, and counter POS for CSC, Cyber Cafés, and Akshaya Centers.",
   icons: {
-    icon: "/logo.png",
-    shortcut: "/logo.png",
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/logo.png", type: "image/png" },
+    ],
+    shortcut: "/favicon.ico",
     apple: "/logo.png",
   },
 };
