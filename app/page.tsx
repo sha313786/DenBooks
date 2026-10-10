@@ -53,6 +53,7 @@ export default function LandingPage() {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("annual");
   const [activeTab, setActiveTab] = useState<"isolation" | "thermal" | "drawer" | "khata">("isolation");
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
+  const [emailCopied, setEmailCopied] = useState(false);
 
   // Interactive Simulator State:
   const [selectedService, setSelectedService] = useState<"passport" | "sarathi" | "edistrict" | "kseb">("passport");
@@ -191,30 +192,14 @@ export default function LandingPage() {
           <Link href="/" className="flex items-center gap-3 group">
             <img
               src="/logo.png"
-              alt="DenBooks 360 Logo"
+              alt="DenBooks Logo"
               className={`h-10 w-10 rounded-xl shadow-lg group-hover:scale-105 transition object-cover border ${
                 isDark ? "border-cyan-500/30 shadow-cyan-500/25" : "border-cyan-300 shadow-cyan-400/20"
               }`}
             />
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className={`text-lg font-black tracking-tight ${isDark ? "text-white" : "text-slate-900"}`}>
-                  DenBooks
-                </span>
-                <span
-                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                    isDark
-                      ? "text-cyan-300 bg-cyan-950/80 border-cyan-800/60"
-                      : "text-cyan-800 bg-cyan-50 border-cyan-300"
-                  }`}
-                >
-                  360
-                </span>
-              </div>
-              <p className={`text-[10px] font-medium hidden sm:block ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                Akshaya, CSC & Cyber Cafe OS
-              </p>
-            </div>
+            <span className={`text-xl font-black tracking-tight ${isDark ? "text-white" : "text-slate-900"}`}>
+              DenBooks
+            </span>
           </Link>
 
 
@@ -1303,14 +1288,14 @@ export default function LandingPage() {
           <h2 className={`text-3xl font-black sm:text-4xl ${isDark ? "text-white" : "text-slate-950"}`}>
             Simple, Transparent Pricing
           </h2>
-          <p className={`mt-3 text-sm max-w-lg mx-auto ${isDark ? "text-slate-400" : "text-slate-600"}`}>
+          <p className={`mt-3 text-sm max-w-lg mx-auto ${isDark ? "text-slate-200" : "text-slate-700"}`}>
             14-day full free trial on all plans. Pay directly via UPI QR with zero payment gateway fees.
           </p>
 
           {/* Billing Cycle Switcher */}
           <div
             className={`mt-8 inline-flex items-center rounded-2xl border p-1.5 gap-1 shadow-inner ${
-              isDark ? "border-slate-800 bg-slate-900/90" : "border-slate-300 bg-white"
+              isDark ? "border-slate-700 bg-slate-900" : "border-slate-300 bg-white"
             }`}
           >
             <button
@@ -1320,8 +1305,8 @@ export default function LandingPage() {
                 billingCycle === "monthly"
                   ? "bg-cyan-400 text-slate-950 shadow-xs font-black"
                   : isDark
-                  ? "text-slate-400 hover:text-white"
-                  : "text-slate-600 hover:text-slate-900"
+                  ? "text-slate-200 hover:text-white"
+                  : "text-slate-700 hover:text-slate-950"
               }`}
             >
               Monthly Billing
@@ -1333,15 +1318,15 @@ export default function LandingPage() {
                 billingCycle === "annual"
                   ? "bg-cyan-400 text-slate-950 shadow-xs font-black"
                   : isDark
-                  ? "text-slate-400 hover:text-white"
-                  : "text-slate-600 hover:text-slate-900"
+                  ? "text-slate-200 hover:text-white"
+                  : "text-slate-700 hover:text-slate-950"
               }`}
             >
               <span>Annual Billing</span>
               <span
                 className={`rounded-full text-[10px] px-2 py-0.5 font-black border ${
                   isDark
-                    ? "bg-emerald-500/20 text-emerald-300 border-emerald-400/40"
+                    ? "bg-emerald-500/25 text-emerald-300 border-emerald-400/50"
                     : "bg-emerald-100 text-emerald-800 border-emerald-300"
                 }`}
               >
@@ -1364,46 +1349,46 @@ export default function LandingPage() {
                 <h3 className={`text-lg font-bold ${isDark ? "text-white" : "text-slate-950"}`}>
                   Single Counter
                 </h3>
-                <p className={`text-xs mt-1 ${isDark ? "text-slate-400" : "text-slate-600"}`}>
+                <p className={`text-xs mt-1 ${isDark ? "text-slate-200" : "text-slate-600"}`}>
                   Essential daybook & thermal POS for single-operator CSCs & Cyber Cafes.
                 </p>
                 <div className="mt-6 flex items-baseline gap-1">
                   <span className={`text-4xl font-black ${isDark ? "text-white" : "text-slate-950"}`}>
                     {billingCycle === "monthly" ? "₹199" : "₹125"}
                   </span>
-                  <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                  <span className={`text-xs ${isDark ? "text-slate-200" : "text-slate-600"}`}>
                     {billingCycle === "monthly" ? "/ month" : "/ month (effective)"}
                   </span>
                 </div>
-                <p className="text-[11.5px] text-cyan-500 font-bold mt-1.5">
+                <p className="text-[11.5px] text-cyan-400 font-bold mt-1.5">
                   {billingCycle === "monthly"
                     ? "Billed monthly • Cancel anytime"
                     : "₹1,499 billed annually • Save ₹889 (37% OFF)"}
                 </p>
 
-                <ul className={`mt-6 space-y-3 text-xs ${isDark ? "text-slate-300" : "text-slate-700"}`}>
+                <ul className={`mt-6 space-y-3 text-xs ${isDark ? "text-slate-100" : "text-slate-800"}`}>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 size={14} className="text-cyan-500 shrink-0" />
+                    <CheckCircle2 size={14} className="text-cyan-400 shrink-0" />
                     <span><b>1 Active Staff Terminal</b> (Single Operator)</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 size={14} className="text-cyan-500 shrink-0" />
+                    <CheckCircle2 size={14} className="text-cyan-400 shrink-0" />
                     <span><b>Single Counter POS</b> & Daybook</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 size={14} className="text-cyan-500 shrink-0" />
+                    <CheckCircle2 size={14} className="text-cyan-400 shrink-0" />
                     <span>4 Portal Advance Wallets (CSC, e-District)</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 size={14} className="text-cyan-500 shrink-0" />
+                    <CheckCircle2 size={14} className="text-cyan-400 shrink-0" />
                     <span>58mm & 80mm Thermal Printer Slips</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 size={14} className="text-cyan-500 shrink-0" />
+                    <CheckCircle2 size={14} className="text-cyan-400 shrink-0" />
                     <span>Customer Khata (Credit) Tracker</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 size={14} className="text-cyan-500 shrink-0" />
+                    <CheckCircle2 size={14} className="text-cyan-400 shrink-0" />
                     <span>Pass-Through Govt Fee Isolation</span>
                   </li>
                 </ul>
@@ -1411,9 +1396,9 @@ export default function LandingPage() {
 
               <Link
                 href="/signup?plan=starter"
-                className={`mt-8 block text-center rounded-xl border py-3 text-xs font-bold transition ${
+                className={`mt-8 block text-center rounded-xl border py-3 text-xs font-bold transition shadow-md ${
                   isDark
-                    ? "border-slate-700 bg-slate-900 text-white hover:border-cyan-400 hover:text-cyan-300"
+                    ? "border-slate-700 bg-slate-800/90 text-white hover:border-cyan-400 hover:bg-slate-700 hover:text-cyan-300"
                     : "border-slate-300 bg-slate-50 text-slate-800 hover:border-cyan-500 hover:text-cyan-700"
                 }`}
               >
@@ -1437,50 +1422,50 @@ export default function LandingPage() {
                 <h3 className={`text-lg font-bold ${isDark ? "text-white" : "text-slate-950"}`}>
                   Pro Center Hub
                 </h3>
-                <p className={`text-xs mt-1 ${isDark ? "text-slate-400" : "text-slate-600"}`}>
+                <p className={`text-xs mt-1 ${isDark ? "text-slate-200" : "text-slate-600"}`}>
                   Full multi-staff power for busy Akshaya, CSC & Xerox centers.
                 </p>
                 <div className="mt-6 flex items-baseline gap-1">
                   <span className={`text-4xl font-black ${isDark ? "text-white" : "text-slate-950"}`}>
                     {billingCycle === "monthly" ? "₹349" : "₹208"}
                   </span>
-                  <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                  <span className={`text-xs ${isDark ? "text-slate-200" : "text-slate-600"}`}>
                     {billingCycle === "monthly" ? "/ month" : "/ month (effective)"}
                   </span>
                 </div>
-                <p className="text-[11.5px] text-emerald-500 font-bold mt-1.5">
+                <p className="text-[11.5px] text-emerald-400 font-bold mt-1.5">
                   {billingCycle === "monthly"
                     ? "Billed monthly • Full multi-operator suite"
                     : "₹2,499 billed annually • Save ₹1,689 (40% OFF / Best Value)"}
                 </p>
 
-                <ul className={`mt-6 space-y-3 text-xs ${isDark ? "text-slate-200" : "text-slate-800"}`}>
+                <ul className={`mt-6 space-y-3 text-xs ${isDark ? "text-slate-100" : "text-slate-800"}`}>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 size={14} className="text-cyan-500 shrink-0" />
+                    <CheckCircle2 size={14} className="text-cyan-400 shrink-0" />
                     <span><b>Unlimited Staff Counter Logins</b> (PIN secured)</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 size={14} className="text-cyan-500 shrink-0" />
+                    <CheckCircle2 size={14} className="text-cyan-400 shrink-0" />
                     <span><b>Shift Cash Drawer Handover Tally</b> (EOD)</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 size={14} className="text-cyan-500 shrink-0" />
+                    <CheckCircle2 size={14} className="text-cyan-400 shrink-0" />
                     <span>Unlimited Portal Wallets & Bank Accounts</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 size={14} className="text-cyan-500 shrink-0" />
+                    <CheckCircle2 size={14} className="text-cyan-400 shrink-0" />
                     <span>FCFS Queue Token & Call Screen</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 size={14} className="text-cyan-500 shrink-0" />
+                    <CheckCircle2 size={14} className="text-cyan-400 shrink-0" />
                     <span>1-Click WhatsApp Khata Reminders</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 size={14} className="text-cyan-500 shrink-0" />
+                    <CheckCircle2 size={14} className="text-cyan-400 shrink-0" />
                     <span>Excel & CSV Daybook Data Export</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 size={14} className="text-cyan-500 shrink-0" />
+                    <CheckCircle2 size={14} className="text-cyan-400 shrink-0" />
                     <span>Priority WhatsApp Help & Support</span>
                   </li>
                 </ul>
@@ -1506,14 +1491,14 @@ export default function LandingPage() {
                 <h3 className={`text-lg font-bold ${isDark ? "text-white" : "text-slate-950"}`}>
                   Multi-Branch Network
                 </h3>
-                <p className={`text-xs mt-1 ${isDark ? "text-slate-400" : "text-slate-600"}`}>
+                <p className={`text-xs mt-1 ${isDark ? "text-slate-200" : "text-slate-600"}`}>
                   For entrepreneurs running multiple center locations or kiosks.
                 </p>
                 <div className="mt-6 flex items-baseline gap-1">
                   <span className={`text-4xl font-black ${isDark ? "text-white" : "text-slate-950"}`}>
                     {billingCycle === "monthly" ? "₹699" : "₹416"}
                   </span>
-                  <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                  <span className={`text-xs ${isDark ? "text-slate-200" : "text-slate-600"}`}>
                     {billingCycle === "monthly" ? "/ month" : "/ month (effective)"}
                   </span>
                 </div>
@@ -1523,25 +1508,25 @@ export default function LandingPage() {
                     : "₹4,999 billed annually • Save ₹3,389 (40% OFF)"}
                 </p>
 
-                <ul className={`mt-6 space-y-3 text-xs ${isDark ? "text-slate-300" : "text-slate-700"}`}>
+                <ul className={`mt-6 space-y-3 text-xs ${isDark ? "text-slate-100" : "text-slate-800"}`}>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 size={14} className="text-cyan-500 shrink-0" />
+                    <CheckCircle2 size={14} className="text-cyan-400 shrink-0" />
                     <span><b>Up to 5 Center Locations</b> Included</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 size={14} className="text-cyan-500 shrink-0" />
+                    <CheckCircle2 size={14} className="text-cyan-400 shrink-0" />
                     <span>Consolidated Owner Financial Dashboard</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 size={14} className="text-cyan-500 shrink-0" />
+                    <CheckCircle2 size={14} className="text-cyan-400 shrink-0" />
                     <span>Custom Center Branding & Receipts</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 size={14} className="text-cyan-500 shrink-0" />
+                    <CheckCircle2 size={14} className="text-cyan-400 shrink-0" />
                     <span>Dedicated Account Manager</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 size={14} className="text-cyan-500 shrink-0" />
+                    <CheckCircle2 size={14} className="text-cyan-400 shrink-0" />
                     <span>Branch-to-Branch Cash Transfer Tracking</span>
                   </li>
                 </ul>
@@ -1549,9 +1534,9 @@ export default function LandingPage() {
 
               <Link
                 href="/signup?plan=multi"
-                className={`mt-8 block text-center rounded-xl border py-3 text-xs font-bold transition ${
+                className={`mt-8 block text-center rounded-xl border py-3 text-xs font-bold transition shadow-md ${
                   isDark
-                    ? "border-slate-700 bg-slate-900 text-white hover:border-cyan-400 hover:text-cyan-300"
+                    ? "border-slate-700 bg-slate-800/90 text-white hover:border-cyan-400 hover:bg-slate-700 hover:text-cyan-300"
                     : "border-slate-300 bg-slate-50 text-slate-800 hover:border-cyan-500 hover:text-cyan-700"
                 }`}
               >
@@ -1798,14 +1783,33 @@ export default function LandingPage() {
 
                 <a
                   href="mailto:support@denbooks.in"
+                  onClick={(e) => {
+                    if (typeof navigator !== "undefined" && navigator.clipboard) {
+                      navigator.clipboard.writeText("support@denbooks.in");
+                      setEmailCopied(true);
+                      setTimeout(() => setEmailCopied(false), 3000);
+                    }
+                  }}
+                  title="Click to copy support@denbooks.in or send an email"
                   className={`inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-semibold transition ${
-                    isDark
+                    emailCopied
+                      ? "border-emerald-500 bg-emerald-950/60 text-emerald-300 ring-2 ring-emerald-500/40"
+                      : isDark
                       ? "border-slate-700 bg-slate-800/80 text-slate-200 hover:border-cyan-500 hover:text-cyan-400"
                       : "border-slate-200 bg-slate-50 text-slate-700 hover:border-cyan-500 hover:text-cyan-600"
                   }`}
                 >
-                  <Mail size={13} className="text-cyan-400" />
-                  <span>support@denbooks.in</span>
+                  {emailCopied ? (
+                    <>
+                      <CheckCircle2 size={13} className="text-emerald-400 animate-bounce" />
+                      <span className="text-emerald-300 font-bold">Copied support@denbooks.in!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Mail size={13} className="text-cyan-400" />
+                      <span>support@denbooks.in</span>
+                    </>
+                  )}
                 </a>
               </div>
 
