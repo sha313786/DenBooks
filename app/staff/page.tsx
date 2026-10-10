@@ -1369,6 +1369,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
             <div class="footer">
               <p>Thank you for choosing ${centerProfile.name}!</p>
               <p style="font-size: 8px; margin-top: 3px;">Computer generated receipt • Counter: ${session?.employeeName || "Staff"}</p>
+              <p style="font-size: 7.5px; margin-top: 2px; color: #555; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px;">Powered by DenBooks 360</p>
             </div>
           </div>
 

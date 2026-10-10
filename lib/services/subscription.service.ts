@@ -114,6 +114,7 @@ export interface PaymentSubmission {
   status: "pending" | "approved" | "rejected";
   notes?: string;
   billing_cycle?: "monthly" | "annual";
+  invoice_number?: string;
   created_at: string;
   approved_at?: string;
 }
@@ -133,12 +134,18 @@ export interface TenantSubscription {
   lock_reason?: string;
   last_payment_utr?: string;
   last_payment_date?: string;
+  last_invoice_number?: string;
   created_at: string;
 }
 
 export interface SuperAdminConfig {
   upi_id: string;
   payee_name: string;
+  // Dynamic Business Address & Legal Entity Details (Updatable at any time)
+  company_name: string;
+  company_address: string;
+  support_email: string;
+  gstin?: string;
   // Per-plan pricing rates
   starter_monthly_price: number;
   starter_yearly_price: number;
@@ -156,6 +163,9 @@ export interface SuperAdminConfig {
 const DEFAULT_SUPER_CONFIG: SuperAdminConfig = {
   upi_id: "denbooks@upi",
   payee_name: "DenBooks 360",
+  company_name: "SRB Studios",
+  company_address: "SRB Studios, Kerala, India",
+  support_email: "support@denbooks.in",
   starter_monthly_price: 199,
   starter_yearly_price: 1499,
   pro_monthly_price: 349,
@@ -410,6 +420,46 @@ export async function submitPaymentUTR(params: {
   notes?: string;
   billingCycle?: "monthly" | "annual";
 }): Promise<PaymentSubmission> {
+  const cleanUtr = params.utrNumber.trim();
+  if (cleanUtr.length < 6) {
+    throw new Error("Invalid UPI Reference / UTR. Must be a valid transaction number.");
+  }
+
+  // UTR Deduplication Check: Check both local storage and database
+  if (typeof window !== "undefined") {
+    try {
+      const stored = localStorage.getItem(LOCAL_STORAGE_SUBMISSIONS_KEY);
+      const list: PaymentSubmission[] = stored ? JSON.parse(stored) : [];
+      const duplicate = list.find((s) => s.utr_number.toLowerCase() === cleanUtr.toLowerCase());
+      if (duplicate) {
+        throw new Error(
+          `This UTR (${cleanUtr}) has already been submitted on ${new Date(duplicate.created_at).toLocaleDateString()}. Please enter a fresh transaction ID.`
+        );
+      }
+    } catch (e: any) {
+      if (e?.message && e.message.includes("already been submitted")) {
+        throw e;
+      }
+    }
+  }
+
+  // Check Supabase for duplicate UTR if connected
+  try {
+    const { data: existingUtr } = await supabase
+      .from("payment_submissions")
+      .select("id, created_at")
+      .eq("utr_number", cleanUtr)
+      .maybeSingle();
+
+    if (existingUtr) {
+      throw new Error(`This UTR (${cleanUtr}) has already been registered in the verification system.`);
+    }
+  } catch (err: any) {
+    if (err?.message && err.message.includes("already been registered")) {
+      throw err;
+    }
+  }
+
   const currentSub = getCurrentTenantSubscription();
   const submission: PaymentSubmission = {
     id: "pay_" + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
@@ -419,7 +469,7 @@ export async function submitPaymentUTR(params: {
     owner_phone: currentSub.owner_phone,
     plan: params.plan,
     amount: params.amount,
-    utr_number: params.utrNumber.trim(),
+    utr_number: cleanUtr,
     status: "pending",
     notes: params.notes,
     billing_cycle: params.billingCycle || "annual",
@@ -433,9 +483,17 @@ export async function submitPaymentUTR(params: {
       list.unshift(submission);
       localStorage.setItem(LOCAL_STORAGE_SUBMISSIONS_KEY, JSON.stringify(list));
 
-      // Update tenant state with submitted UTR
-      currentSub.last_payment_utr = params.utrNumber.trim();
+      // 24-Hour Temporary Grace Pass:
+      // If tenant is expired/locked, unlock temporarily for 24 hours so legitimate shop operators aren't blocked while admin audits bank credit
+      const nowMs = Date.now();
+      const currentExpiryMs = new Date(currentSub.subscription_expires_at).getTime();
+      const graceEndIso = new Date(Math.max(nowMs, currentExpiryMs) + 24 * 60 * 60 * 1000).toISOString();
+
+      currentSub.last_payment_utr = cleanUtr;
       currentSub.last_payment_date = new Date().toISOString();
+      currentSub.subscription_expires_at = graceEndIso;
+      currentSub.is_locked = false;
+      currentSub.lock_reason = undefined;
       saveTenantSubscription(currentSub);
     } catch (e) {
       console.warn("Error saving payment submission:", e);
@@ -509,6 +567,12 @@ export async function approvePaymentSubmission(
   targetSub.status = "approved";
   targetSub.approved_at = new Date().toISOString();
 
+  // Generate clean sequential Tax/Subscription Invoice number
+  const yearStr = new Date().getFullYear();
+  const randSeq = Math.floor(1000 + Math.random() * 9000);
+  const invoiceNum = targetSub.invoice_number || `INV-DB-${yearStr}-${randSeq}`;
+  targetSub.invoice_number = invoiceNum;
+
   // Determine days to add: monthly = 30 days, yearly = 365 days
   const addDays = daysToAdd ?? (targetSub.plan === "yearly" ? 365 : 30);
 
@@ -520,12 +584,18 @@ export async function approvePaymentSubmission(
   try {
     await supabase
       .from("payment_submissions")
-      .update({ status: "approved", approved_at: targetSub.approved_at })
+      .update({
+        status: "approved",
+        approved_at: targetSub.approved_at,
+        invoice_number: invoiceNum,
+      })
       .eq("id", submissionId);
   } catch {}
 
   // Extend tenant
   const updatedTenant = await extendTenantSubscription(targetSub.tenant_id, addDays, targetSub.plan);
+  updatedTenant.last_invoice_number = invoiceNum;
+  saveTenantSubscription(updatedTenant);
   return { success: true, tenant: updatedTenant };
 }
 

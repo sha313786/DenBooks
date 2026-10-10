@@ -35,9 +35,14 @@ import {
   CreditCard,
   Lock,
   RefreshCw,
-  Award,
+  Phone,
+  Mail,
+  MapPin,
+  ExternalLink,
+  Shield,
   Sun,
   Moon,
+  Award,
   Heart,
 } from "lucide-react";
 
@@ -99,7 +104,7 @@ export default function LandingPage() {
     },
     {
       q: "How does the Zero-Fee Direct UPI QR subscription work?",
-      a: "DenBooks eliminates middleman payment gateway commissions (2-3% + GST). You pay the subscription price (₹199/month or ₹1,999/year) directly to the platform via any UPI app (Google Pay, PhonePe, Paytm, BHIM). Once you submit your 12-digit UPI UTR number, your account is activated instantly with 0% extra charges.",
+      a: "We support direct UPI transfers directly to our verified merchant account, passing on 0% gateway markup directly to our customers. You pay the subscription fee (₹199/month or ₹1,499/year) using any UPI app (Google Pay, PhonePe, Paytm, BHIM). After submitting your 12-digit payment reference (UTR), your subscription is verified and activated within 5–15 minutes.",
     },
     {
       q: "Does DenBooks work with my existing 58mm or 80mm thermal receipt printer?",
@@ -162,7 +167,7 @@ export default function LandingPage() {
           >
             <Flame size={12} className="animate-pulse" /> NEW 2026 EDITION
           </span>
-          <span>Zero Payment Gateway Fees • Direct UPI QR Activation with 14-Day Free Trial!</span>
+          <span>Verified UPI Merchant • 0% Gateway Markup • 14-Day Free Trial!</span>
           <Link
             href="/demo"
             className={`font-bold underline ml-1 inline-flex items-center gap-0.5 ${
@@ -1678,38 +1683,133 @@ export default function LandingPage() {
         }`}
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-16 pb-12">
-          {/* Main Multi-Column Grid */}
+          {/* 1. Top Trust Highlights Banner */}
           <div
-            className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b ${
+            className={`mb-14 rounded-3xl border p-6 sm:p-8 backdrop-blur-xl transition-all ${
+              isDark
+                ? "border-slate-800/80 bg-gradient-to-r from-slate-900/90 via-[#0b1220]/80 to-slate-900/90 shadow-2xl shadow-cyan-950/20"
+                : "border-slate-200 bg-gradient-to-r from-slate-50 via-white to-slate-50 shadow-lg shadow-slate-200/50"
+            }`}
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="flex items-start gap-3.5">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shadow-sm">
+                  <Zap size={18} />
+                </div>
+                <div>
+                  <h4 className={`text-xs font-bold ${isDark ? "text-white" : "text-slate-900"}`}>
+                    100% Offline-Capable POS
+                  </h4>
+                  <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
+                    Counter continues issuing slips, daybook entries & queue tokens during peak morning internet cuts.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3.5">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-sm">
+                  <QrCode size={18} />
+                </div>
+                <div>
+                  <h4 className={`text-xs font-bold ${isDark ? "text-white" : "text-slate-900"}`}>
+                    Direct UPI (0% Surcharge)
+                  </h4>
+                  <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
+                    Zero gateway markups. Direct merchant account collections with automated UTR audit trail.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3.5">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 shadow-sm">
+                  <Wallet size={18} />
+                </div>
+                <div>
+                  <h4 className={`text-xs font-bold ${isDark ? "text-white" : "text-slate-900"}`}>
+                    Pure Fee Isolation Engine
+                  </h4>
+                  <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
+                    CSC & e-District pass-through portal wallet debits automatically separated from center earnings.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3.5">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-sm">
+                  <ShieldCheck size={18} />
+                </div>
+                <div>
+                  <h4 className={`text-xs font-bold ${isDark ? "text-white" : "text-slate-900"}`}>
+                    DPDP Act 2023 Compliant
+                  </h4>
+                  <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
+                    Strict tenant database isolation, client-side Aadhaar & PAN masking, and zero citizen data retention.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 2. Main Multi-Column Grid */}
+          <div
+            className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 pb-12 border-b ${
               isDark ? "border-slate-800/80" : "border-slate-200"
             }`}
           >
-            {/* Brand & Studio Attribution Column */}
-            <div className="lg:col-span-2 space-y-4">
+            {/* Column 1: Brand & Studio Attribution (5 Columns) */}
+            <div className="lg:col-span-5 space-y-4">
               <div className="flex items-center gap-3">
                 <img
                   src="/logo.png"
                   alt="DenBooks 360 Logo"
-                  className={`h-9 w-9 rounded-xl object-cover shadow-sm border ${
-                    isDark ? "border-slate-700 bg-slate-800" : "border-slate-200 bg-white"
+                  className={`h-11 w-11 rounded-2xl object-cover shadow-lg border ${
+                    isDark ? "border-cyan-500/30 shadow-cyan-500/20 bg-slate-900" : "border-cyan-200 bg-white"
                   }`}
                 />
                 <div>
-                  <span className={`text-base font-black tracking-tight ${isDark ? "text-white" : "text-slate-950"}`}>
+                  <span className={`text-lg font-black tracking-tight ${isDark ? "text-white" : "text-slate-950"}`}>
                     DenBooks <span className="text-cyan-400">360</span>
                   </span>
                   <span className="block text-[10px] uppercase font-mono font-bold tracking-widest text-cyan-500">
-                    Counter OS for Citizen Centers
+                    Operating Suite for Citizen Hubs
                   </span>
                 </div>
               </div>
 
-              <p className={`text-xs leading-relaxed max-w-sm ${isDark ? "text-slate-400" : "text-slate-600"}`}>
-                Engineered for CSC, Akshaya, E-Mitra, Jan Seva, Cyber Cafes & Citizen Service Centers across India. 
-                Pure pass-through fee isolation, 58/80mm thermal receipts, offline resilience, and daily shift cash reconciliation.
+              <p className={`text-xs leading-relaxed max-w-md ${isDark ? "text-slate-400" : "text-slate-600"}`}>
+                Purpose-built operating software for Akshaya, CSC Digital Seva, e-Mitra, Jan Seva Kendras, and Cyber Cafes across India. Unifies counter POS billing, 58mm/80mm thermal slips, advance wallet isolation, evening cash drawer reconciliation, and automated WhatsApp Khata reminders.
               </p>
 
-              {/* DEVELOPED BY SRB STUDIOS BADGE */}
+              {/* Contact & Support Pills */}
+              <div className="flex flex-wrap gap-2.5 pt-1">
+                <a
+                  href="https://wa.me/917012584152?text=Hello%20DenBooks%20Support,%20I%20have%20an%20inquiry%20regarding%20DenBooks%20360."
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-semibold transition ${
+                    isDark
+                      ? "border-slate-700 bg-slate-800/80 text-slate-200 hover:border-emerald-500 hover:text-emerald-400"
+                      : "border-slate-200 bg-slate-50 text-slate-700 hover:border-emerald-500 hover:text-emerald-600"
+                  }`}
+                >
+                  <MessageSquare size={13} className="text-emerald-400" />
+                  <span>WhatsApp: +91 70125 84152</span>
+                </a>
+
+                <a
+                  href="mailto:support@denbooks.in"
+                  className={`inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-semibold transition ${
+                    isDark
+                      ? "border-slate-700 bg-slate-800/80 text-slate-200 hover:border-cyan-500 hover:text-cyan-400"
+                      : "border-slate-200 bg-slate-50 text-slate-700 hover:border-cyan-500 hover:text-cyan-600"
+                  }`}
+                >
+                  <Mail size={13} className="text-cyan-400" />
+                  <span>support@denbooks.in</span>
+                </a>
+              </div>
+
+              {/* Developed by SRB Studios Badge */}
               <div className="pt-2">
                 <div
                   className={`inline-flex items-center gap-2.5 rounded-xl border px-3.5 py-2 transition-all ${
@@ -1720,7 +1820,7 @@ export default function LandingPage() {
                 >
                   <div className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
                   <span className="text-xs font-medium">
-                    Developed by{" "}
+                    Engineered & Maintained by{" "}
                     <span className="font-extrabold text-cyan-400 tracking-wide">
                       SRB Studios
                     </span>
@@ -1729,127 +1829,196 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Column 2: Core Platform Capabilities */}
-            <div className="space-y-3">
+            {/* Column 2: Platform Capabilities (3 Columns) */}
+            <div className="lg:col-span-3 space-y-3">
               <p className={`text-xs font-bold uppercase tracking-wider ${isDark ? "text-white" : "text-slate-900"}`}>
-                Capabilities
+                Platform Capabilities
               </p>
-              <ul className="space-y-2 text-xs">
+              <ul className="space-y-2.5 text-xs">
                 <li>
-                  <a href="#simulator" className="hover:text-cyan-400 transition flex items-center gap-1.5">
-                    <span className="text-cyan-500">•</span> Fee Isolation Engine
+                  <a href="#simulator" className="hover:text-cyan-400 transition flex items-center gap-2">
+                    <span className="text-cyan-500 font-bold">•</span> Pass-Through Fee Isolation
                   </a>
                 </li>
                 <li>
-                  <a href="#simulator" className="hover:text-cyan-400 transition flex items-center gap-1.5">
-                    <span className="text-cyan-500">•</span> 58mm & 80mm Thermal Slips
+                  <a href="#simulator" className="hover:text-cyan-400 transition flex items-center gap-2">
+                    <span className="text-cyan-500 font-bold">•</span> 58mm & 80mm ESC/POS Printing
                   </a>
                 </li>
                 <li>
-                  <a href="#simulator" className="hover:text-cyan-400 transition flex items-center gap-1.5">
-                    <span className="text-cyan-500">•</span> Evening Drawer Reconciliation
+                  <a href="#simulator" className="hover:text-cyan-400 transition flex items-center gap-2">
+                    <span className="text-cyan-500 font-bold">•</span> Evening Shift Cash Reconciliation
                   </a>
                 </li>
                 <li>
-                  <a href="#simulator" className="hover:text-cyan-400 transition flex items-center gap-1.5">
-                    <span className="text-cyan-500">•</span> WhatsApp Khata & Due Recovery
+                  <a href="#simulator" className="hover:text-cyan-400 transition flex items-center gap-2">
+                    <span className="text-cyan-500 font-bold">•</span> Automated WhatsApp Khata Recovery
                   </a>
                 </li>
                 <li>
-                  <a href="#simulator" className="hover:text-cyan-400 transition flex items-center gap-1.5">
-                    <span className="text-cyan-500">•</span> Token & Queue Management
+                  <a href="#simulator" className="hover:text-cyan-400 transition flex items-center gap-2">
+                    <span className="text-cyan-500 font-bold">•</span> FCFS Queue Tokens & Ticket Slips
+                  </a>
+                </li>
+                <li>
+                  <a href="#simulator" className="hover:text-cyan-400 transition flex items-center gap-2">
+                    <span className="text-cyan-500 font-bold">•</span> Multi-Counter Staff Attendance
                   </a>
                 </li>
               </ul>
             </div>
 
-            {/* Column 3: Quick Navigation */}
-            <div className="space-y-3">
+            {/* Column 3: Navigation & Tools (2 Columns) */}
+            <div className="lg:col-span-2 space-y-3">
               <p className={`text-xs font-bold uppercase tracking-wider ${isDark ? "text-white" : "text-slate-900"}`}>
                 Navigation
               </p>
-              <ul className="space-y-2 text-xs">
+              <ul className="space-y-2.5 text-xs">
                 <li>
-                  <a href="#simulator" className="hover:text-cyan-400 transition flex items-center gap-1.5">
-                    <span className="text-cyan-500">•</span> Feature Tour
+                  <a href="#simulator" className="hover:text-cyan-400 transition flex items-center gap-2">
+                    <span className="text-cyan-500 font-bold">•</span> Live Simulator
                   </a>
                 </li>
                 <li>
-                  <Link href="/demo" className="hover:text-cyan-400 transition flex items-center gap-1.5">
-                    <span className="text-cyan-500">•</span> Interactive Demo
+                  <Link href="/demo" className="hover:text-cyan-400 transition flex items-center gap-2">
+                    <span className="text-cyan-500 font-bold">•</span> Interactive Demo
                   </Link>
                 </li>
                 <li>
-                  <a href="#pricing" className="hover:text-cyan-400 transition flex items-center gap-1.5">
-                    <span className="text-cyan-500">•</span> Plans & Pricing
+                  <a href="#pricing" className="hover:text-cyan-400 transition flex items-center gap-2">
+                    <span className="text-cyan-500 font-bold">•</span> Plans & Pricing
                   </a>
                 </li>
                 <li>
-                  <a href="#faq" className="hover:text-cyan-400 transition flex items-center gap-1.5">
-                    <span className="text-cyan-500">•</span> Frequently Asked Questions
+                  <a href="#faq" className="hover:text-cyan-400 transition flex items-center gap-2">
+                    <span className="text-cyan-500 font-bold">•</span> Center FAQs
                   </a>
                 </li>
                 <li>
-                  <Link href="/signup" className="hover:text-cyan-400 transition flex items-center gap-1.5">
-                    <span className="text-cyan-500">•</span> Start 14-Day Free Trial
+                  <Link href="/signup" className="hover:text-cyan-400 transition flex items-center gap-2">
+                    <span className="text-cyan-500 font-bold">•</span> 14-Day Free Trial
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/login" className="hover:text-cyan-400 transition flex items-center gap-2">
+                    <span className="text-cyan-500 font-bold">•</span> Staff Desk Sign In
                   </Link>
                 </li>
               </ul>
             </div>
 
-            {/* Column 4: Platform Architecture */}
-            <div className="space-y-3">
+            {/* Column 4: Legal & Regulatory (2 Columns) */}
+            <div className="lg:col-span-2 space-y-3">
               <p className={`text-xs font-bold uppercase tracking-wider ${isDark ? "text-white" : "text-slate-900"}`}>
-                Architecture
+                Legal & Compliance
               </p>
-              <ul className="space-y-2 text-xs">
-                <li className="flex items-center gap-1.5">
-                  <CheckCircle2 size={13} className="text-emerald-400 shrink-0" />
-                  <span>100% Offline-Capable Storage</span>
+              <ul className="space-y-2.5 text-xs">
+                <li>
+                  <Link href="/terms" className="hover:text-cyan-400 transition flex items-center gap-2">
+                    <span className="text-cyan-500 font-bold">•</span> Terms of Service
+                  </Link>
                 </li>
-                <li className="flex items-center gap-1.5">
-                  <CheckCircle2 size={13} className="text-emerald-400 shrink-0" />
-                  <span>Direct UPI (0% Gateway Cut)</span>
+                <li>
+                  <Link href="/privacy" className="hover:text-cyan-400 transition flex items-center gap-2">
+                    <span className="text-cyan-500 font-bold">•</span> Privacy Policy
+                  </Link>
                 </li>
-                <li className="flex items-center gap-1.5">
-                  <CheckCircle2 size={13} className="text-emerald-400 shrink-0" />
-                  <span>Row-Level Tenant Isolation</span>
+                <li>
+                  <Link href="/refund-policy" className="hover:text-cyan-400 transition flex items-center gap-2">
+                    <span className="text-cyan-500 font-bold">•</span> Refund & Cancellation
+                  </Link>
                 </li>
-                <li className="flex items-center gap-1.5">
-                  <CheckCircle2 size={13} className="text-emerald-400 shrink-0" />
-                  <span>Multi-Language WhatsApp Slips</span>
+                <li>
+                  <Link href="/refund-policy#grievance" className="hover:text-cyan-400 transition flex items-center gap-2">
+                    <span className="text-cyan-500 font-bold">•</span> Grievance Officer
+                  </Link>
                 </li>
-                <li className="flex items-center gap-1.5">
-                  <CheckCircle2 size={13} className="text-emerald-400 shrink-0" />
-                  <span>Esc/POS USB & Bluetooth Support</span>
+                <li>
+                  <Link href="/admin/login" className="hover:text-cyan-400 transition flex items-center gap-2">
+                    <span className="text-cyan-500 font-bold">•</span> Super Admin Portal
+                  </Link>
                 </li>
               </ul>
             </div>
           </div>
 
-          {/* Bottom Bar */}
-          <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11.5px]">
+          {/* 3. Consolidated Statutory Compliance & Grievance Redressal Card */}
+          <div
+            className={`mt-10 rounded-2xl border p-5 sm:p-6 text-xs transition ${
+              isDark
+                ? "border-slate-800 bg-[#090f1d] text-slate-300"
+                : "border-slate-200 bg-slate-50 text-slate-700"
+            }`}
+          >
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-4 border-b border-slate-800/60 dark:border-slate-800">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck size={16} className="text-cyan-400" />
+                  <span className="font-bold text-white text-xs sm:text-sm">
+                    Consumer Protection (E-Commerce) Rules, 2020 Statutory Disclosure
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  Official Grievance Officer: <strong className="text-slate-200">Muhammed Anees E K V</strong> (Lead Operations & Compliance) • Phone: <a href="tel:+917012584152" className="text-cyan-400 hover:underline font-mono">+91 70125 84152</a> • Email: <a href="mailto:support@denbooks.in" className="text-cyan-400 hover:underline font-mono">support@denbooks.in</a> • Geographic Address: SRB Studios, Kerala, India. Complaints acknowledged within 48 hours and resolved within 1 month.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <Link
+                  href="/refund-policy"
+                  className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:border-cyan-400 hover:text-cyan-300 transition"
+                >
+                  Refund Policy
+                </Link>
+                <Link
+                  href="/terms"
+                  className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:border-cyan-400 hover:text-cyan-300 transition"
+                >
+                  Terms
+                </Link>
+                <Link
+                  href="/privacy"
+                  className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:border-cyan-400 hover:text-cyan-300 transition"
+                >
+                  Privacy
+                </Link>
+              </div>
+            </div>
+
+            {/* Non-Affiliation Disclaimer */}
+            <div className="pt-3.5 flex items-start gap-2.5 text-[11px] leading-relaxed text-slate-400">
+              <AlertCircle size={15} className="text-amber-400 shrink-0 mt-0.5" />
+              <p>
+                <strong className="text-slate-300">Statutory Non-Affiliation Disclaimer:</strong> DenBooks 360 is an independent commercial utility application developed and operated by SRB Studios. It is not affiliated with, authorized by, sponsored by, or endorsed by CSC e-Governance Services India Limited, Akshaya State Project (Kerala), e-Mitra (Rajasthan), Jan Seva Kendra, or any Central or State Government department. All third-party service names, portal trademarks, and logos are properties of their respective statutory owners.
+              </p>
+            </div>
+          </div>
+
+          {/* 4. Bottom Copyright & System Status Bar */}
+          <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
             <div className="flex items-center gap-2">
               <p className={isDark ? "text-slate-500" : "text-slate-600"}>
-                © {new Date().getFullYear()} DenBooks 360. Built for Indian Citizen Service Centers.
+                © {new Date().getFullYear()} DenBooks 360. All rights reserved.
               </p>
             </div>
 
             <div className="flex items-center gap-1.5 font-medium">
-              <span className={isDark ? "text-slate-500" : "text-slate-600"}>Designed & Developed by</span>
-              <span className="font-bold text-cyan-400 tracking-wide">
+              <span className={isDark ? "text-slate-500" : "text-slate-600"}>Designed & Engineered by</span>
+              <span className="font-extrabold text-cyan-400 tracking-wide">
                 SRB Studios
               </span>
             </div>
 
             <div className={`flex items-center gap-4 ${isDark ? "text-slate-500" : "text-slate-600"}`}>
-              <a href="#faq" className="hover:text-cyan-400 transition">FAQ</a>
+              <Link href="/terms" className="hover:text-cyan-400 transition">Terms</Link>
               <span>•</span>
-              <a href="#pricing" className="hover:text-cyan-400 transition">Pricing</a>
+              <Link href="/privacy" className="hover:text-cyan-400 transition">Privacy</Link>
               <span>•</span>
-              <span className="inline-flex items-center gap-1 text-emerald-500 font-semibold">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                Operational
+              <Link href="/refund-policy" className="hover:text-cyan-400 transition">Refunds</Link>
+              <span>•</span>
+              <span className="inline-flex items-center gap-1.5 text-emerald-400 font-semibold bg-emerald-950/40 border border-emerald-800/40 px-2 py-0.5 rounded-full text-[10px]">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                All Systems Operational
               </span>
             </div>
           </div>

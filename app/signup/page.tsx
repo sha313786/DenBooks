@@ -373,7 +373,17 @@ export default function SignupPage() {
             </button>
           </form>
 
-          <div className="mt-6 text-center text-xs text-slate-400">
+          <div
+            className={`mt-6 rounded-xl border p-3 text-[10.5px] leading-relaxed text-center ${
+              isDark
+                ? "border-slate-800 bg-slate-900/60 text-slate-400"
+                : "border-slate-200 bg-slate-50 text-slate-500"
+            }`}
+          >
+            <b>Statutory Notice:</b> DenBooks 360 is an independent commercial utility software developed by SRB Studios. It is not affiliated with, authorized by, sponsored by, or endorsed by CSC e-Governance Services India Limited, Akshaya State Project, e-Mitra, Jan Seva Kendra, or any Central/State Government department.
+          </div>
+
+          <div className="mt-4 text-center text-xs text-slate-400">
             Already registered?{" "}
             <Link href="/login" className="font-bold text-cyan-500 hover:underline">
               Sign in here

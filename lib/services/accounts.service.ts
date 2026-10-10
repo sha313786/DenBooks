@@ -35,6 +35,29 @@ export interface PaymentSplit {
   credit: number;
 }
 
+/**
+ * Client-Side PII Data Sanitizer:
+ * Masks 12-digit Aadhaar patterns (e.g. 1234 5678 9012 or 123456789012) into XXXX-XXXX-9012
+ * and PAN card numbers (5 letters + 4 digits + 1 letter) into XXXXX1234X
+ * before persisting to local storage, daybook database, or thermal receipts.
+ */
+export function sanitizeSensitivePii(text?: string): string {
+  if (!text) return "";
+  let sanitized = text;
+
+  // Mask 12-digit Aadhaar (with optional spaces or dashes)
+  sanitized = sanitized.replace(/\b(\d{4})[\s-]?(\d{4})[\s-]?(\d{4})\b/g, (_match, _p1, _p2, p3) => {
+    return `XXXX-XXXX-${p3}`;
+  });
+
+  // Mask PAN: 5 letters, 4 digits, 1 letter (e.g., ABCDE1234F -> XXXXX1234F)
+  sanitized = sanitized.replace(/\b([A-Z]{5})(\d{4})([A-Z]{1})\b/gi, (_match, _letters, digits, last) => {
+    return `XXXXX${digits}${last.toUpperCase()}`;
+  });
+
+  return sanitized;
+}
+
 export type AccountTransaction = {
   id: string;
   transaction_date: string; // YYYY-MM-DD
@@ -566,20 +589,25 @@ export async function createAccountTransaction(
     transaction_date: payload.transaction_date || getTodayDateString(),
     type: payload.type,
     category: payload.category,
-    title: payload.title,
-    description: payload.description || "",
+    title: sanitizeSensitivePii(payload.title),
+    description: sanitizeSensitivePii(payload.description || ""),
     amount: Number(payload.amount),
     govt_fee: payload.govt_fee ? Number(payload.govt_fee) : 0,
     service_charge: payload.service_charge ? Number(payload.service_charge) : 0,
     payment_method: payload.payment_method,
     reference_id: payload.reference_id || "",
-    customer_name: payload.customer_name || "",
+    customer_name: sanitizeSensitivePii(payload.customer_name || ""),
     customer_phone: payload.customer_phone || "",
     is_settled: payload.is_settled ?? true,
     wallet_name: payload.wallet_name || "",
     employee_id: payload.employee_id || "",
     employee_name: payload.employee_name || "",
-    items: payload.items || undefined,
+    items: payload.items
+      ? payload.items.map((item) => ({
+          ...item,
+          service_name: sanitizeSensitivePii(item.service_name),
+        }))
+      : undefined,
     payment_split: payload.payment_split || undefined,
     invoice_number: payload.invoice_number || payload.reference_id || undefined,
   };

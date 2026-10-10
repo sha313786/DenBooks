@@ -275,7 +275,7 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
         notes: utrNotes.trim() || undefined,
         billingCycle: selectedPlan === "yearly" ? "annual" : "monthly",
       });
-      setUtrSuccessMsg("UTR submitted successfully! Super Admin notified for instant manual approval.");
+      setUtrSuccessMsg("UTR submitted! A temporary 24-Hour Grace Pass has been activated while your payment is verified.");
       setUtrInput("");
       setUtrNotes("");
       loadSubscriptionData();

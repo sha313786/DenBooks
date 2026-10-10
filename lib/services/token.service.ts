@@ -443,6 +443,7 @@ export function printQueueTokenSlip(token: QueueToken) {
             <p><strong>Please take a seat in the waiting lounge.</strong></p>
             <p>Your token number will be announced at the counter.</p>
             <p style="margin-top: 4px; font-size: 8px; color: #666;">Issued by Reception: ${token.employee_name || "Receptionist"}</p>
+            <p style="margin-top: 3px; font-size: 7.5px; color: #666; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">Powered by DenBooks 360</p>
           </div>
         </div>
 

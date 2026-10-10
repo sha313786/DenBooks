@@ -85,6 +85,9 @@ export default function SuperAdminPage() {
   const [configMultiYearly, setConfigMultiYearly] = useState("4999");
   const [configWa, setConfigWa] = useState("");
   const [configPin, setConfigPin] = useState("9999");
+  const [configCompanyName, setConfigCompanyName] = useState("SRB Studios");
+  const [configCompanyAddress, setConfigCompanyAddress] = useState("SRB Studios, Kerala, India");
+  const [configSupportEmail, setConfigSupportEmail] = useState("support@denbooks.in");
   const [savedSettingsSuccess, setSavedSettingsSuccess] = useState(false);
   const [copiedUtr, setCopiedUtr] = useState<string | null>(null);
 
@@ -134,6 +137,9 @@ export default function SuperAdminPage() {
     setConfigWa(cleanWaDigits);
 
     setConfigPin(currentCfg.master_pin);
+    setConfigCompanyName(currentCfg.company_name || "SRB Studios");
+    setConfigCompanyAddress(currentCfg.company_address || "SRB Studios, Kerala, India");
+    setConfigSupportEmail(currentCfg.support_email || "support@denbooks.in");
   }, []);
 
   // Fetch tenants and submissions
@@ -256,6 +262,9 @@ export default function SuperAdminPage() {
     const updated = saveSuperAdminConfig({
       upi_id: cleanUpi,
       payee_name: configPayee.trim() || "DenBooks 360",
+      company_name: configCompanyName.trim() || "SRB Studios",
+      company_address: configCompanyAddress.trim() || "SRB Studios, Kerala, India",
+      support_email: configSupportEmail.trim() || "support@denbooks.in",
       starter_monthly_price: starterMo,
       starter_yearly_price: starterYr,
       pro_monthly_price: proMo,
@@ -1032,6 +1041,66 @@ export default function SuperAdminPage() {
                   <AlertTriangle size={15} className="text-amber-400 shrink-0 mt-0.5" />
                   <div className="leading-relaxed">
                     <strong className="text-amber-300 font-bold">Bank / VPA Name Match Tip:</strong> Ensure your Payee Name (e.g. <strong>{configPayee || "DenBooks 360"}</strong>) matches or closely aligns with the legal account name registered to <strong>{configUpiId || "your UPI ID"}</strong>. When users scan and pay with GPay or PhonePe, the bank's registered legal account name will be displayed.
+                  </div>
+                </div>
+
+                {/* Legal Entity & Invoice Header (Updatable at any time) */}
+                <div className="p-4 rounded-2xl border border-slate-800 bg-slate-900/60 space-y-3">
+                  <div>
+                    <h3 className="text-xs font-bold text-white flex items-center gap-1.5 uppercase tracking-wider">
+                      <Building size={14} className="text-cyan-400" />
+                      <span>Legal Entity & Subscription Invoice Header</span>
+                    </h3>
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      These details appear dynamically on official subscription invoices and receipts issued to center owners. You can update this address at any time.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                        Operating Entity / Company Name *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={configCompanyName}
+                        onChange={(e) => setConfigCompanyName(e.target.value)}
+                        placeholder="e.g. SRB Studios"
+                        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-white focus:border-cyan-400 outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                        Support & Billing Email *
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        value={configSupportEmail}
+                        onChange={(e) => setConfigSupportEmail(e.target.value)}
+                        placeholder="support@denbooks.in"
+                        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-white focus:border-cyan-400 outline-none"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                        Official Registered / Geographic Address *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={configCompanyAddress}
+                        onChange={(e) => setConfigCompanyAddress(e.target.value)}
+                        placeholder="e.g. SRB Studios, Kerala, India (Update street address when finalized)"
+                        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-white focus:border-cyan-400 outline-none"
+                      />
+                      <p className="text-[10px] text-slate-500 mt-1">
+                        Printed on all subscriber tax invoices and regulatory compliance cards.
+                      </p>
+                    </div>
                   </div>
                 </div>
 

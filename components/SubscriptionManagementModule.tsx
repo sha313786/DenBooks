@@ -30,7 +30,10 @@ import {
   IndianRupee,
   Edit2,
   X,
+  FileText,
+  Printer,
 } from "lucide-react";
+import SubscriptionInvoiceModal from "@/components/SubscriptionInvoiceModal";
 import {
   TenantSubscription,
   SuperAdminConfig,
@@ -92,10 +95,12 @@ export default function SubscriptionManagementModule({
   const [instantPinError, setInstantPinError] = useState("");
   const [instantSwitching, setInstantSwitching] = useState(false);
 
-  // Submissions history
+  // Submissions history & Invoice modal
   const [submissions, setSubmissions] = useState<PaymentSubmission[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [selectedInvoiceSubmission, setSelectedInvoiceSubmission] = useState<PaymentSubmission | null>(null);
 
   function loadData() {
     const sub = getCurrentTenantSubscription();
@@ -277,7 +282,7 @@ export default function SubscriptionManagementModule({
       });
 
       setUtrSuccessMsg(
-        `UTR submitted for ${currentPlanDef.name} (${billingCycle === "annual" ? "Annual" : "Monthly"} - ₹${payableAmount})! Queued for Super Admin verification.`
+        `UTR submitted for ${currentPlanDef.name}! A temporary 24-Hour Grace Pass has been activated while your payment is verified.`
       );
       setUtrInput("");
       setUtrNotes("");
@@ -386,6 +391,20 @@ export default function SubscriptionManagementModule({
               Expires: {new Date(subState.subscription_expires_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
             </span>
           </div>
+
+          {/* Download Subscription Tax Invoice Button */}
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedInvoiceSubmission(null);
+              setShowInvoiceModal(true);
+            }}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-3 py-2 text-xs font-bold text-cyan-300 hover:bg-cyan-500/20 hover:text-white transition shadow-sm cursor-pointer whitespace-nowrap"
+            title="View & Download official subscription tax invoice / receipt"
+          >
+            <FileText size={14} />
+            <span>Tax Invoice</span>
+          </button>
 
           {!embedded && (
             <Link
@@ -761,7 +780,7 @@ export default function SubscriptionManagementModule({
               </a>
 
               <p className="text-[10px] text-slate-400 leading-snug">
-                Scan with PhonePe, GPay, Paytm, or BHIM. Zero gateway fees. Copy 12-digit UTR from receipt and submit below.
+                Scan with PhonePe, GPay, Paytm, or BHIM. Zero gateway markup. Activated within 5–15 minutes after submitting the 12-digit UTR below.
               </p>
             </div>
           </div>
@@ -879,17 +898,33 @@ export default function SubscriptionManagementModule({
                           })}
                         </span>
                       </div>
-                      <span
-                        className={`text-[9.5px] font-bold px-2 py-0.5 rounded-full ${
-                          s.status === "approved"
-                            ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                            : s.status === "rejected"
-                            ? "bg-rose-500/20 text-rose-300 border border-rose-500/30"
-                            : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
-                        }`}
-                      >
-                        {s.status.toUpperCase()}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        {s.status === "approved" && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedInvoiceSubmission(s);
+                              setShowInvoiceModal(true);
+                            }}
+                            className="inline-flex items-center gap-1 rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-2 py-0.5 text-[10px] font-bold text-cyan-300 hover:bg-cyan-500/20"
+                            title="Print / View Invoice"
+                          >
+                            <FileText size={11} />
+                            <span>Invoice</span>
+                          </button>
+                        )}
+                        <span
+                          className={`text-[9.5px] font-bold px-2 py-0.5 rounded-full ${
+                            s.status === "approved"
+                              ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                              : s.status === "rejected"
+                              ? "bg-rose-500/20 text-rose-300 border border-rose-500/30"
+                              : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                          }`}
+                        >
+                          {s.status.toUpperCase()}
+                        </span>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -898,6 +933,30 @@ export default function SubscriptionManagementModule({
           )}
         </div>
       </div>
+
+      {/* Subscription Tax Invoice Modal */}
+      {subState && (
+        <SubscriptionInvoiceModal
+          isOpen={showInvoiceModal}
+          onClose={() => setShowInvoiceModal(false)}
+          config={superConfig}
+          submission={selectedInvoiceSubmission}
+          tenant={{
+            ...subState,
+            shop_name: shopName || subState.shop_name,
+            owner_name: ownerName || subState.owner_name,
+            owner_phone: phone || subState.owner_phone,
+          }}
+          onTenantUpdate={(updated) => {
+            if (updated.shop_name) setShopName(updated.shop_name);
+            if (updated.owner_name) setOwnerName(updated.owner_name);
+            if (updated.owner_phone) setPhone(updated.owner_phone);
+            if (subState) {
+              setSubState({ ...subState, ...updated });
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
