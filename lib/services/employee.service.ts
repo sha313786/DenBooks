@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { getCurrentTenantSubscription, getPlanLimits } from "@/lib/services/subscription.service";
 
 export type EmployeeRole =
   | "Counter Staff"
@@ -150,13 +151,23 @@ export async function getEmployees(): Promise<Employee[]> {
 export async function createEmployee(
   data: Omit<Employee, "id" | "joinedDate">
 ): Promise<Employee> {
+  const currentList = loadFromStorage();
+  const sub = getCurrentTenantSubscription();
+  const limits = getPlanLimits(sub.plan);
+
+  if (currentList.length >= limits.maxStaff) {
+    throw new Error(
+      `Your current ${limits.planName} allows ${limits.maxStaff} staff operator login. To add multiple staff with separate PINs and individual shift handovers, please upgrade to Pro Center Hub.`
+    );
+  }
+
   const newEmp: Employee = {
     ...data,
     id: `emp-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
     joinedDate: new Date().toISOString().split("T")[0],
   };
 
-  const list = [newEmp, ...loadFromStorage()];
+  const list = [newEmp, ...currentList];
   saveToStorage(list);
 
   // Sync to Supabase in background
@@ -246,12 +257,12 @@ export async function staffLogin(
   );
 
   // Auto-seed test verification employee if needed
-  if (!found && (cleanInput === "9876543210" || cleanInput === "demo" || cleanInput === "admin")) {
+  if (!found && (cleanInput === "demo" || cleanInput === "admin")) {
     if (cleanPin === "1234" || cleanPin === "0000" || cleanPin === "admin") {
       const demoEmp: Employee = {
-        id: "emp-demo-anees",
-        name: "Anees (Akshaya Desk)",
-        phone: "9876543210",
+        id: "emp-demo-desk",
+        name: "Staff Desk (Demo)",
+        phone: "",
         role: "Branch Supervisor",
         pin: "1234",
         isActive: true,

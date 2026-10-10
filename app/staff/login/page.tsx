@@ -135,7 +135,7 @@ export default function StaffLoginPage() {
                 <input
                   type="text"
                   required
-                  placeholder="e.g. 9876543210"
+                  placeholder="10-digit mobile number"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   className="w-full rounded-xl border border-slate-700/80 bg-slate-900/90 pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition"

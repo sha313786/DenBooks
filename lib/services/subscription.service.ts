@@ -1,7 +1,106 @@
 import { supabase } from "@/lib/supabase";
 
-export type SubscriptionPlan = "trial" | "monthly" | "yearly";
+export type SubscriptionPlan = "trial" | "single" | "pro" | "multi" | "monthly" | "yearly";
 export type SubscriptionStatus = "trial" | "active" | "expired" | "suspended";
+
+export interface PlanDefinition {
+  id: "single" | "pro" | "multi";
+  name: string;
+  tagline: string;
+  monthlyPrice: number;
+  yearlyPrice: number;
+  yearlyMonthlyEquiv: number;
+  savingsText: string;
+  isPopular?: boolean;
+  features: string[];
+}
+
+export const DENBOOKS_PLANS: PlanDefinition[] = [
+  {
+    id: "single",
+    name: "Single Counter",
+    tagline: "Essential daybook & thermal POS for single-operator CSCs & Cyber Cafes.",
+    monthlyPrice: 199,
+    yearlyPrice: 1499,
+    yearlyMonthlyEquiv: 125,
+    savingsText: "Save 37%",
+    features: [
+      "1 Active Staff Counter Operator (Single Terminal)",
+      "Single Counter POS & Daybook",
+      "4 Portal Advance Wallets (CSC, e-District)",
+      "58mm & 80mm Thermal Printer Slips",
+      "Customer Khata (Credit) Tracker",
+      "Pass-Through Govt Fee Isolation",
+    ],
+  },
+  {
+    id: "pro",
+    name: "Pro Center Hub",
+    tagline: "Full multi-staff power for busy Akshaya, CSC & Xerox centers.",
+    monthlyPrice: 349,
+    yearlyPrice: 2499,
+    yearlyMonthlyEquiv: 208,
+    savingsText: "Save 40% / Best Value",
+    isPopular: true,
+    features: [
+      "Unlimited Staff Counter Logins (PIN secured)",
+      "Shift Cash Drawer Handover Tally (EOD)",
+      "Operator-wise Revenue Attribution & Shift Logs",
+      "Unlimited Portal Wallets & Bank Accounts",
+      "FCFS Queue Token & Call Screen",
+      "1-Click WhatsApp Khata Reminders",
+      "Excel & CSV Daybook Data Export",
+      "Priority WhatsApp Help & Support",
+    ],
+  },
+  {
+    id: "multi",
+    name: "Multi-Branch Network",
+    tagline: "For entrepreneurs running multiple center locations or kiosks.",
+    monthlyPrice: 699,
+    yearlyPrice: 4999,
+    yearlyMonthlyEquiv: 416,
+    savingsText: "Save 40%",
+    features: [
+      "Up to 5 Center Locations Included",
+      "Unlimited Staff Across All Locations",
+      "Consolidated Owner Financial Dashboard",
+      "Custom Center Branding & Receipts",
+      "Dedicated Account Manager",
+      "Branch-to-Branch Cash Transfer Tracking",
+    ],
+  },
+];
+
+export interface PlanLimits {
+  maxStaff: number; // 1 for single/starter, Infinity for pro/multi/trial
+  canMultiStaff: boolean;
+  canShiftHandover: boolean;
+  canExportExcel: boolean;
+  canQueueTokens: boolean;
+  planName: string;
+}
+
+export function getPlanLimits(plan: SubscriptionPlan): PlanLimits {
+  if (plan === "single") {
+    return {
+      maxStaff: 1,
+      canMultiStaff: false,
+      canShiftHandover: false,
+      canExportExcel: false,
+      canQueueTokens: false,
+      planName: "Single Counter (Starter)",
+    };
+  }
+  return {
+    maxStaff: Infinity,
+    canMultiStaff: true,
+    canShiftHandover: true,
+    canExportExcel: true,
+    canQueueTokens: true,
+    planName: plan === "multi" ? "Multi-Branch Network" : plan === "trial" ? "14-Day Free Pro Trial" : "Pro Center Hub",
+  };
+}
 
 export interface PaymentSubmission {
   id: string;
@@ -14,6 +113,7 @@ export interface PaymentSubmission {
   utr_number: string;
   status: "pending" | "approved" | "rejected";
   notes?: string;
+  billing_cycle?: "monthly" | "annual";
   created_at: string;
   approved_at?: string;
 }
@@ -39,6 +139,14 @@ export interface TenantSubscription {
 export interface SuperAdminConfig {
   upi_id: string;
   payee_name: string;
+  // Per-plan pricing rates
+  starter_monthly_price: number;
+  starter_yearly_price: number;
+  pro_monthly_price: number;
+  pro_yearly_price: number;
+  multi_monthly_price: number;
+  multi_yearly_price: number;
+  // Legacy / fallback fields
   monthly_price: number;
   yearly_price: number;
   whatsapp_number: string;
@@ -48,11 +156,54 @@ export interface SuperAdminConfig {
 const DEFAULT_SUPER_CONFIG: SuperAdminConfig = {
   upi_id: "denbooks@upi",
   payee_name: "DenBooks 360",
-  monthly_price: 499,
-  yearly_price: 3999,
-  whatsapp_number: "+919876543210",
+  starter_monthly_price: 199,
+  starter_yearly_price: 1499,
+  pro_monthly_price: 349,
+  pro_yearly_price: 2499,
+  multi_monthly_price: 699,
+  multi_yearly_price: 4999,
+  monthly_price: 199,
+  yearly_price: 1499,
+  whatsapp_number: "",
   master_pin: "9999",
 };
+
+/**
+ * Returns plan definitions with live prices merged from Super Admin config
+ */
+export function getPlanDefinitions(cfg?: SuperAdminConfig): PlanDefinition[] {
+  const config = cfg || getSuperAdminConfig();
+  const starterMo = config.starter_monthly_price || 199;
+  const starterYr = config.starter_yearly_price || 1499;
+  const proMo = config.pro_monthly_price || 349;
+  const proYr = config.pro_yearly_price || 2499;
+  const multiMo = config.multi_monthly_price || 699;
+  const multiYr = config.multi_yearly_price || 4999;
+
+  return [
+    {
+      ...DENBOOKS_PLANS[0],
+      monthlyPrice: starterMo,
+      yearlyPrice: starterYr,
+      yearlyMonthlyEquiv: Math.round(starterYr / 12),
+      savingsText: `Save ${Math.max(0, Math.round(((starterMo * 12 - starterYr) / (starterMo * 12)) * 100))}%`,
+    },
+    {
+      ...DENBOOKS_PLANS[1],
+      monthlyPrice: proMo,
+      yearlyPrice: proYr,
+      yearlyMonthlyEquiv: Math.round(proYr / 12),
+      savingsText: `Save ${Math.max(0, Math.round(((proMo * 12 - proYr) / (proMo * 12)) * 100))}%`,
+    },
+    {
+      ...DENBOOKS_PLANS[2],
+      monthlyPrice: multiMo,
+      yearlyPrice: multiYr,
+      yearlyMonthlyEquiv: Math.round(multiYr / 12),
+      savingsText: `Save ${Math.max(0, Math.round(((multiMo * 12 - multiYr) / (multiMo * 12)) * 100))}%`,
+    },
+  ];
+}
 
 const LOCAL_STORAGE_TENANT_KEY = "denbooks_current_tenant";
 const LOCAL_STORAGE_SUB_KEY = "denbooks_subscription_state";
@@ -93,10 +244,23 @@ export function saveSuperAdminConfig(cfg: Partial<SuperAdminConfig>): SuperAdmin
  */
 export function getDaysRemaining(isoDateString?: string): number {
   if (!isoDateString) return 0;
-  const target = new Date(isoDateString).getTime();
-  const now = new Date().getTime();
-  const diffMs = target - now;
-  return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  const targetDate = new Date(isoDateString);
+  const now = new Date();
+
+  // Normalize both dates to midnight (00:00:00) to calculate true calendar days
+  const targetMidnight = new Date(
+    targetDate.getFullYear(),
+    targetDate.getMonth(),
+    targetDate.getDate()
+  ).getTime();
+
+  const todayMidnight = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate()
+  ).getTime();
+
+  return Math.round((targetMidnight - todayMidnight) / (1000 * 60 * 60 * 24));
 }
 
 /**
@@ -132,12 +296,12 @@ export function getCurrentTenantSubscription(): TenantSubscription {
     } catch {}
   }
 
-  const tenantId = tenantProfile.id || "tenant_default_csc";
-  const shopName = tenantProfile.name || "Apex Digital Seva Center";
-  const ownerName = tenantProfile.owner || "CSC Operator";
-  const ownerPhone = tenantProfile.phone || "9876543210";
-  const ownerEmail = tenantProfile.email || "csc@digitalindia.gov";
-  const state = tenantProfile.state || "Kerala";
+  const tenantId = tenantProfile.id || `tenant_${Date.now()}`;
+  const shopName = tenantProfile.name || "";
+  const ownerName = tenantProfile.owner || "";
+  const ownerPhone = tenantProfile.phone || "";
+  const ownerEmail = tenantProfile.email || "";
+  const state = tenantProfile.state || "";
 
   // Check saved subscription state
   let subState: TenantSubscription | null = null;
@@ -166,10 +330,14 @@ export function getCurrentTenantSubscription(): TenantSubscription {
     };
     saveTenantSubscription(subState);
   } else {
+    // Purge any legacy dummy values from previous runs
+    if (subState.owner_phone === "9876543210") subState.owner_phone = "";
+    if (subState.shop_name === "Apex Digital Seva Center") subState.shop_name = "";
+    if (subState.owner_name === "CSC Operator") subState.owner_name = "";
     // Sync any name/phone updates
-    subState.shop_name = shopName;
-    subState.owner_name = ownerName;
-    subState.owner_phone = ownerPhone;
+    if (shopName) subState.shop_name = shopName;
+    if (ownerName) subState.owner_name = ownerName;
+    if (ownerPhone) subState.owner_phone = ownerPhone;
   }
 
   // Evaluate dynamic expiration status
@@ -240,6 +408,7 @@ export async function submitPaymentUTR(params: {
   amount: number;
   utrNumber: string;
   notes?: string;
+  billingCycle?: "monthly" | "annual";
 }): Promise<PaymentSubmission> {
   const currentSub = getCurrentTenantSubscription();
   const submission: PaymentSubmission = {
@@ -253,6 +422,7 @@ export async function submitPaymentUTR(params: {
     utr_number: params.utrNumber.trim(),
     status: "pending",
     notes: params.notes,
+    billing_cycle: params.billingCycle || "annual",
     created_at: new Date().toISOString(),
   };
 
@@ -385,88 +555,83 @@ export async function rejectPaymentSubmission(submissionId: string, reason?: str
 }
 
 /**
- * Super Admin: List all tenants
+ * Super Admin: List all tenants without dummy sample data
  */
-function getAllTenantsLocal(): TenantSubscription[] {
+export function purgeAllSampleTenants(): TenantSubscription[] {
   if (typeof window === "undefined") return [];
+  const SAMPLE_IDS = new Set(["ten_kerala_01", "ten_up_02", "ten_tn_03", "ten_bihar_04"]);
+  const SAMPLE_NAMES = new Set([
+    "Malabar Akshaya e-Kendra",
+    "Jan Seva Kendra Lucknow",
+    "Madurai e-Sevai Maiyam",
+    "Vasudha Kendra Patna",
+    "Apex Digital Seva Center",
+    "Apex Digital Seva Kendra",
+  ]);
+
+  let cleanList: TenantSubscription[] = [];
   try {
     const raw = localStorage.getItem(LOCAL_STORAGE_ALL_TENANTS_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed: TenantSubscription[] = JSON.parse(raw);
+      cleanList = parsed.filter(
+        (t) =>
+          !SAMPLE_IDS.has(t.id) &&
+          !SAMPLE_NAMES.has(t.shop_name) &&
+          t.shop_name &&
+          t.shop_name.trim().length > 0 &&
+          t.owner_phone !== "9876543210"
+      );
+    }
   } catch {}
 
-  // If empty, seed with current tenant + initial sample tenants for demo
+  // Check if current session tenant is a real registered center
   const current = getCurrentTenantSubscription();
-  const initialList: TenantSubscription[] = [
-    current,
-    {
-      id: "ten_kerala_01",
-      shop_name: "Malabar Akshaya e-Kendra",
-      owner_name: "Muhammed Rashid",
-      owner_phone: "9447123456",
-      owner_email: "rashid.akshaya@kerala.gov.in",
-      state: "Kerala",
-      plan: "monthly",
-      status: "active",
-      trial_ends_at: new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString(),
-      subscription_expires_at: new Date(Date.now() + 22 * 24 * 3600 * 1000).toISOString(),
-      is_locked: false,
-      last_payment_utr: "428919028391",
-      last_payment_date: new Date(Date.now() - 8 * 24 * 3600 * 1000).toISOString(),
-      created_at: new Date(Date.now() - 38 * 24 * 3600 * 1000).toISOString(),
-    },
-    {
-      id: "ten_up_02",
-      shop_name: "Jan Seva Kendra Lucknow",
-      owner_name: "Alok Kumar Verma",
-      owner_phone: "9839012345",
-      owner_email: "alok.janseva@gmail.com",
-      state: "Uttar Pradesh",
-      plan: "trial",
-      status: "trial",
-      trial_ends_at: new Date(Date.now() + 4 * 24 * 3600 * 1000).toISOString(),
-      subscription_expires_at: new Date(Date.now() + 4 * 24 * 3600 * 1000).toISOString(),
-      is_locked: false,
-      created_at: new Date(Date.now() - 10 * 24 * 3600 * 1000).toISOString(),
-    },
-    {
-      id: "ten_tn_03",
-      shop_name: "Madurai e-Sevai Maiyam",
-      owner_name: "S. Murugan",
-      owner_phone: "9842109876",
-      owner_email: "murugan.esevai@tn.gov.in",
-      state: "Tamil Nadu",
-      plan: "yearly",
-      status: "active",
-      trial_ends_at: new Date(Date.now() - 90 * 24 * 3600 * 1000).toISOString(),
-      subscription_expires_at: new Date(Date.now() + 275 * 24 * 3600 * 1000).toISOString(),
-      is_locked: false,
-      last_payment_utr: "510984920194",
-      last_payment_date: new Date(Date.now() - 90 * 24 * 3600 * 1000).toISOString(),
-      created_at: new Date(Date.now() - 95 * 24 * 3600 * 1000).toISOString(),
-    },
-    {
-      id: "ten_bihar_04",
-      shop_name: "Vasudha Kendra Patna",
-      owner_name: "Rajnish Pandey",
-      owner_phone: "9431055443",
-      owner_email: "rajnish.bihar@csc.gov.in",
-      state: "Bihar",
-      plan: "trial",
-      status: "expired",
-      trial_ends_at: new Date(Date.now() - 2 * 24 * 3600 * 1000).toISOString(),
-      subscription_expires_at: new Date(Date.now() - 2 * 24 * 3600 * 1000).toISOString(),
-      is_locked: true,
-      lock_reason: "14-day trial expired. Center locked until renewal.",
-      created_at: new Date(Date.now() - 16 * 24 * 3600 * 1000).toISOString(),
-    },
-  ];
+  if (
+    current &&
+    current.shop_name &&
+    !SAMPLE_NAMES.has(current.shop_name) &&
+    current.owner_phone !== "9876543210"
+  ) {
+    if (!cleanList.some((t) => t.id === current.id || t.shop_name === current.shop_name)) {
+      cleanList.unshift(current);
+    }
+  }
 
-  localStorage.setItem(LOCAL_STORAGE_ALL_TENANTS_KEY, JSON.stringify(initialList));
-  return initialList;
+  try {
+    localStorage.setItem(LOCAL_STORAGE_ALL_TENANTS_KEY, JSON.stringify(cleanList));
+    window.dispatchEvent(new Event("storage"));
+  } catch {}
+
+  return cleanList;
+}
+
+export function getAllTenantsLocal(): TenantSubscription[] {
+  return purgeAllSampleTenants();
+}
+
+export async function deleteTenantSubscription(tenantId: string): Promise<boolean> {
+  if (typeof window !== "undefined") {
+    try {
+      const raw = localStorage.getItem(LOCAL_STORAGE_ALL_TENANTS_KEY);
+      if (raw) {
+        const all: TenantSubscription[] = JSON.parse(raw);
+        const filtered = all.filter((t) => t.id !== tenantId);
+        localStorage.setItem(LOCAL_STORAGE_ALL_TENANTS_KEY, JSON.stringify(filtered));
+        window.dispatchEvent(new Event("storage"));
+      }
+    } catch {}
+  }
+
+  try {
+    await supabase.from("tenants").delete().eq("id", tenantId);
+  } catch {}
+
+  return true;
 }
 
 export async function getAllTenantsSubscription(): Promise<TenantSubscription[]> {
-  const localList = getAllTenantsLocal();
+  const localList = purgeAllSampleTenants();
 
   try {
     const { data, error } = await supabase
@@ -474,9 +639,26 @@ export async function getAllTenantsSubscription(): Promise<TenantSubscription[]>
       .select("*")
       .order("created_at", { ascending: false });
     if (!error && data && data.length > 0) {
+      const SAMPLE_IDS = new Set(["ten_kerala_01", "ten_up_02", "ten_tn_03", "ten_bihar_04"]);
+      const SAMPLE_NAMES = new Set([
+        "Malabar Akshaya e-Kendra",
+        "Jan Seva Kendra Lucknow",
+        "Madurai e-Sevai Maiyam",
+        "Vasudha Kendra Patna",
+        "Apex Digital Seva Center",
+        "Apex Digital Seva Kendra",
+      ]);
+      const validRemote = (data as TenantSubscription[]).filter(
+        (t) =>
+          !SAMPLE_IDS.has(t.id) &&
+          !SAMPLE_NAMES.has(t.shop_name) &&
+          t.shop_name &&
+          t.shop_name.trim().length > 0 &&
+          t.owner_phone !== "9876543210"
+      );
       const mergedMap = new Map<string, TenantSubscription>();
       localList.forEach((t) => mergedMap.set(t.id, t));
-      data.forEach((t) => mergedMap.set(t.id, t as TenantSubscription));
+      validRemote.forEach((t) => mergedMap.set(t.id, t));
       return Array.from(mergedMap.values());
     }
   } catch {}

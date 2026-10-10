@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
 import {
   Users,
   UserPlus,
@@ -23,6 +24,8 @@ import {
   Receipt,
   FileText,
   BadgeCheck,
+  Lock,
+  ArrowRight,
 } from "lucide-react";
 import {
   Employee,
@@ -33,6 +36,12 @@ import {
   updateEmployee,
   deleteEmployee,
 } from "@/lib/services/employee.service";
+import {
+  getCurrentTenantSubscription,
+  getPlanLimits,
+  TenantSubscription,
+  PlanLimits,
+} from "@/lib/services/subscription.service";
 
 export default function EmployeeManagementModule() {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -40,6 +49,11 @@ export default function EmployeeManagementModule() {
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+
+  // Subscription plan limits state
+  const [subState, setSubState] = useState<TenantSubscription | null>(null);
+  const [planLimits, setPlanLimits] = useState<PlanLimits | null>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   // Show PIN visibility toggle by employee id
   const [visiblePins, setVisiblePins] = useState<Record<string, boolean>>({});
@@ -71,6 +85,9 @@ export default function EmployeeManagementModule() {
     try {
       const list = await getEmployees();
       setEmployees(list);
+      const sub = getCurrentTenantSubscription();
+      setSubState(sub);
+      setPlanLimits(getPlanLimits(sub.plan));
     } catch (e) {
       console.error(e);
     } finally {
@@ -87,6 +104,10 @@ export default function EmployeeManagementModule() {
   }
 
   function openAddModal() {
+    if (planLimits && !planLimits.canMultiStaff && employees.length >= planLimits.maxStaff) {
+      setShowUpgradeModal(true);
+      return;
+    }
     setEditingEmployee(null);
     setFormName("");
     setFormPhone("");
@@ -156,6 +177,12 @@ export default function EmployeeManagementModule() {
         );
         setStatusMsg(`Updated ${updated.name} successfully.`);
       } else {
+        if (planLimits && !planLimits.canMultiStaff && employees.length >= planLimits.maxStaff) {
+          setShowModal(false);
+          setShowUpgradeModal(true);
+          setSaving(false);
+          return;
+        }
         const created = await createEmployee({
           name: formName.trim(),
           phone: formPhone.trim(),
@@ -179,7 +206,12 @@ export default function EmployeeManagementModule() {
       setShowModal(false);
       setTimeout(() => setStatusMsg(""), 3500);
     } catch (err: any) {
-      alert(err.message || "Failed to save employee.");
+      if (err.message?.includes("upgrade to Pro")) {
+        setShowModal(false);
+        setShowUpgradeModal(true);
+      } else {
+        alert(err.message || "Failed to save employee.");
+      }
     } finally {
       setSaving(false);
     }
@@ -281,10 +313,23 @@ export default function EmployeeManagementModule() {
           <button
             type="button"
             onClick={openAddModal}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 px-4 py-2 text-xs font-bold text-slate-950 hover:brightness-110 transition shadow-md shadow-cyan-500/20"
+            className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition shadow-md ${
+              planLimits && !planLimits.canMultiStaff && employees.length >= planLimits.maxStaff
+                ? "border border-amber-300 dark:border-amber-400/50 bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-500/30"
+                : "bg-gradient-to-r from-cyan-500 to-teal-500 text-slate-950 hover:brightness-110 shadow-cyan-500/20"
+            }`}
           >
-            <UserPlus size={15} />
-            <span>Add New Staff</span>
+            {planLimits && !planLimits.canMultiStaff && employees.length >= planLimits.maxStaff ? (
+              <>
+                <Lock size={14} className="text-amber-700 dark:text-amber-400" />
+                <span>Add Staff (Pro Feature)</span>
+              </>
+            ) : (
+              <>
+                <UserPlus size={15} />
+                <span>Add New Staff</span>
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -293,6 +338,50 @@ export default function EmployeeManagementModule() {
         <div className="flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 text-xs font-medium text-emerald-300 animate-fadeIn">
           <BadgeCheck size={16} />
           <span>{statusMsg}</span>
+        </div>
+      )}
+
+      {/* Plan Multi-Staff Enforcer Banner */}
+      {planLimits && !planLimits.canMultiStaff ? (
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-2xl border border-amber-300 dark:border-amber-500/40 bg-amber-50/90 dark:bg-[#1a140d] p-4 text-xs shadow-sm">
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-amber-700 dark:text-amber-400">
+              <Users size={18} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-bold text-amber-900 dark:text-amber-300">
+                  Starter Plan (Single Counter) Limit: 1 Staff Terminal Included
+                </span>
+                <span className="rounded-full bg-amber-200/80 dark:bg-amber-900/50 px-2.5 py-0.5 text-[10.5px] font-bold text-amber-900 dark:text-amber-300 border border-amber-300/80 dark:border-amber-700/50">
+                  {employees.length} / 1 Staff Used
+                </span>
+              </div>
+              <p className="mt-1 text-[11px] text-amber-800/90 dark:text-amber-300/70">
+                Want 3+ employees with separate 4-digit PINs, individual shift handover tally slips, and operator tracking? Upgrade to <strong>Pro Center Hub</strong>.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowUpgradeModal(true)}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-3.5 py-2 text-xs font-bold text-slate-950 hover:brightness-110 active:scale-95 transition shadow-sm"
+          >
+            <Sparkles size={13} />
+            <span>Upgrade to Pro (₹349/mo)</span>
+          </button>
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-emerald-300 dark:border-emerald-500/30 bg-emerald-50/80 dark:bg-emerald-950/20 px-4 py-2.5 text-xs text-emerald-800 dark:text-emerald-300 shadow-sm">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 size={15} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <span className="font-bold">
+              {subState?.plan === "trial" ? "14-Day Free Pro Trial Active" : "Pro Center Hub Active"}: Unlimited Staff Counter Logins & Separate PIN Shifts
+            </span>
+          </div>
+          <span className="text-[11px] text-emerald-700 dark:text-emerald-400/80">
+            {employees.length} staff registered • Individual shift handover slips enabled
+          </span>
         </div>
       )}
 
@@ -590,7 +679,7 @@ export default function EmployeeManagementModule() {
                   <input
                     type="tel"
                     required
-                    placeholder="e.g. 9876543210"
+                    placeholder="10-digit mobile number"
                     value={formPhone}
                     onChange={(e) => setFormPhone(e.target.value)}
                     className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-mono text-white outline-none focus:border-cyan-400"
@@ -779,6 +868,128 @@ export default function EmployeeManagementModule() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Upgrade to Pro Modal (Multi-Staff Limit Enforcer) */}
+      {showUpgradeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-fadeIn">
+          <div className="relative w-full max-w-lg rounded-3xl border border-cyan-400/40 bg-white dark:bg-[#0c1322] p-6 shadow-2xl space-y-5 text-slate-800 dark:text-slate-100">
+            {/* Header */}
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400/20 to-teal-400/10 border border-cyan-400/30 text-cyan-600 dark:text-cyan-400">
+                  <Sparkles size={22} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 dark:text-white">
+                    Upgrade to Pro Center Hub for Multi-Staff
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Your current Single Counter (Starter) Plan includes 1 staff operator.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowUpgradeModal(false)}
+                className="rounded-lg p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+              >
+                <XCircle size={18} />
+              </button>
+            </div>
+
+            {/* Plan Comparison Box */}
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 p-3.5 space-y-2">
+                <div className="font-bold text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider">
+                  Single Counter (Current)
+                </div>
+                <div className="font-black text-sm text-slate-800 dark:text-slate-300">₹ 199 / mo</div>
+                <ul className="space-y-1.5 text-[11px] text-slate-600 dark:text-slate-400 pt-1 border-t border-slate-200 dark:border-slate-800">
+                  <li className="flex items-center gap-1.5">
+                    <Check size={12} className="text-cyan-600 dark:text-cyan-400" />
+                    <span>1 Staff Login Included</span>
+                  </li>
+                  <li className="flex items-center gap-1.5">
+                    <Check size={12} className="text-cyan-600 dark:text-cyan-400" />
+                    <span>Single Drawer Tally</span>
+                  </li>
+                  <li className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500">
+                    <span className="line-through">Individual Staff Handover</span>
+                  </li>
+                  <li className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500">
+                    <span className="line-through">Operator Revenue Attribution</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="rounded-2xl border border-cyan-300 dark:border-cyan-500/50 bg-cyan-50/70 dark:bg-gradient-to-b dark:from-cyan-950/30 dark:to-[#0e1c33] p-3.5 space-y-2 relative shadow-lg shadow-cyan-950/20">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-cyan-700 dark:text-cyan-400 uppercase text-[10px] tracking-wider">
+                    Pro Center Hub
+                  </span>
+                  <span className="rounded-full bg-cyan-500/20 px-2 py-0.5 text-[9px] font-black text-cyan-700 dark:text-cyan-300 border border-cyan-400/30">
+                    RECOMMENDED
+                  </span>
+                </div>
+                <div className="font-black text-sm text-cyan-950 dark:text-white">
+                  ₹ 349 / mo <span className="text-[10px] text-slate-500 dark:text-slate-400 font-normal">or ₹1999/yr</span>
+                </div>
+                <ul className="space-y-1.5 text-[11px] text-slate-700 dark:text-slate-200 pt-1 border-t border-cyan-200 dark:border-cyan-500/20">
+                  <li className="flex items-center gap-1.5">
+                    <Check size={12} className="text-emerald-600 dark:text-emerald-400" />
+                    <span className="font-bold text-slate-900 dark:text-white">Unlimited Staff PIN Logins</span>
+                  </li>
+                  <li className="flex items-center gap-1.5">
+                    <Check size={12} className="text-emerald-600 dark:text-emerald-400" />
+                    <span>Shift Drawer Handover Slips</span>
+                  </li>
+                  <li className="flex items-center gap-1.5">
+                    <Check size={12} className="text-emerald-600 dark:text-emerald-400" />
+                    <span>Operator Revenue Attribution</span>
+                  </li>
+                  <li className="flex items-center gap-1.5">
+                    <Check size={12} className="text-emerald-600 dark:text-emerald-400" />
+                    <span>Token Queue Call Screen</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Explanatory text */}
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-900/40 p-3 text-xs text-slate-700 dark:text-slate-300 space-y-1">
+              <p className="font-semibold text-slate-900 dark:text-slate-200">
+                How multi-staff works in Pro Center Hub:
+              </p>
+              <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                Each of your 3+ staff members gets their own mobile number + 4-digit PIN. When their shift ends, DenBooks tallies their physical cash drawer separately and prints a verified Handover Slip before the next staff member logs in.
+              </p>
+            </div>
+
+            {/* CTAs */}
+            <div className="flex flex-col sm:flex-row items-center gap-2 pt-2">
+              <Link
+                href="/dashboard/subscription"
+                className="w-full sm:flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-400 to-teal-400 py-3 text-xs font-black text-slate-950 hover:brightness-110 active:scale-95 transition shadow-lg shadow-cyan-400/20"
+              >
+                <span>Upgrade to Pro Center Hub</span>
+                <ArrowRight size={14} />
+              </Link>
+              {employees.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowUpgradeModal(false);
+                    openEditModal(employees[0]);
+                  }}
+                  className="w-full sm:w-auto rounded-xl border border-slate-300 dark:border-slate-700 px-4 py-3 text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                >
+                  Edit Current Staff ({employees[0].name})
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}

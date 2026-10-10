@@ -140,7 +140,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
   }>({
     name: "DenBooks Counter Desk",
     phone: "",
-    centerCode: "KNR059",
+    centerCode: "",
   });
 
   // Staff Attendance State
@@ -153,10 +153,12 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
         const stored = localStorage.getItem("denbooks_current_tenant");
         if (stored) {
           const parsed = JSON.parse(stored);
+          const cleanCenterCode = parsed.centerCode === "KNR059" ? "" : (parsed.centerCode || "");
+          const cleanPhone = parsed.phone === "9876543210" ? "" : (parsed.phone || "");
           setCenterProfile({
             name: parsed.name || "DenBooks Counter Desk",
-            phone: parsed.phone || "",
-            centerCode: parsed.centerCode || "KNR059",
+            phone: cleanPhone,
+            centerCode: cleanCenterCode,
           });
         }
       } catch {}
@@ -511,7 +513,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
 
     setInvCustomerName(tok.customer_name);
     setInvCustomerPhone(tok.customer_phone || "");
-    const nextSeq = peekNextInvoiceNumber(centerProfile.centerCode || "KNR059");
+    const nextSeq = peekNextInvoiceNumber(centerProfile.centerCode || "");
     setInvRefId(nextSeq);
     setInvNotes(`Token #${tok.token_number} - ${tok.service_requested}`);
     setInvPaymentMethod("Cash");
@@ -686,7 +688,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
     setInvLinkedRequestId(null);
     setInvCustomerName("");
     setInvCustomerPhone("");
-    const nextSeq = peekNextInvoiceNumber(centerProfile.centerCode || "KNR059");
+    const nextSeq = peekNextInvoiceNumber(centerProfile.centerCode || "");
     setInvRefId(nextSeq);
     setInvPaymentMethod("Cash");
     setInvIsCredit(false);
@@ -808,7 +810,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
     setInvMode("citizen");
     setInvCustomerName(receptionCustName.trim());
     setInvCustomerPhone(receptionCustPhone.trim());
-    const nextSeq = peekNextInvoiceNumber(centerProfile.centerCode || "KNR059");
+    const nextSeq = peekNextInvoiceNumber(centerProfile.centerCode || "");
     setInvRefId(nextSeq);
     setInvNotes(receptionNotes.trim());
     setInvItems(itemsToBill);
@@ -956,7 +958,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
 
     setSavingInvoice(true);
     try {
-      const centerCode = centerProfile.centerCode || "KNR059";
+      const centerCode = centerProfile.centerCode || "";
       const actualInvNumber = getNextInvoiceNumber(centerCode);
 
       const paymentMethod: PaymentMethod =
@@ -2017,9 +2019,11 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
           {/* Active Employee Info & Actions */}
           <div className="flex items-center gap-2 sm:gap-2.5">
             {/* Center Code Badge */}
-            <span className="hidden md:inline-flex items-center gap-1 rounded-xl bg-slate-900 border border-slate-750 px-2.5 py-1 text-xs font-mono font-bold text-cyan-300" title="Akshaya Center Audit Code">
-              🏢 {centerProfile.centerCode || "KNR059"}
-            </span>
+            {centerProfile.centerCode ? (
+              <span className="hidden md:inline-flex items-center gap-1 rounded-xl bg-slate-900 border border-slate-750 px-2.5 py-1 text-xs font-mono font-bold text-cyan-300" title="Center Audit Code">
+                🏢 {centerProfile.centerCode}
+              </span>
+            ) : null}
 
             {/* Attendance Punch In / Punch Out Widget (hidden on Attendance tab where dedicated banner exists) */}
             {activeTab !== "attendance" && (
@@ -2090,18 +2094,18 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
       {/* 2. Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-4">
         {/* Modern Segmented Front Desk Navigation Bar */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 rounded-2xl border border-slate-800/80 bg-[#0e1526] p-2.5 shadow-md">
+        <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-2.5 rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-[#0e1526] p-2.5 shadow-md">
           {/* Module Tabs */}
-          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar p-0.5 rounded-xl bg-[#090d16]/70 border border-slate-800/60">
+          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar p-0.5 rounded-xl bg-slate-100 dark:bg-[#090d16]/70 border border-slate-200 dark:border-slate-800/60 flex-wrap sm:flex-nowrap">
             <Link
               href="/staff/tokens"
               className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition whitespace-nowrap flex items-center gap-1.5 ${
                 activeTab === "tokens"
-                  ? "bg-pink-500/20 text-pink-300 border border-pink-500/40 font-bold shadow-sm"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
+                  ? "bg-pink-100 text-pink-700 border border-pink-300 dark:bg-pink-500/20 dark:text-pink-300 dark:border-pink-500/40 font-bold shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800/40"
               }`}
             >
-              <Ticket size={13} className={activeTab === "tokens" ? "text-pink-400" : "text-slate-500"} />
+              <Ticket size={13} className={activeTab === "tokens" ? "text-pink-600 dark:text-pink-400" : "text-slate-500"} />
               <span>Queue Tokens</span>
               {queueStats.waitingCount > 0 && (
                 <span className="rounded-full bg-pink-500 text-slate-950 font-black px-1.5 py-0.2 text-[10px]">
@@ -2114,11 +2118,11 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
               href="/staff/reception"
               className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition whitespace-nowrap flex items-center gap-1.5 ${
                 activeTab === "reception"
-                  ? "bg-violet-500/20 text-violet-300 border border-violet-500/40 font-bold shadow-sm"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
+                  ? "bg-violet-100 text-violet-700 border border-violet-300 dark:bg-violet-500/20 dark:text-violet-300 dark:border-violet-500/40 font-bold shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800/40"
               }`}
             >
-              <Sparkles size={13} className={activeTab === "reception" ? "text-violet-400" : "text-slate-500"} />
+              <Sparkles size={13} className={activeTab === "reception" ? "text-violet-600 dark:text-violet-400" : "text-slate-500"} />
               <span>Reception Intake</span>
             </Link>
 
@@ -2127,12 +2131,12 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
               className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition whitespace-nowrap flex items-center gap-1.5 ${
                 activeTab === "invoices"
                   ? "bg-cyan-500 text-slate-950 font-bold shadow-sm"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800/40"
               }`}
             >
               <Receipt size={13} className={activeTab === "invoices" ? "text-slate-950" : "text-slate-500"} />
               <span>Invoices & Bills</span>
-              <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${activeTab === "invoices" ? "bg-slate-950 text-cyan-300" : "bg-slate-800 text-slate-400"}`}>
+              <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${activeTab === "invoices" ? "bg-slate-950 text-cyan-300" : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-400"}`}>
                 {transactions.length}
               </span>
             </Link>
@@ -2142,12 +2146,12 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
               className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition whitespace-nowrap flex items-center gap-1.5 ${
                 activeTab === "requests"
                   ? "bg-cyan-500 text-slate-950 font-bold shadow-sm"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800/40"
               }`}
             >
               <FileText size={13} className={activeTab === "requests" ? "text-slate-950" : "text-slate-500"} />
               <span>Citizen Requests</span>
-              <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${activeTab === "requests" ? "bg-slate-950 text-cyan-300" : "bg-slate-800 text-slate-400"}`}>
+              <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${activeTab === "requests" ? "bg-slate-950 text-cyan-300" : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-400"}`}>
                 {requests.length}
               </span>
             </Link>
@@ -2156,14 +2160,14 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
               href="/staff/khata"
               className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition whitespace-nowrap flex items-center gap-1.5 ${
                 activeTab === "khata"
-                  ? "bg-amber-500/20 text-amber-300 border border-amber-400/40 font-bold shadow-sm"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
+                  ? "bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-400/40 font-bold shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800/40"
               }`}
             >
-              <Clock size={13} className={activeTab === "khata" ? "text-amber-400" : "text-slate-500"} />
+              <Clock size={13} className={activeTab === "khata" ? "text-amber-600 dark:text-amber-400" : "text-slate-500"} />
               <span>Customer Khata</span>
               {khataList.length > 0 && (
-                <span className="rounded-full bg-amber-500/30 text-amber-300 border border-amber-500/40 px-1.5 py-0.2 text-[10px] font-bold">
+                <span className="rounded-full bg-amber-200 text-amber-800 border border-amber-300 dark:bg-amber-500/30 dark:text-amber-300 dark:border-amber-500/40 px-1.5 py-0.2 text-[10px] font-bold">
                   {khataList.length}
                 </span>
               )}
@@ -2173,11 +2177,11 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
               href="/staff/drawer"
               className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition whitespace-nowrap flex items-center gap-1.5 ${
                 activeTab === "drawer"
-                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 font-bold shadow-sm"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
+                  ? "bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-400/40 font-bold shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800/40"
               }`}
             >
-              <Banknote size={13} className={activeTab === "drawer" ? "text-emerald-400" : "text-slate-500"} />
+              <Banknote size={13} className={activeTab === "drawer" ? "text-emerald-600 dark:text-emerald-400" : "text-slate-500"} />
               <span>Shift Drawer</span>
             </Link>
 
@@ -2185,14 +2189,14 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
               href="/staff/attendance"
               className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition whitespace-nowrap flex items-center gap-1.5 ${
                 activeTab === "attendance"
-                  ? "bg-teal-500/20 text-teal-300 border border-teal-500/40 font-bold shadow-sm"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
+                  ? "bg-teal-100 text-teal-800 border border-teal-300 dark:bg-teal-500/20 dark:text-teal-300 dark:border-teal-500/40 font-bold shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800/40"
               }`}
             >
-              <UserCheck size={13} className={activeTab === "attendance" ? "text-teal-400" : "text-slate-500"} />
+              <UserCheck size={13} className={activeTab === "attendance" ? "text-teal-600 dark:text-teal-400" : "text-slate-500"} />
               <span>Attendance</span>
               {todayAttendance && (
-                <span className="rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-1.5 py-0.2 text-[10px] font-bold">
+                <span className="rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/40 px-1.5 py-0.2 text-[10px] font-bold">
                   {todayAttendance.punch_out ? "Done" : "In"}
                 </span>
               )}
@@ -2221,7 +2225,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
               </button>
             )}
 
-            {isReceptionistOrAdmin && (
+            {isReceptionistOrAdmin && activeTab !== "requests" && (
               <button
                 type="button"
                 onClick={() => setShowRequestModal(true)}
@@ -2266,17 +2270,17 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
         {activeTab === "invoices" && !hideShiftWidgets && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
             {/* Left: 4 Portal Wallets (5 cols) */}
-            <div className="lg:col-span-5 rounded-2xl border border-slate-800 bg-[#0c1322] p-3.5 shadow-md flex flex-col justify-between">
-              <div className="flex items-center justify-between border-b border-slate-800/80 pb-2 mb-2.5">
+            <div className="lg:col-span-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1322] p-3.5 shadow-md flex flex-col justify-between">
+              <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 pb-2 mb-2.5">
                 <div className="flex items-center gap-2">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-cyan-400/10 text-cyan-400 border border-cyan-400/20">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-cyan-50 dark:bg-cyan-400/10 text-cyan-600 dark:text-cyan-400 border border-cyan-200 dark:border-cyan-400/20">
                     <Landmark size={13} />
                   </div>
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-white">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-900 dark:text-white">
                     Bank & Portal Accounts
                   </span>
                 </div>
-                <span className="font-mono text-xs font-black text-cyan-300 bg-cyan-950/60 border border-cyan-800/60 px-2 py-0.5 rounded-md">
+                <span className="font-mono text-xs font-black text-cyan-700 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-950/60 border border-cyan-200 dark:border-cyan-800/60 px-2 py-0.5 rounded-md">
                   Total: ₹{wallets.reduce((s, w) => s + w.balance, 0).toLocaleString("en-IN")}
                 </span>
               </div>
@@ -2288,18 +2292,18 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                   return (
                     <div
                       key={wallet.id}
-                      className="rounded-xl border border-slate-800/90 bg-slate-900/80 p-2.5 hover:border-slate-700 transition flex flex-col justify-between"
+                      className="rounded-xl border border-slate-200 dark:border-slate-800/90 bg-slate-50 dark:bg-slate-900/80 p-2.5 hover:border-slate-300 dark:hover:border-slate-700 transition flex flex-col justify-between"
                     >
                       <div className="flex items-center justify-between gap-1">
-                        <span className="text-[10px] font-bold text-slate-300 truncate" title={wallet.name}>
+                        <span className="text-[10px] font-bold text-slate-800 dark:text-slate-300 truncate" title={wallet.name}>
                           {wallet.name}
                         </span>
                         {isLow && (
-                          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400 animate-pulse" title="Low Balance" />
+                          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500 animate-pulse" title="Low Balance" />
                         )}
                       </div>
                       <div className="mt-1 flex items-baseline justify-between">
-                        <span className="font-mono text-sm font-black text-white">
+                        <span className="font-mono text-sm font-black text-slate-900 dark:text-white">
                           ₹{wallet.balance.toLocaleString("en-IN")}
                         </span>
                         <span className="text-[9px] text-slate-500 font-mono">
@@ -2313,19 +2317,19 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
             </div>
 
             {/* Right: 4 Shift Financial KPI Cards + Operator Badge (7 cols) */}
-            <div className="lg:col-span-7 rounded-2xl border border-slate-800 bg-[#0c1322] p-3.5 shadow-md flex flex-col justify-between">
+            <div className="lg:col-span-7 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1322] p-3.5 shadow-md flex flex-col justify-between">
               {/* Operator info strip */}
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-2 mb-2.5">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800/80 pb-2 mb-2.5">
                 <div className="flex items-center gap-2">
-                  <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-xs font-bold text-slate-200">
-                    Shift Operator: <span className="text-cyan-300">{session?.employeeName}</span> ({session?.role})
+                  <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                    Shift Operator: <span className="text-cyan-700 dark:text-cyan-300">{session?.employeeName}</span> ({session?.role})
                   </span>
-                  <span className="rounded bg-cyan-950 text-cyan-400 border border-cyan-800/50 px-1.5 py-0.2 text-[9.5px] font-bold">
+                  <span className="rounded bg-cyan-50 dark:bg-cyan-950 text-cyan-700 dark:text-cyan-400 border border-cyan-200 dark:border-cyan-800/50 px-1.5 py-0.2 text-[9.5px] font-bold">
                     Isolated Drawer
                   </span>
                 </div>
-                <span className="text-[10px] text-slate-400">
+                <span className="text-[10px] text-slate-500 dark:text-slate-400">
                   Personal daily tally
                 </span>
               </div>
@@ -2333,53 +2337,53 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
               {/* 4 Shift KPI Cards Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {/* Today's Invoices */}
-                <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-2.5 flex flex-col justify-between">
-                  <div className="flex items-center justify-between text-slate-400">
+                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 p-2.5 flex flex-col justify-between">
+                  <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
                     <span className="text-[10px] font-semibold uppercase">Bills Issued</span>
-                    <Receipt size={12} className="text-cyan-400" />
+                    <Receipt size={12} className="text-cyan-600 dark:text-cyan-400" />
                   </div>
-                  <div className="mt-1 font-mono text-lg font-black text-white">
+                  <div className="mt-1 font-mono text-lg font-black text-slate-900 dark:text-white">
                     {shiftSummary.billCount}
                   </div>
-                  <div className="text-[9.5px] text-slate-400">Today's count</div>
+                  <div className="text-[9.5px] text-slate-500 dark:text-slate-400">Today's count</div>
                 </div>
 
                 {/* Cash in Drawer */}
-                <div className="rounded-xl border border-emerald-500/25 bg-gradient-to-br from-slate-900/80 to-emerald-950/20 p-2.5 flex flex-col justify-between">
-                  <div className="flex items-center justify-between text-emerald-400">
+                <div className="rounded-xl border border-emerald-300 dark:border-emerald-500/25 bg-emerald-50 dark:bg-gradient-to-br dark:from-slate-900/80 dark:to-emerald-950/20 p-2.5 flex flex-col justify-between">
+                  <div className="flex items-center justify-between text-emerald-800 dark:text-emerald-400">
                     <span className="text-[10px] font-semibold uppercase">Cash Drawer</span>
                     <Banknote size={12} />
                   </div>
-                  <div className="mt-1 font-mono text-lg font-black text-emerald-300">
+                  <div className="mt-1 font-mono text-lg font-black text-emerald-900 dark:text-emerald-300">
                     ₹{shiftSummary.netCashInHand.toFixed(0)}
                   </div>
-                  <div className="text-[9.5px] text-emerald-400/70">
+                  <div className="text-[9.5px] text-emerald-700 dark:text-emerald-400/70">
                     {shiftSummary.cashExpense > 0 ? `After -₹${shiftSummary.cashExpense.toFixed(0)} exp` : "Physical tally"}
                   </div>
                 </div>
 
                 {/* UPI / Online */}
-                <div className="rounded-xl border border-cyan-500/25 bg-gradient-to-br from-slate-900/80 to-cyan-950/20 p-2.5 flex flex-col justify-between">
-                  <div className="flex items-center justify-between text-cyan-400">
+                <div className="rounded-xl border border-sky-300 dark:border-cyan-500/25 bg-sky-50 dark:bg-gradient-to-br dark:from-slate-900/80 dark:to-cyan-950/20 p-2.5 flex flex-col justify-between">
+                  <div className="flex items-center justify-between text-sky-800 dark:text-cyan-400">
                     <span className="text-[10px] font-semibold uppercase">UPI / Online</span>
                     <Smartphone size={12} />
                   </div>
-                  <div className="mt-1 font-mono text-lg font-black text-cyan-300">
+                  <div className="mt-1 font-mono text-lg font-black text-sky-900 dark:text-cyan-300">
                     ₹{shiftSummary.totalUpi.toFixed(0)}
                   </div>
-                  <div className="text-[9.5px] text-cyan-400/70">QR / Scanner</div>
+                  <div className="text-[9.5px] text-sky-700 dark:text-cyan-400/70">QR / Scanner</div>
                 </div>
 
                 {/* Total Turnover / Expenses */}
-                <div className="rounded-xl border border-teal-500/25 bg-gradient-to-br from-slate-900/80 to-teal-950/20 p-2.5 flex flex-col justify-between">
-                  <div className="flex items-center justify-between text-teal-400">
+                <div className="rounded-xl border border-teal-300 dark:border-teal-500/25 bg-teal-50 dark:bg-gradient-to-br dark:from-slate-900/80 dark:to-teal-950/20 p-2.5 flex flex-col justify-between">
+                  <div className="flex items-center justify-between text-teal-800 dark:text-teal-400">
                     <span className="text-[10px] font-semibold uppercase">Shift Sales</span>
                     <TrendingUp size={12} />
                   </div>
-                  <div className="mt-1 font-mono text-lg font-black text-white">
+                  <div className="mt-1 font-mono text-lg font-black text-teal-950 dark:text-white">
                     ₹{shiftSummary.totalTurnover.toFixed(0)}
                   </div>
-                  <div className="text-[9.5px] text-teal-400/70">
+                  <div className="text-[9.5px] text-teal-700 dark:text-teal-400/70">
                     {shiftSummary.totalExpense > 0 ? `₹${shiftSummary.totalExpense.toFixed(0)} exp logged` : "Counter total"}
                   </div>
                 </div>
@@ -2412,7 +2416,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                 </div>
               </div>
 
-              {/* Call Next Button & Issue Slip */}
+              {/* Call Next Button */}
               <div className="flex items-center gap-3">
                 <button
                   type="button"
@@ -2423,25 +2427,6 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                   <Megaphone size={16} className={callingToken ? "animate-bounce" : ""} />
                   <span>{callingToken ? "Calling..." : "📢 Call Next Citizen"}</span>
                 </button>
-
-                {isReceptionistOrAdmin && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setTokCustName("");
-                      setTokCustPhone("");
-                      setTokService("Aadhaar / Citizen Services");
-                      setTokPriority("Normal");
-                      setTokCounter("Counter 1");
-                      setTokNotes("");
-                      setShowTokenModal(true);
-                    }}
-                    className="inline-flex items-center gap-2 rounded-xl border border-pink-500/40 bg-pink-500/20 px-4 py-3 text-xs font-bold text-pink-200 hover:bg-pink-500/30 transition shadow-sm"
-                  >
-                    <Plus size={15} />
-                    <span>Issue Slip</span>
-                  </button>
-                )}
               </div>
             </div>
 
@@ -3362,63 +3347,63 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
           <div className="max-w-6xl mx-auto space-y-6">
             {/* Top 4 Quick Shift Summary Metric Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-              <div className="rounded-2xl border border-emerald-500/40 bg-gradient-to-br from-[#0c1322] to-[#0f241d] p-4 shadow-lg flex flex-col justify-between">
+              <div className="rounded-2xl border border-emerald-300 dark:border-emerald-500/40 bg-emerald-50/80 dark:bg-gradient-to-br dark:from-[#0c1322] dark:to-[#0f241d] p-4 shadow-lg flex flex-col justify-between">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">Cash in Drawer</span>
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400">Cash in Drawer</span>
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400">
                     <Banknote size={15} />
                   </div>
                 </div>
                 <div className="mt-2">
-                  <p className="font-mono text-2xl font-black text-emerald-300">
+                  <p className="font-mono text-2xl font-black text-emerald-900 dark:text-emerald-300">
                     ₹ {shiftSummary.netCashInHand.toFixed(2)}
                   </p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">Physical cash ready for handover</p>
+                  <p className="text-[10px] text-emerald-700 dark:text-slate-400 mt-0.5">Physical cash ready for handover</p>
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-cyan-500/30 bg-gradient-to-br from-[#0c1322] to-[#102236] p-4 shadow-lg flex flex-col justify-between">
+              <div className="rounded-2xl border border-sky-300 dark:border-cyan-500/30 bg-sky-50/80 dark:bg-gradient-to-br dark:from-[#0c1322] dark:to-[#102236] p-4 shadow-lg flex flex-col justify-between">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-400">UPI / Online</span>
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-500/20 text-cyan-400">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-sky-800 dark:text-cyan-400">UPI / Online</span>
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-100 dark:bg-cyan-500/20 text-sky-700 dark:text-cyan-400">
                     <Smartphone size={15} />
                   </div>
                 </div>
                 <div className="mt-2">
-                  <p className="font-mono text-2xl font-black text-white">
+                  <p className="font-mono text-2xl font-black text-slate-900 dark:text-white">
                     ₹ {shiftSummary.totalUpi.toFixed(2)}
                   </p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">QR & online settlements</p>
+                  <p className="text-[10px] text-sky-700 dark:text-slate-400 mt-0.5">QR & online settlements</p>
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-[#0c1322] to-[#261f12] p-4 shadow-lg flex flex-col justify-between">
+              <div className="rounded-2xl border border-amber-300 dark:border-amber-500/30 bg-amber-50/80 dark:bg-gradient-to-br dark:from-[#0c1322] dark:to-[#261f12] p-4 shadow-lg flex flex-col justify-between">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-amber-400">Customer Dues</span>
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/20 text-amber-400">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-amber-800 dark:text-amber-400">Customer Dues</span>
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400">
                     <Clock3 size={15} />
                   </div>
                 </div>
                 <div className="mt-2">
-                  <p className="font-mono text-2xl font-black text-amber-300">
+                  <p className="font-mono text-2xl font-black text-amber-900 dark:text-amber-300">
                     ₹ {shiftSummary.totalCredit.toFixed(2)}
                   </p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">Pending khata balances</p>
+                  <p className="text-[10px] text-amber-700 dark:text-slate-400 mt-0.5">Pending khata balances</p>
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-slate-800 bg-gradient-to-br from-[#0c1322] to-[#161c2c] p-4 shadow-lg flex flex-col justify-between">
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-gradient-to-br dark:from-[#0c1322] dark:to-[#161c2c] p-4 shadow-lg flex flex-col justify-between">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-300">Bills Issued</span>
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-800 text-slate-300">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Bills Issued</span>
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
                     <Receipt size={15} />
                   </div>
                 </div>
                 <div className="mt-2">
-                  <p className="font-mono text-2xl font-black text-white">
+                  <p className="font-mono text-2xl font-black text-slate-900 dark:text-white">
                     {shiftSummary.billCount}
                   </p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">Completed transactions</p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Completed transactions</p>
                 </div>
               </div>
             </div>
@@ -3426,66 +3411,66 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
             {/* Main 2-Column Side-by-Side Layout */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
               {/* Left Column: Shift Drawer Reconciliation & Breakdown (7 cols) */}
-              <div className="lg:col-span-7 rounded-2xl border border-slate-800 bg-[#0c1322] p-5 md:p-6 space-y-4 shadow-xl">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="lg:col-span-7 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1322] p-5 md:p-6 space-y-4 shadow-xl">
+                <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
                   <div className="flex items-center gap-2.5">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-50 dark:bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-200 dark:border-cyan-500/20">
                       <Receipt size={17} />
                     </div>
                     <div>
-                      <h3 className="text-base font-bold text-white">Shift Drawer Reconciliation</h3>
-                      <p className="text-xs text-slate-400">Cash in drawer report to hand over to shop owner</p>
+                      <h3 className="text-base font-bold text-slate-900 dark:text-white">Shift Drawer Reconciliation</h3>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Cash in drawer report to hand over to shop owner</p>
                     </div>
                   </div>
                   <div className="text-right text-xs">
                     <span className="text-slate-500">Operator:</span>
-                    <div className="font-bold text-cyan-300">{session?.employeeName}</div>
-                    <span className="text-[10px] text-slate-400 font-mono">{session?.role}</span>
+                    <div className="font-bold text-cyan-700 dark:text-cyan-300">{session?.employeeName}</div>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">{session?.role}</span>
                   </div>
                 </div>
 
                 <div className="space-y-2.5 font-mono text-xs">
-                  <div className="flex justify-between py-2 border-b border-slate-800/80">
-                    <span className="text-slate-400 font-sans">Total Bills / Invoices Issued:</span>
-                    <span className="font-bold text-white">{shiftSummary.billCount} bills</span>
+                  <div className="flex justify-between py-2 border-b border-slate-200 dark:border-slate-800/80">
+                    <span className="text-slate-600 dark:text-slate-400 font-sans">Total Bills / Invoices Issued:</span>
+                    <span className="font-bold text-slate-900 dark:text-white">{shiftSummary.billCount} bills</span>
                   </div>
-                  <div className="flex justify-between py-2 border-b border-slate-800/80">
-                    <span className="text-slate-400 font-sans">Physical Cash Collected:</span>
-                    <span className="font-bold text-emerald-300">+ ₹ {shiftSummary.totalCash.toFixed(2)}</span>
+                  <div className="flex justify-between py-2 border-b border-slate-200 dark:border-slate-800/80">
+                    <span className="text-slate-600 dark:text-slate-400 font-sans">Physical Cash Collected:</span>
+                    <span className="font-bold text-emerald-700 dark:text-emerald-300">+ ₹ {shiftSummary.totalCash.toFixed(2)}</span>
                   </div>
                   {shiftSummary.cashExpense > 0 && (
-                    <div className="flex justify-between py-2 border-b border-slate-800/80">
-                      <span className="text-rose-400 font-sans">Less: Cash Drawer Expenses Paid:</span>
-                      <span className="font-bold text-rose-400">- ₹ {shiftSummary.cashExpense.toFixed(2)}</span>
+                    <div className="flex justify-between py-2 border-b border-slate-200 dark:border-slate-800/80">
+                      <span className="text-rose-600 dark:text-rose-400 font-sans">Less: Cash Drawer Expenses Paid:</span>
+                      <span className="font-bold text-rose-700 dark:text-rose-400">- ₹ {shiftSummary.cashExpense.toFixed(2)}</span>
                     </div>
                   )}
-                  <div className="flex justify-between py-2 border-b border-slate-800/80">
-                    <span className="text-slate-400 font-sans">Online / UPI Collected:</span>
-                    <span className="font-bold text-cyan-300">₹ {shiftSummary.totalUpi.toFixed(2)}</span>
+                  <div className="flex justify-between py-2 border-b border-slate-200 dark:border-slate-800/80">
+                    <span className="text-slate-600 dark:text-slate-400 font-sans">Online / UPI Collected:</span>
+                    <span className="font-bold text-cyan-700 dark:text-cyan-300">₹ {shiftSummary.totalUpi.toFixed(2)}</span>
                   </div>
                   {shiftSummary.upiExpense > 0 && (
-                    <div className="flex justify-between py-2 border-b border-slate-800/80">
-                      <span className="text-slate-400 font-sans">Online / UPI Expenses Paid:</span>
-                      <span className="font-bold text-slate-300">- ₹ {shiftSummary.upiExpense.toFixed(2)}</span>
+                    <div className="flex justify-between py-2 border-b border-slate-200 dark:border-slate-800/80">
+                      <span className="text-slate-600 dark:text-slate-400 font-sans">Online / UPI Expenses Paid:</span>
+                      <span className="font-bold text-slate-700 dark:text-slate-300">- ₹ {shiftSummary.upiExpense.toFixed(2)}</span>
                     </div>
                   )}
-                  <div className="flex justify-between py-2 border-b border-slate-800/80">
-                    <span className="text-slate-400 font-sans">Pending Customer Credit (Khata):</span>
-                    <span className="font-bold text-amber-300">₹ {shiftSummary.totalCredit.toFixed(2)}</span>
+                  <div className="flex justify-between py-2 border-b border-slate-200 dark:border-slate-800/80">
+                    <span className="text-slate-600 dark:text-slate-400 font-sans">Pending Customer Credit (Khata):</span>
+                    <span className="font-bold text-amber-700 dark:text-amber-300">₹ {shiftSummary.totalCredit.toFixed(2)}</span>
                   </div>
                 </div>
 
                 {/* Net Physical Cash Box */}
-                <div className="rounded-xl border border-emerald-500/40 bg-gradient-to-r from-emerald-950/40 to-teal-950/20 p-4 flex items-center justify-between shadow-inner">
+                <div className="rounded-xl border border-emerald-300 dark:border-emerald-500/40 bg-emerald-50 dark:bg-gradient-to-r dark:from-emerald-950/40 dark:to-teal-950/20 p-4 flex items-center justify-between shadow-inner">
                   <div>
-                    <span className="font-sans font-black text-xs uppercase tracking-wider text-emerald-400 block">
+                    <span className="font-sans font-black text-xs uppercase tracking-wider text-emerald-800 dark:text-emerald-400 block">
                       Physical Cash In Drawer
                     </span>
-                    <span className="text-[10px] text-slate-400 font-sans">
+                    <span className="text-[10px] text-emerald-700 dark:text-slate-400 font-sans">
                       Verified count to physically deposit or hand over
                     </span>
                   </div>
-                  <span className="font-mono font-black text-emerald-300 text-2xl">
+                  <span className="font-mono font-black text-emerald-900 dark:text-emerald-300 text-2xl">
                     ₹ {shiftSummary.netCashInHand.toFixed(2)}
                   </span>
                 </div>
@@ -3494,7 +3479,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                   <button
                     type="button"
                     onClick={printShiftTallySlip}
-                    className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-400 to-teal-400 py-3 px-4 text-xs font-bold text-slate-950 hover:brightness-110 active:scale-95 transition shadow-lg shadow-cyan-400/20"
+                    className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-400 to-teal-400 py-3 px-4 text-xs font-bold text-slate-950 hover:brightness-110 active:scale-95 transition shadow-lg shadow-cyan-400/20 cursor-pointer"
                   >
                     <Printer size={15} />
                     <span>Print Shift Closing Tally Slip</span>
@@ -3503,7 +3488,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                   <button
                     type="button"
                     onClick={() => setShowExpenseModal(true)}
-                    className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-xs font-bold text-rose-300 hover:bg-rose-500/20 active:scale-95 transition"
+                    className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-rose-300 dark:border-rose-500/40 bg-rose-50 dark:bg-rose-500/10 px-4 py-3 text-xs font-bold text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-500/20 active:scale-95 transition cursor-pointer"
                   >
                     <ArrowDownRight size={14} />
                     <span>Add Expense</span>
@@ -3512,18 +3497,18 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
               </div>
 
               {/* Right Column: Bank & Portal Accounts Standing (5 cols) */}
-              <div className="lg:col-span-5 rounded-2xl border border-slate-800 bg-[#0c1322] p-5 md:p-6 space-y-4 shadow-xl">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="lg:col-span-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1322] p-5 md:p-6 space-y-4 shadow-xl">
+                <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
                   <div className="flex items-center gap-2.5">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-50 dark:bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-200 dark:border-cyan-500/20">
                       <Landmark size={17} />
                     </div>
                     <div>
-                      <h3 className="text-base font-bold text-white">Bank & Portal Accounts</h3>
-                      <p className="text-xs text-slate-400">Live balances available for service processing</p>
+                      <h3 className="text-base font-bold text-slate-900 dark:text-white">Bank & Portal Accounts</h3>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Live balances available for service processing</p>
                     </div>
                   </div>
-                  <span className="text-xs font-mono font-bold text-cyan-300 bg-cyan-950/70 border border-cyan-800/60 px-2.5 py-1 rounded-full">
+                  <span className="text-xs font-mono font-bold text-cyan-700 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-950/70 border border-cyan-200 dark:border-cyan-800/60 px-2.5 py-1 rounded-full">
                     Total: ₹{wallets.reduce((s, w) => s + (w.balance || 0), 0).toLocaleString("en-IN")}
                   </span>
                 </div>
@@ -3534,28 +3519,28 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                     return (
                       <div
                         key={w.id}
-                        className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-3.5 flex items-center justify-between hover:border-slate-700 transition"
+                        className="rounded-xl border border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-900/60 p-3.5 flex items-center justify-between hover:border-slate-300 dark:hover:border-slate-700 transition"
                       >
                         <div className="min-w-0 pr-2">
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-slate-200 text-xs truncate" title={w.name}>
+                            <span className="font-bold text-slate-900 dark:text-slate-200 text-xs truncate" title={w.name}>
                               {w.name}
                             </span>
                             {isLow && (
-                              <span className="rounded bg-rose-950/80 border border-rose-800/60 px-1.5 py-0.5 text-[9.5px] font-bold text-rose-300 flex items-center gap-1">
-                                <span className="h-1.5 w-1.5 rounded-full bg-rose-400 animate-pulse" />
+                              <span className="rounded bg-rose-100 dark:bg-rose-950/80 border border-rose-300 dark:border-rose-800/60 px-1.5 py-0.5 text-[9.5px] font-bold text-rose-700 dark:text-rose-300 flex items-center gap-1">
+                                <span className="h-1.5 w-1.5 rounded-full bg-rose-600 dark:bg-rose-400 animate-pulse" />
                                 <span>Low</span>
                               </span>
                             )}
                           </div>
-                          <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-1">
+                          <div className="flex items-center gap-2 text-[10px] text-slate-600 dark:text-slate-400 mt-1">
                             <span>{w.category}</span>
                             <span>•</span>
                             <span>Min Alert: ₹{(w.min_alert_balance || 1000).toLocaleString("en-IN")}</span>
                           </div>
                         </div>
                         <div className="text-right shrink-0">
-                          <span className={`font-mono text-sm font-black ${isLow ? "text-rose-400" : "text-emerald-300"}`}>
+                          <span className={`font-mono text-sm font-black ${isLow ? "text-rose-600 dark:text-rose-400" : "text-emerald-700 dark:text-emerald-300"}`}>
                             ₹ {(w.balance || 0).toLocaleString("en-IN")}
                           </span>
                         </div>
@@ -3564,8 +3549,8 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                   })}
                 </div>
 
-                <div className="rounded-xl border border-slate-800/80 bg-slate-900/30 p-3 text-[11px] text-slate-400">
-                  <span className="text-cyan-400 font-semibold">💡 Automatic Deductions:</span> Official fees for online applications (e.g. Passport, e-District, PAN) deduct directly from these portal balances.
+                <div className="rounded-xl border border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-900/30 p-3 text-[11px] text-slate-600 dark:text-slate-400">
+                  <span className="text-cyan-700 dark:text-cyan-400 font-semibold">💡 Automatic Deductions:</span> Official fees for online applications (e.g. Passport, e-District, PAN) deduct directly from these portal balances.
                 </div>
               </div>
             </div>
@@ -3586,9 +3571,11 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                     <span className="font-bold text-white text-base tracking-wide">
                       Staff Daily Attendance Register
                     </span>
-                    <span className="rounded-full bg-teal-500/20 px-2 py-0.5 text-[10px] font-bold text-teal-300 border border-teal-500/30 font-mono">
-                      Center: {centerProfile.centerCode || "KNR059"}
-                    </span>
+                    {centerProfile.centerCode ? (
+                      <span className="rounded-full bg-teal-500/20 px-2 py-0.5 text-[10px] font-bold text-teal-300 border border-teal-500/30 font-mono">
+                        Center: {centerProfile.centerCode}
+                      </span>
+                    ) : null}
                   </div>
                   <p className="text-xs text-slate-300 mt-0.5">
                     Live clock-in and clock-out shift logging, timestamps, and staff daily attendance tracking.
@@ -3950,14 +3937,16 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
               </button>
             </div>
 
-            {/* Form Body */}
+            {/* Form wrapping scrollable body and permanent sticky footer */}
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 handleSaveInvoice(invAutoPrint);
               }}
-              className="flex-1 overflow-y-auto p-5 space-y-4 text-xs"
+              className="flex-1 flex flex-col min-h-0 overflow-hidden"
             >
+              {/* Scrollable Form Body */}
+              <div className="flex-1 overflow-y-auto p-5 space-y-4 text-xs">
               {/* Tab 1: Citizen Multi-Item Invoicing */}
               {invMode === "citizen" && (
                 <div className="space-y-3.5 rounded-xl border border-slate-800 bg-[#0e1625] p-3.5">
@@ -4258,7 +4247,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                     </label>
                     <input
                       type="tel"
-                      placeholder={isCreditActive ? "10-digit mobile number *" : "e.g. 9876543210"}
+                      placeholder={isCreditActive ? "10-digit mobile number *" : "10-digit mobile (optional)"}
                       value={invCustomerPhone}
                       onChange={(e) => setInvCustomerPhone(e.target.value)}
                       className={`w-full rounded-xl border bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400 ${
@@ -4409,30 +4398,31 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                   ₹{invTotalAmount.toFixed(2)}
                 </div>
               </div>
+            </div>
 
-              {/* Actions */}
-              <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-800">
-                <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-300 font-medium select-none">
-                  <input
-                    type="checkbox"
-                    checked={invAutoPrint}
-                    onChange={(e) => setInvAutoPrint(e.target.checked)}
-                    className="h-4 w-4 rounded border-slate-700 bg-slate-900 text-cyan-400 focus:ring-cyan-400 cursor-pointer"
-                  />
-                  <Printer size={14} className="text-cyan-400" />
-                  <span>Auto-print receipt slip upon saving</span>
-                </label>
+            {/* Permanent Sticky Modal Footer - ALWAYS VISIBLE */}
+            <div className="shrink-0 border-t border-slate-800 bg-[#121b2f] px-5 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg">
+              <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-300 font-medium select-none">
+                <input
+                  type="checkbox"
+                  checked={invAutoPrint}
+                  onChange={(e) => setInvAutoPrint(e.target.checked)}
+                  className="h-4 w-4 rounded border-slate-700 bg-slate-900 text-cyan-400 focus:ring-cyan-400 cursor-pointer"
+                />
+                <Printer size={14} className="text-cyan-400" />
+                <span>Auto-print receipt slip upon saving</span>
+              </label>
 
-                <button
-                  type="submit"
-                  disabled={savingInvoice || Math.abs(allocationRemaining) > 0.01}
-                  className="w-full sm:w-auto sm:min-w-[220px] rounded-xl bg-gradient-to-r from-cyan-400 to-teal-400 hover:brightness-110 py-3 px-6 text-xs font-black text-slate-950 transition shadow-md shadow-cyan-400/20 disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  <Receipt size={14} />
-                  <span>{savingInvoice ? "Recording..." : `Save Invoice (₹${invTotalAmount.toFixed(0)})`}</span>
-                </button>
-              </div>
-            </form>
+              <button
+                type="submit"
+                disabled={savingInvoice || Math.abs(allocationRemaining) > 0.01}
+                className="w-full sm:w-auto sm:min-w-[220px] rounded-xl bg-gradient-to-r from-cyan-400 to-teal-400 hover:brightness-110 active:scale-95 py-2.5 px-6 text-xs font-black text-slate-950 transition shadow-md shadow-cyan-400/20 disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                <Receipt size={14} />
+                <span>{savingInvoice ? "Recording..." : `Save Invoice (₹${invTotalAmount.toFixed(0)})`}</span>
+              </button>
+            </div>
+          </form>
           </div>
         </div>
       )}
@@ -4478,7 +4468,7 @@ export default function StaffCounterPage({ initialTab = "invoices", hideShiftWid
                 <input
                   type="tel"
                   required
-                  placeholder="e.g. 9876543210"
+                  placeholder="10-digit mobile number"
                   value={reqCustPhone}
                   onChange={(e) => setReqCustPhone(e.target.value)}
                   className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400"

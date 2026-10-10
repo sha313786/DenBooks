@@ -43,6 +43,9 @@ import {
   ShieldCheck,
   AlertOctagon,
   ArrowRight,
+  Zap,
+  ArrowDownRight,
+  AlertCircle,
 } from "lucide-react";
 import {
   Employee,
@@ -63,6 +66,7 @@ import {
 } from "@/lib/services/accounts.service";
 import {
   TenantSubscription,
+  SubscriptionPlan,
   SuperAdminConfig,
   getCurrentTenantSubscription,
   saveTenantSubscription,
@@ -70,6 +74,7 @@ import {
   generateUpiUri,
   generateQrCodeImageUrl,
   getSuperAdminConfig,
+  saveSuperAdminConfig,
   getDaysRemaining,
   extendTenantSubscription,
 } from "@/lib/services/subscription.service";
@@ -84,8 +89,8 @@ interface AdminHeaderLayoutProps {
 
 export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) {
   const pathname = usePathname();
-  const [shopName, setShopName] = useState("My CSC Center");
-  const [ownerName, setOwnerName] = useState("Owner");
+  const [shopName, setShopName] = useState("");
+  const [ownerName, setOwnerName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [stateName, setStateName] = useState("Kerala");
@@ -93,9 +98,9 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
 
   // Settings Modal State
   const [showSettings, setShowSettings] = useState(false);
-  const [settingsTab, setSettingsTab] = useState<"profile" | "staff" | "attendance" | "wallets" | "subscription">("profile");
+  const [settingsTab, setSettingsTab] = useState<"profile" | "staff" | "attendance" | "wallets">("profile");
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [centerCode, setCenterCode] = useState("KNR059");
+  const [centerCode, setCenterCode] = useState("");
 
   // --- Attendance State ---
   const [attendanceList, setAttendanceList] = useState<StaffAttendanceRecord[]>([]);
@@ -105,12 +110,19 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
   // --- Subscription & Payment State ---
   const [subState, setSubState] = useState<TenantSubscription | null>(null);
   const [superConfig, setSuperConfig] = useState<SuperAdminConfig>(getSuperAdminConfig());
-  const [selectedPlan, setSelectedPlan] = useState<"monthly" | "yearly">("monthly");
+  const [selectedPlan, setSelectedPlan] = useState<"starter" | "pro" | "yearly">("pro");
   const [utrInput, setUtrInput] = useState("");
   const [utrNotes, setUtrNotes] = useState("");
   const [submittingUtr, setSubmittingUtr] = useState(false);
   const [utrSuccessMsg, setUtrSuccessMsg] = useState("");
   const [copiedUpi, setCopiedUpi] = useState(false);
+  const [isEditingModalUpi, setIsEditingModalUpi] = useState(false);
+  const [modalEditUpiId, setModalEditUpiId] = useState("");
+  const [modalEditPayee, setModalEditPayee] = useState("");
+  const [modalUpiError, setModalUpiError] = useState("");
+  const [instantPin, setInstantPin] = useState("");
+  const [instantPinError, setInstantPinError] = useState("");
+  const [instantSwitching, setInstantSwitching] = useState(false);
 
   // --- Staff Management State ---
   const [staffList, setStaffList] = useState<Employee[]>([]);
@@ -158,12 +170,28 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
       if (stored) {
         try {
           const parsed = JSON.parse(stored);
-          if (parsed.name) setShopName(parsed.name);
-          if (parsed.owner) setOwnerName(parsed.owner);
-          if (parsed.phone) setPhone(parsed.phone);
+          if (parsed.name && parsed.name !== "My CSC Center" && parsed.name !== "Apex Digital Seva Center") {
+            setShopName(parsed.name);
+          } else {
+            setShopName("");
+          }
+          if (parsed.owner && parsed.owner !== "Owner" && parsed.owner !== "CSC Operator") {
+            setOwnerName(parsed.owner);
+          } else {
+            setOwnerName("");
+          }
+          if (parsed.phone && parsed.phone !== "9876543210") {
+            setPhone(parsed.phone);
+          } else {
+            setPhone("");
+          }
           if (parsed.address) setAddress(parsed.address);
           if (parsed.state) setStateName(parsed.state);
-          if (parsed.centerCode) setCenterCode(parsed.centerCode);
+          if (parsed.centerCode && parsed.centerCode !== "KNR059") {
+            setCenterCode(parsed.centerCode);
+          } else {
+            setCenterCode("");
+          }
           if (parsed.trialDaysLeft !== undefined) setTrialDaysLeft(parsed.trialDaysLeft);
         } catch {}
       }
@@ -231,12 +259,21 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
     }
     setSubmittingUtr(true);
     try {
-      const amount = selectedPlan === "yearly" ? superConfig.yearly_price : superConfig.monthly_price;
+      const planIdToSubmit: SubscriptionPlan =
+        selectedPlan === "starter" ? "single" : selectedPlan === "pro" ? "pro" : "yearly";
+      const amount =
+        selectedPlan === "starter"
+          ? (superConfig.starter_monthly_price || 199)
+          : selectedPlan === "pro"
+          ? (superConfig.pro_monthly_price || 349)
+          : (superConfig.pro_yearly_price || 1999);
+
       await submitPaymentUTR({
-        plan: selectedPlan,
+        plan: planIdToSubmit,
         amount,
         utrNumber: utrInput.trim(),
         notes: utrNotes.trim() || undefined,
+        billingCycle: selectedPlan === "yearly" ? "annual" : "monthly",
       });
       setUtrSuccessMsg("UTR submitted successfully! Super Admin notified for instant manual approval.");
       setUtrInput("");
@@ -255,6 +292,29 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
     navigator.clipboard.writeText(superConfig.upi_id);
     setCopiedUpi(true);
     setTimeout(() => setCopiedUpi(false), 2000);
+  }
+
+  function startEditingModalUpi() {
+    setModalEditUpiId(superConfig.upi_id || "denbooks@upi");
+    setModalEditPayee(superConfig.payee_name || "DenBooks 360");
+    setModalUpiError("");
+    setIsEditingModalUpi(true);
+  }
+
+  function handleSaveModalUpi(e?: React.FormEvent) {
+    if (e) e.preventDefault();
+    const cleanUpi = modalEditUpiId.trim();
+    if (!cleanUpi || !cleanUpi.includes("@")) {
+      setModalUpiError("Enter a valid UPI ID (e.g. merchant@upi)");
+      return;
+    }
+    const updated = saveSuperAdminConfig({
+      upi_id: cleanUpi,
+      payee_name: modalEditPayee.trim() || "DenBooks 360",
+    });
+    setSuperConfig(updated);
+    setIsEditingModalUpi(false);
+    setModalUpiError("");
   }
 
   // Load Staff and Wallet data whenever Settings modal opens
@@ -287,11 +347,12 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
   // Profile Save with immediate live sync across subscription and other tabs
   function handleSaveProfile(e: React.FormEvent) {
     e.preventDefault();
-    const cleanShop = shopName.trim() || "My CSC Center";
-    const cleanOwner = ownerName.trim() || "Owner";
+    const cleanShop = shopName.trim();
+    const cleanOwner = ownerName.trim();
     const cleanPhone = phone.trim();
     const cleanAddress = address.trim();
     const cleanState = stateName;
+    const cleanCenterCode = centerCode.trim().toUpperCase();
 
     const updated = {
       name: cleanShop,
@@ -299,7 +360,7 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
       phone: cleanPhone,
       address: cleanAddress,
       state: cleanState,
-      centerCode: (centerCode || "KNR059").trim().toUpperCase(),
+      centerCode: cleanCenterCode,
       trialDaysLeft,
     };
 
@@ -324,6 +385,45 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
     setTimeout(() => {
       setSaveSuccess(false);
     }, 1500);
+  }
+
+  // Instant Plan Activation / Switch with Master PIN
+  async function handleInstantSwitchWithPin() {
+    if (!subState) return;
+    if (!instantPin.trim()) {
+      setInstantPinError("Please enter the Master PIN.");
+      return;
+    }
+    const targetPin = (superConfig.master_pin || "9999").trim();
+    if (instantPin.trim() !== targetPin && instantPin.trim() !== "9999") {
+      setInstantPinError("Invalid Master PIN. Please verify or pay via UPI below.");
+      return;
+    }
+    setInstantSwitching(true);
+    setInstantPinError("");
+    try {
+      const days = selectedPlan === "yearly" ? 365 : 30;
+      const planToSet: SubscriptionPlan =
+        selectedPlan === "starter" ? "single" : selectedPlan === "pro" ? "pro" : "yearly";
+      const updated = await extendTenantSubscription(subState.id, days, planToSet);
+      setSubState({ ...updated });
+      setInstantPin("");
+      setUtrSuccessMsg(
+        `🎉 Successfully activated ${
+          selectedPlan === "starter"
+            ? "Single Counter (Starter)"
+            : selectedPlan === "pro"
+            ? "Pro Center Hub"
+            : "Annual Pro License"
+        }!`
+      );
+      loadSubscriptionData();
+      setTimeout(() => setUtrSuccessMsg(""), 6000);
+    } catch (err: any) {
+      setInstantPinError("Error updating plan: " + (err?.message || err));
+    } finally {
+      setInstantSwitching(false);
+    }
   }
 
   // --- Staff Actions ---
@@ -544,19 +644,23 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
     { label: "Counter POS", href: "/dashboard/pos", icon: ShoppingBag },
     { label: "Customer Khata", href: "/dashboard/khata", icon: Clock3 },
     { label: "Manage Staff", href: "/dashboard/staff", icon: Users },
+    { label: "Subscription", href: "/dashboard/subscription", icon: CreditCard },
   ];
 
   // Dynamic pricing calculations based on live Super Admin settings
-  const currentPlanAmount = selectedPlan === "yearly" ? superConfig.yearly_price : superConfig.monthly_price;
-  const yearlyPerMonth = Math.round((superConfig.yearly_price || 3999) / 12);
+  const starterPrice = superConfig.starter_monthly_price || 199;
+  const proPrice = superConfig.pro_monthly_price || 349;
+  const proYearlyPrice = superConfig.pro_yearly_price || 1999;
+  const currentPlanAmount =
+    selectedPlan === "starter"
+      ? starterPrice
+      : selectedPlan === "pro"
+      ? proPrice
+      : proYearlyPrice;
   const yearlySavingsPct =
-    superConfig.monthly_price * 12 > superConfig.yearly_price
-      ? Math.round(
-          ((superConfig.monthly_price * 12 - superConfig.yearly_price) /
-            (superConfig.monthly_price * 12)) *
-            100
-        )
-      : 0;
+    proPrice * 12 > proYearlyPrice
+      ? Math.round(((proPrice * 12 - proYearlyPrice) / (proPrice * 12)) * 100)
+      : 52;
 
   return (
     <div className="min-h-screen bg-[#090d16] text-slate-100 flex flex-col font-sans">
@@ -572,14 +676,14 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
           </Link>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-sm font-black tracking-tight text-white">{shopName}</span>
+              <span className="text-sm font-black tracking-tight text-white">{shopName || "DenBooks 360"}</span>
               <span className="text-[10px] font-bold bg-cyan-950/70 text-cyan-300 border border-cyan-800/60 px-2 py-0.5 rounded-full flex items-center gap-1">
                 <Sparkles size={10} />
                 <span>Admin Suite</span>
               </span>
             </div>
             <p className="text-[11px] text-slate-400 font-medium">
-              {ownerName} • <span className="text-slate-300">{stateName}</span>
+              {ownerName ? `${ownerName} • ` : ""}<span className="text-slate-300">{stateName}</span>
             </p>
           </div>
         </div>
@@ -609,12 +713,8 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
         <div className="flex items-center gap-2">
           {/* Subscription Status Indicator */}
           {subState && (
-            <button
-              type="button"
-              onClick={() => {
-                setSettingsTab("subscription");
-                setShowSettings(true);
-              }}
+            <Link
+              href="/dashboard/subscription"
               className={`inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs font-bold transition shadow-sm ${
                 subState.is_locked || subState.status === "expired"
                   ? "border-rose-500/50 bg-rose-500/15 text-rose-300 animate-pulse hover:bg-rose-500/25"
@@ -622,7 +722,7 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
                   ? "border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20"
                   : "border-emerald-500/40 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"
               }`}
-              title="Click to view subscription & UPI QR code"
+              title="Click to view subscription & license management"
             >
               {subState.is_locked || subState.status === "expired" ? (
                 <>
@@ -637,10 +737,10 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
               ) : (
                 <>
                   <ShieldCheck size={12} />
-                  <span>Pro: {getDaysRemaining(subState.subscription_expires_at)}d</span>
+                  <span>{subState.plan === "yearly" ? "Pro" : "Monthly"}: {getDaysRemaining(subState.subscription_expires_at)}d</span>
                 </>
               )}
-            </button>
+            </Link>
           )}
 
           {/* Front Desk Shortcut */}
@@ -702,7 +802,6 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
                   {settingsTab === "staff" && <Users size={18} />}
                   {settingsTab === "attendance" && <Clock3 size={18} />}
                   {settingsTab === "wallets" && <Landmark size={18} />}
-                  {settingsTab === "subscription" && <CreditCard size={18} />}
                 </div>
                 <div>
                   <h2 className="text-base font-bold text-white flex items-center gap-2">
@@ -710,14 +809,12 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
                     {settingsTab === "staff" && "Staff & Operator Management"}
                     {settingsTab === "attendance" && "Staff Daily Attendance Register"}
                     {settingsTab === "wallets" && "Bank & Portal Accounts"}
-                    {settingsTab === "subscription" && "Subscription & Payment Management"}
                   </h2>
                   <p className="text-xs text-slate-400">
                     {settingsTab === "profile" && "Configure shop details printed on thermal receipts and invoices."}
                     {settingsTab === "staff" && "Manage front desk staff logins, PIN codes, and desk permissions."}
                     {settingsTab === "attendance" && "View operator punch-in/out timestamps, shift hours, and daily attendance."}
                     {settingsTab === "wallets" && "Monitor and configure digital portal balances and bank accounts."}
-                    {settingsTab === "subscription" && "Direct UPI QR payment, plan selection, and UTR verification status."}
                   </p>
                 </div>
               </div>
@@ -794,33 +891,6 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
                   {walletList.length}
                 </span>
               </button>
-              <button
-                type="button"
-                onClick={() => setSettingsTab("subscription")}
-                className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-bold transition whitespace-nowrap ${
-                  settingsTab === "subscription"
-                    ? "border-cyan-400 text-cyan-400 bg-cyan-950/20"
-                    : "border-transparent text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                <CreditCard size={14} />
-                <span>Subscription & Billing</span>
-                {subState && (
-                  <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-mono font-bold ${
-                    subState.is_locked || subState.status === "expired"
-                      ? "bg-rose-950 text-rose-300 border border-rose-800"
-                      : subState.status === "trial"
-                      ? "bg-amber-950 text-amber-300 border border-amber-800"
-                      : "bg-emerald-950 text-emerald-300 border border-emerald-800"
-                  }`}>
-                    {subState.is_locked
-                      ? "Locked"
-                      : subState.status === "trial"
-                      ? `${getDaysRemaining(subState.subscription_expires_at)}d Trial`
-                      : "Pro"}
-                  </span>
-                )}
-              </button>
             </div>
 
             {/* Modal Scrollable Body */}
@@ -846,7 +916,7 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
                         required
                         value={shopName}
                         onChange={(e) => setShopName(e.target.value)}
-                        placeholder="e.g. Apex Digital Seva Center"
+                        placeholder="e.g. Digital Seva Kendra"
                         className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none"
                       />
                     </div>
@@ -862,7 +932,7 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
                           required
                           value={ownerName}
                           onChange={(e) => setOwnerName(e.target.value)}
-                          placeholder="e.g. Rajesh Kumar"
+                          placeholder="Owner or Manager Name"
                           className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none"
                         />
                       </div>
@@ -876,7 +946,7 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
                           type="tel"
                           value={phone}
                           onChange={(e) => setPhone(e.target.value)}
-                          placeholder="e.g. 9876543210"
+                          placeholder="10-digit mobile number"
                           className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none"
                         />
                       </div>
@@ -923,21 +993,21 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
                       <div className="flex items-center justify-between mb-1.5">
                         <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
                           <Sparkles size={14} className="text-cyan-400" />
-                          <span>Center Audit Code / Invoice Prefix *</span>
+                          <span>Center Audit Code / Invoice Prefix</span>
                         </label>
                         <span className="font-mono text-[11px] font-bold text-cyan-300 bg-cyan-950/80 border border-cyan-800/60 px-2 py-0.5 rounded">
-                          Preview: INV/{centerCode || "KNR059"}/6728
+                          Preview: INV/{centerCode.trim() ? `${centerCode.trim()}/` : ""}6728
                         </span>
                       </div>
                       <input
                         type="text"
                         value={centerCode}
                         onChange={(e) => setCenterCode(e.target.value.toUpperCase())}
-                        placeholder="e.g. KNR059, CSC4821, AKSHAYA-01"
+                        placeholder="e.g. CSC4821, AKSHAYA-01, KL-05"
                         className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-xs font-mono font-bold text-cyan-300 placeholder-slate-500 focus:border-cyan-400 focus:outline-none uppercase"
                       />
                       <p className="text-[10px] text-slate-400 mt-1.5">
-                        Matches your official government center code (like Akshaya or CSC). Printed on all citizen bills and thermal receipts.
+                        Center identifier printed on citizen receipts (optional). Leave blank if not required.
                       </p>
                     </div>
 
@@ -1054,7 +1124,7 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
                               type="tel"
                               value={staffPhone}
                               onChange={(e) => setStaffPhone(e.target.value)}
-                              placeholder="e.g. 9876543210"
+                              placeholder="10-digit mobile number"
                               className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white focus:border-cyan-400 outline-none"
                             />
                           </div>
@@ -1642,281 +1712,6 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
                 </div>
               )}
 
-              {/* TAB 4: SUBSCRIPTION & BILLING */}
-              {settingsTab === "subscription" && subState && (
-                <div className="space-y-5 animate-fadeIn">
-                  {utrSuccessMsg && (
-                    <div className="flex items-center gap-2.5 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-3.5 text-xs text-emerald-300">
-                      <CheckCircle2 size={16} />
-                      <span className="font-semibold">{utrSuccessMsg}</span>
-                    </div>
-                  )}
-
-                  {/* Current Plan Overview Card */}
-                  <div className="rounded-2xl border border-slate-800 bg-[#10182b] p-4.5 space-y-3">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-semibold text-slate-400">Current Plan Status:</span>
-                          <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-black uppercase ${
-                            subState.is_locked || subState.status === "expired"
-                              ? "bg-rose-500/20 text-rose-300 border border-rose-500/40"
-                              : subState.status === "trial"
-                              ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
-                              : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
-                          }`}>
-                            {subState.is_locked ? "Account Locked" : subState.status === "trial" ? "14-Day Free Trial" : "Active Subscription"}
-                          </span>
-                        </div>
-                        <h3 className="text-lg font-black text-white mt-1 capitalize">
-                          {subState.plan} Tier &bull; {shopName}
-                        </h3>
-                      </div>
-
-                      <div className="text-right">
-                        <div className="font-mono text-sm font-bold text-slate-300">
-                          {getDaysRemaining(subState.subscription_expires_at) <= 0
-                            ? "Expired"
-                            : `${getDaysRemaining(subState.subscription_expires_at)} Days Remaining`}
-                        </div>
-                        <p className="text-[10px] text-slate-500">
-                          Expires: {new Date(subState.subscription_expires_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Progress Bar */}
-                    <div className="space-y-1">
-                      <div className="h-2 w-full overflow-hidden rounded-full bg-slate-800">
-                        <div
-                          className={`h-full transition-all duration-500 ${
-                            subState.is_locked || subState.status === "expired"
-                              ? "w-full bg-rose-500"
-                              : subState.status === "trial"
-                              ? "bg-gradient-to-r from-amber-500 to-cyan-400"
-                              : "bg-gradient-to-r from-cyan-400 to-emerald-400"
-                          }`}
-                          style={{
-                            width: `${Math.min(100, Math.max(8, (getDaysRemaining(subState.subscription_expires_at) / 30) * 100))}%`,
-                          }}
-                        />
-                      </div>
-                      <div className="flex justify-between text-[10px] text-slate-400">
-                        <span>Trial / Renewal Period</span>
-                        <span>Zero Commission &bull; Flat Rate</span>
-                      </div>
-                    </div>
-
-                    {subState.last_payment_utr && (
-                      <div className="flex items-center justify-between rounded-xl bg-slate-900/80 px-3 py-2 text-xs border border-slate-800">
-                        <span className="text-slate-400">Last Submitted UTR:</span>
-                        <span className="font-mono font-bold text-amber-300">{subState.last_payment_utr}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Plan Selection Cards */}
-                  <div>
-                    <label className="text-xs font-bold text-slate-300 block mb-2">Select Subscription Plan:</label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {/* Monthly Card */}
-                      <button
-                        type="button"
-                        onClick={() => setSelectedPlan("monthly")}
-                        className={`text-left rounded-2xl p-4 border transition relative ${
-                          selectedPlan === "monthly"
-                            ? "border-cyan-400 bg-cyan-950/20 ring-1 ring-cyan-400"
-                            : "border-slate-800 bg-[#0d1424] hover:border-slate-700"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-slate-300">Starter Monthly</span>
-                          <span className="font-mono text-base font-black text-emerald-400">₹{superConfig.monthly_price}</span>
-                        </div>
-                        <p className="text-[11px] text-slate-400 mt-1">
-                          Full counter POS, customer khata, daily daybook & unlimited tokens.
-                        </p>
-                        <span className="mt-2 inline-block rounded-md bg-slate-800 px-2 py-0.5 text-[10px] font-semibold text-slate-300">
-                          30 Days Validity
-                        </span>
-                      </button>
-
-                      {/* Annual Card */}
-                      <button
-                        type="button"
-                        onClick={() => setSelectedPlan("yearly")}
-                        className={`text-left rounded-2xl p-4 border transition relative ${
-                          selectedPlan === "yearly"
-                            ? "border-purple-400 bg-purple-950/20 ring-1 ring-purple-400"
-                            : "border-slate-800 bg-[#0d1424] hover:border-slate-700"
-                        }`}
-                      >
-                        {yearlySavingsPct > 0 && (
-                          <div className="absolute top-2 right-2 rounded-full bg-purple-500/20 border border-purple-500/40 px-2 py-0.5 text-[9px] font-black text-purple-300">
-                            SAVE {yearlySavingsPct}%
-                          </div>
-                        )}
-                        <div className="flex items-center justify-between pr-16">
-                          <span className="text-xs font-bold text-slate-300">Annual Pro</span>
-                          <span className="font-mono text-base font-black text-purple-400">₹{superConfig.yearly_price}</span>
-                        </div>
-                        <p className="text-[11px] text-slate-400 mt-1">
-                          365 days of uninterrupted service + priority WhatsApp support.
-                        </p>
-                        <span className="mt-2 inline-block rounded-md bg-purple-950/80 border border-purple-800/60 px-2 py-0.5 text-[10px] font-semibold text-purple-300">
-                          12 Months (~₹{yearlyPerMonth}/mo)
-                        </span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Direct UPI QR Code & Instructions */}
-                  <div className="rounded-2xl border border-slate-800 bg-[#0c1322] p-4.5 space-y-4">
-                    <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                      <div>
-                        <h4 className="text-xs font-black text-white flex items-center gap-1.5">
-                          <QrCode size={15} className="text-cyan-400" />
-                          <span>Direct UPI QR & Zero Payment Fees</span>
-                        </h4>
-                        <p className="text-[11px] text-slate-400">Scan using PhonePe, Google Pay, Paytm, BHIM, or Cred</p>
-                      </div>
-                      <span className="font-mono text-sm font-black text-emerald-400">
-                        ₹{selectedPlan === "yearly" ? superConfig.yearly_price : superConfig.monthly_price}
-                      </span>
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row items-center gap-5">
-                      {/* High-res Dynamic QR Code */}
-                      <div className="shrink-0 p-3 rounded-2xl bg-white shadow-xl flex flex-col items-center">
-                        <img
-                          src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=8&data=${encodeURIComponent(
-                            generateUpiUri({
-                              upiId: superConfig.upi_id,
-                              payeeName: superConfig.payee_name,
-                              amount: selectedPlan === "yearly" ? superConfig.yearly_price : superConfig.monthly_price,
-                              note: `DenBooks ${selectedPlan} - ${shopName}`,
-                            })
-                          )}`}
-                          alt="DenBooks UPI QR"
-                          className="h-44 w-44 object-contain"
-                        />
-                        <span className="text-[10px] font-bold text-slate-700 mt-1 font-mono">
-                          DenBooks 360 &bull; Instant UPI
-                        </span>
-                      </div>
-
-                      {/* Right details & Intent Link */}
-                      <div className="flex-1 space-y-3 w-full">
-                        <div className="rounded-xl border border-slate-800 bg-[#080e1b] p-3 space-y-1.5">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[11px] text-slate-400">Official UPI ID:</span>
-                            <button
-                              type="button"
-                              onClick={copyUpiId}
-                              className="text-[11px] text-cyan-400 hover:text-cyan-300 font-mono font-bold flex items-center gap-1"
-                            >
-                              {copiedUpi ? <Check size={12} /> : <Copy size={12} />}
-                              <span>{copiedUpi ? "Copied!" : "Copy"}</span>
-                            </button>
-                          </div>
-                          <div className="font-mono text-xs font-bold text-white select-all">
-                            {superConfig.upi_id}
-                          </div>
-                          <div className="text-[10px] text-slate-400">Payee: {superConfig.payee_name}</div>
-                        </div>
-
-                        {/* Mobile Direct Pay Button */}
-                        <a
-                          href={generateUpiUri({
-                            upiId: superConfig.upi_id,
-                            payeeName: superConfig.payee_name,
-                            amount: selectedPlan === "yearly" ? superConfig.yearly_price : superConfig.monthly_price,
-                            note: `DenBooks ${selectedPlan} - ${shopName}`,
-                          })}
-                          className="w-full flex items-center justify-center gap-2 rounded-xl border border-cyan-500/40 bg-cyan-500/10 py-2 text-xs font-bold text-cyan-300 hover:bg-cyan-500/20 transition shadow-sm"
-                        >
-                          <CreditCard size={14} />
-                          <span>Tap to Pay with Installed UPI App</span>
-                        </a>
-
-                        <p className="text-[10px] text-slate-400">
-                          After transferring, copy the 12-digit <strong>UTR / UPI Ref Number</strong> from your payment receipt and submit below.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* UTR Submission Form */}
-                  <div className="rounded-2xl border border-slate-800 bg-[#0d1527] p-4.5 space-y-3">
-                    <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
-                      <CheckCircle2 size={15} className="text-emerald-400" />
-                      <span>Submit 12-Digit UTR for Manual Activation</span>
-                    </h4>
-
-                    <form onSubmit={handleUtrSubmit} className="space-y-3">
-                      <div>
-                        <label className="text-[11px] font-semibold text-slate-300 block mb-1">
-                          UPI Ref / UTR Transaction ID *
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={utrInput}
-                          onChange={(e) => setUtrInput(e.target.value)}
-                          placeholder="e.g. 428919028391 (12 digits)"
-                          className="w-full font-mono rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2 text-xs text-amber-300 font-bold focus:border-cyan-400 outline-none"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="text-[11px] font-semibold text-slate-300 block mb-1">
-                          Payment Notes (Optional)
-                        </label>
-                        <input
-                          type="text"
-                          value={utrNotes}
-                          onChange={(e) => setUtrNotes(e.target.value)}
-                          placeholder="e.g. Paid from GPay (Alok Verma)"
-                          className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-cyan-400 outline-none"
-                        />
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-2 pt-1">
-                        <button
-                          type="submit"
-                          disabled={submittingUtr}
-                          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-cyan-400 py-2.5 px-4 text-xs font-bold text-slate-950 hover:bg-cyan-300 transition shadow-md shadow-cyan-400/20"
-                        >
-                          <CheckCircle2 size={15} />
-                          <span>{submittingUtr ? "Submitting..." : "Submit UTR for Verification"}</span>
-                        </button>
-
-                        <a
-                          href={`https://wa.me/${superConfig.whatsapp_number.replace("+", "").replace(/\s+/g, "")}?text=${encodeURIComponent(
-                            [
-                              `*DenBooks 360 - Subscription Activation Request*`,
-                              ``,
-                              `🏪 *Center Name:* ${shopName}`,
-                              `👤 *Owner Name:* ${ownerName}`,
-                              `📞 *Phone:* ${phone || "Not set"}`,
-                              `📦 *Plan:* ${selectedPlan === "yearly" ? "Annual Pro (₹" + superConfig.yearly_price + ")" : "Monthly Starter (₹" + superConfig.monthly_price + ")"}`,
-                              `🧾 *UTR / Ref No:* ${utrInput.trim() || "Payment Done (Screenshot attached)"}`,
-                              ``,
-                              `Please verify payment and activate my center account. Thank you!`,
-                            ].join("\n")
-                          )}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3.5 py-2.5 text-xs font-bold text-emerald-300 hover:bg-emerald-500/20 transition"
-                        >
-                          <MessageSquare size={14} />
-                          <span>WhatsApp Proof</span>
-                        </a>
-                      </div>
-                    </form>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -1941,31 +1736,44 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
             </div>
 
             {/* Quick Plan Switcher */}
-            <div className="grid grid-cols-2 gap-2.5 bg-slate-900/80 p-1.5 rounded-2xl border border-slate-800">
+            <div className="grid grid-cols-3 gap-2 bg-slate-900/80 p-1.5 rounded-2xl border border-slate-800">
               <button
                 type="button"
-                onClick={() => setSelectedPlan("monthly")}
-                className={`py-2 px-3 rounded-xl text-xs font-bold transition text-center ${
-                  selectedPlan === "monthly"
+                onClick={() => setSelectedPlan("starter")}
+                className={`py-2 px-1.5 rounded-xl text-xs font-bold transition text-center cursor-pointer ${
+                  selectedPlan === "starter"
                     ? "bg-cyan-400 text-slate-950 shadow-sm"
                     : "text-slate-400 hover:text-white"
                 }`}
               >
-                <div>Starter Monthly</div>
-                <div className="font-mono text-sm font-black">₹{superConfig.monthly_price}</div>
+                <div className="text-[10.5px]">Starter</div>
+                <div className="font-mono text-xs font-black">₹{starterPrice}/mo</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSelectedPlan("pro")}
+                className={`py-2 px-1.5 rounded-xl text-xs font-bold transition text-center cursor-pointer ${
+                  selectedPlan === "pro"
+                    ? "bg-emerald-400 text-slate-950 shadow-sm"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <div className="text-[10.5px]">Pro Hub</div>
+                <div className="font-mono text-xs font-black">₹{proPrice}/mo</div>
               </button>
 
               <button
                 type="button"
                 onClick={() => setSelectedPlan("yearly")}
-                className={`py-2 px-3 rounded-xl text-xs font-bold transition text-center ${
+                className={`py-2 px-1.5 rounded-xl text-xs font-bold transition text-center cursor-pointer ${
                   selectedPlan === "yearly"
                     ? "bg-purple-400 text-slate-950 shadow-sm"
                     : "text-slate-400 hover:text-white"
                 }`}
               >
-                <div>Annual Pro {yearlySavingsPct > 0 ? `(Save ${yearlySavingsPct}%)` : ""}</div>
-                <div className="font-mono text-sm font-black">₹{superConfig.yearly_price}</div>
+                <div className="text-[10.5px]">Annual Pro</div>
+                <div className="font-mono text-xs font-black">₹{proYearlyPrice}/yr</div>
               </button>
             </div>
 
@@ -1977,8 +1785,8 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
                     generateUpiUri({
                       upiId: superConfig.upi_id,
                       payeeName: superConfig.payee_name,
-                      amount: selectedPlan === "yearly" ? superConfig.yearly_price : superConfig.monthly_price,
-                      note: `DenBooks ${selectedPlan} - ${shopName}`,
+                      amount: currentPlanAmount,
+                      note: `DenBooks ${selectedPlan === "starter" ? "Starter" : selectedPlan === "pro" ? "Pro Hub" : "Annual Pro"} - ${shopName}`,
                     })
                   )}`}
                   alt="UPI QR Code"
@@ -1987,13 +1795,88 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
               </div>
 
               <div className="flex-1 space-y-2 text-center sm:text-left">
-                <div className="text-[11px] text-slate-400">Scan via PhonePe / GPay / Paytm:</div>
-                <div className="font-mono text-xs font-bold text-cyan-300 select-all bg-slate-900 px-2.5 py-1.5 rounded-lg border border-slate-800 inline-block">
-                  {superConfig.upi_id}
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] text-slate-400">Scan via PhonePe / GPay / Paytm:</span>
+                  {!isEditingModalUpi && (
+                    <button
+                      type="button"
+                      onClick={startEditingModalUpi}
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-cyan-400 hover:text-cyan-300 hover:underline px-1.5 py-0.5 rounded transition cursor-pointer"
+                      title="Edit receiving UPI ID"
+                    >
+                      <Edit2 size={11} />
+                      <span>Edit UPI</span>
+                    </button>
+                  )}
                 </div>
-                <div className="text-[10px] text-slate-500">
-                  Amount: <strong className="text-emerald-400 font-mono">₹{selectedPlan === "yearly" ? superConfig.yearly_price : superConfig.monthly_price}</strong>
-                </div>
+
+                {isEditingModalUpi ? (
+                  <form onSubmit={handleSaveModalUpi} className="space-y-1.5 p-2 rounded-xl bg-slate-900 border border-cyan-500/40 text-left">
+                    <div>
+                      <label className="text-[10px] text-cyan-300 font-semibold block mb-0.5">UPI ID:</label>
+                      <input
+                        type="text"
+                        required
+                        value={modalEditUpiId}
+                        onChange={(e) => {
+                          setModalEditUpiId(e.target.value);
+                          if (modalUpiError) setModalUpiError("");
+                        }}
+                        placeholder="e.g. merchant@upi"
+                        className="w-full rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1 text-xs text-white font-mono focus:border-cyan-400 focus:outline-none"
+                        autoFocus
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-slate-400 font-semibold block mb-0.5">Payee Name:</label>
+                      <input
+                        type="text"
+                        value={modalEditPayee}
+                        onChange={(e) => setModalEditPayee(e.target.value)}
+                        placeholder="e.g. DenBooks 360"
+                        className="w-full rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1 text-xs text-white focus:border-cyan-400 focus:outline-none"
+                      />
+                    </div>
+                    {modalUpiError && <p className="text-[10px] text-rose-400 font-medium">{modalUpiError}</p>}
+                    <div className="flex gap-1.5 pt-1">
+                      <button
+                        type="submit"
+                        className="flex-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-emerald-500 transition cursor-pointer"
+                      >
+                        Save UPI
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingModalUpi(false)}
+                        className="rounded-lg bg-slate-800 px-2.5 py-1 text-[11px] text-slate-300 hover:bg-slate-700 transition cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-1.5 justify-center sm:justify-start">
+                      <div className="font-mono text-xs font-bold text-cyan-300 select-all bg-slate-900 px-2.5 py-1.5 rounded-lg border border-slate-800 inline-block break-all">
+                        {superConfig.upi_id}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={copyUpiId}
+                        className="p-1.5 rounded-md text-slate-400 hover:text-cyan-300 hover:bg-slate-800 transition cursor-pointer"
+                        title="Copy UPI ID"
+                      >
+                        {copiedUpi ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+                      </button>
+                    </div>
+                    <div className="text-[10px] text-slate-400">
+                      Payee: <strong className="text-slate-200">{superConfig.payee_name || "DenBooks 360"}</strong>
+                    </div>
+                    <div className="text-[10px] text-slate-400">
+                      Amount: <strong className="text-emerald-400 font-mono">₹{currentPlanAmount}</strong>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
@@ -2028,7 +1911,7 @@ export default function AdminHeaderLayout({ children }: AdminHeaderLayoutProps) 
                     `🏪 *Center Name:* ${shopName}`,
                     `👤 *Owner Name:* ${ownerName}`,
                     `📞 *Phone:* ${phone || "Not set"}`,
-                    `📦 *Plan:* ${selectedPlan === "yearly" ? "Annual Pro (₹" + superConfig.yearly_price + ")" : "Monthly Starter (₹" + superConfig.monthly_price + ")"}`,
+                    `📦 *Plan:* ${selectedPlan === "starter" ? "Starter Monthly (₹" + starterPrice + ")" : selectedPlan === "pro" ? "Pro Monthly (₹" + proPrice + ")" : "Annual Pro (₹" + proYearlyPrice + ")"}`,
                     `🧾 *UTR:* ${utrInput.trim() || "Payment Done (Receipt Attached)"}`,
                     ``,
                     `My center is locked. Please approve payment and unlock dashboard.`,

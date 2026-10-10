@@ -59,9 +59,10 @@ export type AccountTransaction = {
   invoice_number?: string;
 };
 
-export function getNextInvoiceNumber(centerCode: string = "KNR059"): string {
+export function getNextInvoiceNumber(centerCode: string = ""): string {
   if (typeof window === "undefined") {
-    return `INV/${centerCode}/${Math.floor(1000 + Math.random() * 9000)}`;
+    const code = centerCode.trim().toUpperCase();
+    return code ? `INV/${code}/${Math.floor(1000 + Math.random() * 9000)}` : `INV/${Math.floor(1000 + Math.random() * 9000)}`;
   }
   try {
     const raw = localStorage.getItem("denbooks_invoice_sequence");
@@ -69,25 +70,28 @@ export function getNextInvoiceNumber(centerCode: string = "KNR059"): string {
     if (isNaN(seq) || seq < 1) seq = 6728;
     seq += 1;
     localStorage.setItem("denbooks_invoice_sequence", seq.toString());
-    const cleanCode = (centerCode || "KNR059").trim().toUpperCase();
-    return `INV/${cleanCode}/${seq}`;
+    const cleanCode = (centerCode || "").trim().toUpperCase();
+    return cleanCode ? `INV/${cleanCode}/${seq}` : `INV/${seq}`;
   } catch (e) {
-    return `INV/${centerCode}/${Math.floor(1000 + Math.random() * 9000)}`;
+    const code = centerCode.trim().toUpperCase();
+    return code ? `INV/${code}/${Math.floor(1000 + Math.random() * 9000)}` : `INV/${Math.floor(1000 + Math.random() * 9000)}`;
   }
 }
 
-export function peekNextInvoiceNumber(centerCode: string = "KNR059"): string {
+export function peekNextInvoiceNumber(centerCode: string = ""): string {
   if (typeof window === "undefined") {
-    return `INV/${centerCode}/6729`;
+    const code = centerCode.trim().toUpperCase();
+    return code ? `INV/${code}/6729` : `INV/6729`;
   }
   try {
     const raw = localStorage.getItem("denbooks_invoice_sequence");
     let seq = raw ? parseInt(raw, 10) : 6728;
     if (isNaN(seq) || seq < 1) seq = 6728;
-    const cleanCode = (centerCode || "KNR059").trim().toUpperCase();
-    return `INV/${cleanCode}/${seq + 1}`;
+    const cleanCode = (centerCode || "").trim().toUpperCase();
+    return cleanCode ? `INV/${cleanCode}/${seq + 1}` : `INV/${seq + 1}`;
   } catch (e) {
-    return `INV/${centerCode}/6729`;
+    const code = centerCode.trim().toUpperCase();
+    return code ? `INV/${code}/6729` : `INV/6729`;
   }
 }
 

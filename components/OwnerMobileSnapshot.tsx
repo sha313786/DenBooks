@@ -49,7 +49,7 @@ export default function OwnerMobileSnapshot({
   wallets,
   transactions,
   selectedDate,
-  centerCode = "KNR059",
+  centerCode = "",
   centerName = "DenBooks 360",
   onSwitchToDesktop,
   onOpenInvoiceModal,
@@ -107,13 +107,15 @@ export default function OwnerMobileSnapshot({
   return (
     <div className="space-y-4 pb-12 font-sans">
       {/* 1. Header Banner: Owner Mobile Command */}
-      <div className="rounded-2xl border border-cyan-500/30 bg-gradient-to-br from-[#0c1626] via-[#0e1f38] to-[#09111e] p-4 shadow-lg text-white">
+      <div className="rounded-2xl border dark:border-cyan-500/30 border-slate-200 dark:bg-gradient-to-br dark:from-[#0c1626] dark:via-[#0e1f38] dark:to-[#09111e] bg-white p-4 shadow-lg dark:text-white text-slate-900">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="rounded-xl bg-cyan-950/80 border border-cyan-700/60 px-2.5 py-1 text-xs font-mono font-bold text-cyan-300">
-              🏢 {centerCode}
-            </span>
-            <span className="text-[11px] font-semibold text-slate-300">
+            {centerCode ? (
+              <span className="rounded-xl dark:bg-cyan-950/80 bg-cyan-50 border dark:border-cyan-700/60 border-cyan-300 px-2.5 py-1 text-xs font-mono font-bold dark:text-cyan-300 text-cyan-800">
+                🏢 {centerCode}
+              </span>
+            ) : null}
+            <span className="text-[11px] font-semibold dark:text-slate-300 text-slate-600">
               {formattedDate}
             </span>
           </div>
@@ -122,9 +124,9 @@ export default function OwnerMobileSnapshot({
             <button
               type="button"
               onClick={onSwitchToDesktop}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/80 px-2.5 py-1 text-[11px] font-bold text-slate-200 hover:text-white transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-xl border dark:border-slate-700 border-slate-300 dark:bg-slate-800/80 bg-slate-100 px-2.5 py-1 text-[11px] font-bold dark:text-slate-200 text-slate-700 hover:text-cyan-600 transition cursor-pointer"
             >
-              <Monitor size={12} className="text-cyan-400" />
+              <Monitor size={12} className="dark:text-cyan-400 text-cyan-600" />
               <span>Full Desktop Tables</span>
             </button>
           )}
@@ -132,13 +134,13 @@ export default function OwnerMobileSnapshot({
 
         <div className="mt-2.5 flex items-center justify-between">
           <div>
-            <h1 className="text-base font-black tracking-tight text-white flex items-center gap-1.5">
+            <h1 className="text-base font-black tracking-tight dark:text-white text-slate-900 flex items-center gap-1.5">
               <span>Owner Evening Snapshot</span>
-              <span className="rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] px-2 py-0.5 font-bold">
+              <span className="rounded-full dark:bg-emerald-500/20 bg-emerald-100 dark:text-emerald-300 text-emerald-800 border dark:border-emerald-500/30 border-emerald-300 text-[9px] px-2 py-0.5 font-bold">
                 LIVE
               </span>
             </h1>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-[11px] dark:text-slate-400 text-slate-600">
               {centerName} • Cash Reconciliation & Daily Health
             </p>
           </div>
@@ -161,54 +163,54 @@ export default function OwnerMobileSnapshot({
       {/* 2. SECTION 1: EVENING CASH HANDOVER & REVENUE (4 Big KPI Cards) */}
       <div className="space-y-2">
         <div className="flex items-center justify-between px-1">
-          <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-            <IndianRupee size={13} className="text-emerald-400" />
+          <span className="text-xs font-bold dark:text-slate-300 text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+            <IndianRupee size={13} className="dark:text-emerald-400 text-emerald-600" />
             <span>1. Cash Handover & Revenue</span>
           </span>
-          <span className="text-[10px] text-slate-400 font-mono">
+          <span className="text-[10px] dark:text-slate-400 text-slate-600 font-mono">
             {summary.transactionCount} transactions
           </span>
         </div>
 
         <div className="grid grid-cols-2 gap-2.5">
           {/* Card A: Physical Cash in Drawer (Top Priority) */}
-          <div className="rounded-2xl border border-emerald-500/40 bg-gradient-to-br from-[#0c2419] to-[#0a1813] p-3.5 shadow-md flex flex-col justify-between">
+          <div className="rounded-2xl border dark:border-emerald-500/40 border-emerald-300 dark:bg-gradient-to-br dark:from-[#0c2419] dark:to-[#0a1813] bg-emerald-50/80 p-3.5 shadow-md flex flex-col justify-between">
             <div className="flex items-center justify-between">
-              <span className="text-[10.5px] font-bold uppercase tracking-wider text-emerald-400">
+              <span className="text-[10.5px] font-bold uppercase tracking-wider dark:text-emerald-400 text-emerald-800">
                 💵 Cash in Drawer
               </span>
-              <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+              <div className="h-2 w-2 rounded-full dark:bg-emerald-400 bg-emerald-600 animate-pulse" />
             </div>
             <div className="my-2">
-              <div className="text-2xl font-black text-white font-mono tracking-tight">
+              <div className="text-2xl font-black dark:text-white text-emerald-950 font-mono tracking-tight">
                 ₹{summary.cashInHand.toLocaleString("en-IN")}
               </div>
-              <p className="text-[10px] text-emerald-300/80 font-medium mt-0.5">
+              <p className="text-[10px] dark:text-emerald-300/80 text-emerald-700 font-medium mt-0.5">
                 Staff must hand this over
               </p>
             </div>
-            <div className="text-[9.5px] text-slate-400 pt-1 border-t border-emerald-500/20">
+            <div className="text-[9.5px] dark:text-slate-400 text-slate-600 pt-1 border-t dark:border-emerald-500/20 border-emerald-200">
               Cash in: ₹{summary.totalIncome > 0 ? (summary.cashInHand + summary.totalExpense).toLocaleString("en-IN") : "0"} • Exp: ₹{summary.totalExpense.toLocaleString("en-IN")}
             </div>
           </div>
 
           {/* Card B: UPI Received in Bank */}
-          <div className="rounded-2xl border border-cyan-500/40 bg-gradient-to-br from-[#0c1c2b] to-[#091520] p-3.5 shadow-md flex flex-col justify-between">
+          <div className="rounded-2xl border dark:border-cyan-500/40 border-sky-300 dark:bg-gradient-to-br dark:from-[#0c1c2b] dark:to-[#091520] bg-sky-50/80 p-3.5 shadow-md flex flex-col justify-between">
             <div className="flex items-center justify-between">
-              <span className="text-[10.5px] font-bold uppercase tracking-wider text-cyan-400">
+              <span className="text-[10.5px] font-bold uppercase tracking-wider dark:text-cyan-400 text-sky-800">
                 📱 UPI Received
               </span>
-              <CreditCard size={13} className="text-cyan-400" />
+              <CreditCard size={13} className="dark:text-cyan-400 text-sky-600" />
             </div>
             <div className="my-2">
-              <div className="text-2xl font-black text-white font-mono tracking-tight">
+              <div className="text-2xl font-black dark:text-white text-sky-950 font-mono tracking-tight">
                 ₹{summary.upiReceived.toLocaleString("en-IN")}
               </div>
-              <p className="text-[10px] text-cyan-300/80 font-medium mt-0.5">
+              <p className="text-[10px] dark:text-cyan-300/80 text-sky-700 font-medium mt-0.5">
                 Direct in Shop Bank Account
               </p>
             </div>
-            <div className="text-[9.5px] text-slate-400 pt-1 border-t border-cyan-500/20">
+            <div className="text-[9.5px] dark:text-slate-400 text-slate-600 pt-1 border-t dark:border-cyan-500/20 border-sky-200">
               GPay, PhonePe, QR receipts
             </div>
           </div>
@@ -217,46 +219,46 @@ export default function OwnerMobileSnapshot({
           <div
             className={`rounded-2xl border p-3.5 shadow-md flex flex-col justify-between ${
               summary.netShopProfit >= 0
-                ? "border-indigo-500/40 bg-gradient-to-br from-[#121633] to-[#0b0e21]"
-                : "border-rose-500/40 bg-gradient-to-br from-[#290e14] to-[#17080b]"
+                ? "dark:border-indigo-500/40 border-indigo-300 dark:bg-gradient-to-br dark:from-[#121633] dark:to-[#0b0e21] bg-indigo-50/80"
+                : "dark:border-rose-500/40 border-rose-300 dark:bg-gradient-to-br dark:from-[#290e14] dark:to-[#17080b] bg-rose-50/80"
             }`}
           >
             <div className="flex items-center justify-between">
-              <span className="text-[10.5px] font-bold uppercase tracking-wider text-indigo-400">
+              <span className="text-[10.5px] font-bold uppercase tracking-wider dark:text-indigo-400 text-indigo-800">
                 📈 Real Net Profit
               </span>
-              <Sparkles size={13} className="text-indigo-400" />
+              <Sparkles size={13} className="dark:text-indigo-400 text-indigo-600" />
             </div>
             <div className="my-2">
-              <div className="text-2xl font-black text-white font-mono tracking-tight">
+              <div className="text-2xl font-black dark:text-white text-indigo-950 font-mono tracking-tight">
                 ₹{summary.netShopProfit.toLocaleString("en-IN")}
               </div>
-              <p className="text-[10px] text-indigo-300/80 font-medium mt-0.5">
+              <p className="text-[10px] dark:text-indigo-300/80 text-indigo-700 font-medium mt-0.5">
                 Your actual earnings today
               </p>
             </div>
-            <div className="text-[9.5px] text-slate-400 pt-1 border-t border-indigo-500/20">
+            <div className="text-[9.5px] dark:text-slate-400 text-slate-600 pt-1 border-t dark:border-indigo-500/20 border-indigo-200">
               Rev: ₹{summary.realShopRevenue.toLocaleString("en-IN")} • Net margin
             </div>
           </div>
 
           {/* Card D: Govt Pass-Through Fees */}
-          <div className="rounded-2xl border border-slate-700/80 bg-gradient-to-br from-[#121724] to-[#0b0e17] p-3.5 shadow-md flex flex-col justify-between">
+          <div className="rounded-2xl border dark:border-slate-700/80 border-slate-300 dark:bg-gradient-to-br dark:from-[#121724] dark:to-[#0b0e17] bg-slate-100/90 p-3.5 shadow-md flex flex-col justify-between">
             <div className="flex items-center justify-between">
-              <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-300">
+              <span className="text-[10.5px] font-bold uppercase tracking-wider dark:text-slate-300 text-slate-700">
                 🏛️ Govt Pass-Through
               </span>
-              <Building size={13} className="text-slate-400" />
+              <Building size={13} className="dark:text-slate-400 text-slate-600" />
             </div>
             <div className="my-2">
-              <div className="text-2xl font-black text-slate-200 font-mono tracking-tight">
+              <div className="text-2xl font-black dark:text-slate-200 text-slate-900 font-mono tracking-tight">
                 ₹{summary.totalGovtFees.toLocaleString("en-IN")}
               </div>
-              <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+              <p className="text-[10px] dark:text-slate-400 text-slate-600 font-medium mt-0.5">
                 From advance portal wallets
               </p>
             </div>
-            <div className="text-[9.5px] text-slate-400 pt-1 border-t border-slate-750">
+            <div className="text-[9.5px] dark:text-slate-400 text-slate-600 pt-1 border-t dark:border-slate-750 border-slate-200">
               Not counted as store taxable income
             </div>
           </div>
@@ -264,22 +266,22 @@ export default function OwnerMobileSnapshot({
       </div>
 
       {/* 3. SECTION 2: ADVANCE PORTAL WALLETS (Recharge Alert for Tomorrow Morning) */}
-      <div className="rounded-2xl border border-slate-800 bg-[#0e1626] p-4 shadow-md space-y-3">
-        <div className="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
+      <div className="rounded-2xl border dark:border-slate-800 border-slate-200 dark:bg-[#0e1626] bg-white p-4 shadow-md space-y-3">
+        <div className="flex items-center justify-between border-b dark:border-slate-800/80 border-slate-200 pb-2.5">
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-cyan-500/15 text-cyan-400 border border-cyan-500/30">
+            <div className="flex h-7 w-7 items-center justify-center rounded-xl dark:bg-cyan-500/15 bg-cyan-100 dark:text-cyan-400 text-cyan-700 border dark:border-cyan-500/30 border-cyan-300">
               <Wallet size={14} />
             </div>
             <div>
-              <h2 className="text-xs font-bold text-white tracking-wide">
+              <h2 className="text-xs font-bold dark:text-white text-slate-900 tracking-wide">
                 2. Running Portal Wallets
               </h2>
-              <p className="text-[10px] text-slate-400">
+              <p className="text-[10px] dark:text-slate-400 text-slate-600">
                 Check tonight before tomorrow&apos;s morning rush
               </p>
             </div>
           </div>
-          <span className="font-mono text-xs font-black text-cyan-300 bg-cyan-950/80 border border-cyan-800/60 px-2 py-0.5 rounded-lg">
+          <span className="font-mono text-xs font-black dark:text-cyan-300 text-cyan-800 dark:bg-cyan-950/80 bg-cyan-100 border dark:border-cyan-800/60 border-cyan-300 px-2 py-0.5 rounded-lg">
             Total: ₹{wallets.reduce((s, w) => s + w.balance, 0).toLocaleString("en-IN")}
           </span>
         </div>
@@ -292,28 +294,28 @@ export default function OwnerMobileSnapshot({
                 key={wallet.id}
                 className={`flex items-center justify-between p-3 rounded-xl border transition ${
                   isLow
-                    ? "border-amber-500/40 bg-amber-950/20"
-                    : "border-slate-800 bg-slate-900/60"
+                    ? "dark:border-amber-500/40 border-amber-300 dark:bg-amber-950/20 bg-amber-50"
+                    : "dark:border-slate-800 border-slate-200 dark:bg-slate-900/60 bg-slate-50"
                 }`}
               >
                 <div className="space-y-0.5">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-bold text-white">
+                    <span className="text-xs font-bold dark:text-white text-slate-900">
                       {wallet.name}
                     </span>
                     {isLow ? (
-                      <span className="rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[9px] px-1.5 py-0.2 font-bold flex items-center gap-0.5">
+                      <span className="rounded-full dark:bg-amber-500/20 bg-amber-100 dark:text-amber-300 text-amber-800 border dark:border-amber-500/30 border-amber-300 text-[9px] px-1.5 py-0.2 font-bold flex items-center gap-0.5">
                         <AlertTriangle size={9} />
                         <span>Top up!</span>
                       </span>
                     ) : (
-                      <span className="rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] px-1.5 py-0.2 font-bold flex items-center gap-0.5">
+                      <span className="rounded-full dark:bg-emerald-500/20 bg-emerald-100 dark:text-emerald-300 text-emerald-800 border dark:border-emerald-500/30 border-emerald-300 text-[9px] px-1.5 py-0.2 font-bold flex items-center gap-0.5">
                         <CheckCircle2 size={9} />
                         <span>OK</span>
                       </span>
                     )}
                   </div>
-                  <p className="text-[10px] text-slate-400">
+                  <p className="text-[10px] dark:text-slate-400 text-slate-600">
                     Min alert: ₹{wallet.min_alert_balance || 1000}
                   </p>
                 </div>
@@ -321,12 +323,12 @@ export default function OwnerMobileSnapshot({
                 <div className="text-right">
                   <div
                     className={`font-mono text-base font-black ${
-                      isLow ? "text-amber-400" : "text-white"
+                      isLow ? "dark:text-amber-400 text-amber-700" : "dark:text-white text-slate-900"
                     }`}
                   >
                     ₹{wallet.balance.toLocaleString("en-IN")}
                   </div>
-                  <span className="text-[9.5px] text-slate-400">
+                  <span className="text-[9.5px] dark:text-slate-400 text-slate-600">
                     {wallet.category || "Portal"}
                   </span>
                 </div>
@@ -337,31 +339,31 @@ export default function OwnerMobileSnapshot({
       </div>
 
       {/* 4. SECTION 3: STAFF SHIFT HANDOVER STATUS */}
-      <div className="rounded-2xl border border-slate-800 bg-[#0e1626] p-4 shadow-md space-y-3">
-        <div className="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
+      <div className="rounded-2xl border dark:border-slate-800 border-slate-200 dark:bg-[#0e1626] bg-white p-4 shadow-md space-y-3">
+        <div className="flex items-center justify-between border-b dark:border-slate-800/80 border-slate-200 pb-2.5">
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-teal-500/15 text-teal-400 border border-teal-500/30">
+            <div className="flex h-7 w-7 items-center justify-center rounded-xl dark:bg-teal-500/15 bg-teal-100 dark:text-teal-400 text-teal-700 border dark:border-teal-500/30 border-teal-300">
               <UserCheck size={14} />
             </div>
             <div>
-              <h2 className="text-xs font-bold text-white tracking-wide">
+              <h2 className="text-xs font-bold dark:text-white text-slate-900 tracking-wide">
                 3. Staff Shift Handover
               </h2>
-              <p className="text-[10px] text-slate-400">
+              <p className="text-[10px] dark:text-slate-400 text-slate-600">
                 Physical drawer balance per counter
               </p>
             </div>
           </div>
           <Link
             href="/dashboard/employees"
-            className="text-[11px] font-semibold text-cyan-400 hover:text-cyan-300"
+            className="text-[11px] font-semibold dark:text-cyan-400 text-cyan-600 hover:underline"
           >
             Staff Suite &rarr;
           </Link>
         </div>
 
         {attendance.length === 0 ? (
-          <div className="rounded-xl border border-slate-850 bg-slate-900/40 p-3.5 text-center text-xs text-slate-400">
+          <div className="rounded-xl border dark:border-slate-850 border-slate-200 dark:bg-slate-900/40 bg-slate-50 p-3.5 text-center text-xs dark:text-slate-400 text-slate-600">
             {loadingAttendance
               ? "Checking attendance records..."
               : "No staff attendance punches logged for this date."}
@@ -393,33 +395,33 @@ export default function OwnerMobileSnapshot({
               return (
                 <div
                   key={rec.id || rec.employee_id}
-                  className="flex items-center justify-between p-3 rounded-xl border border-slate-800 bg-slate-900/60"
+                  className="flex items-center justify-between p-3 rounded-xl border dark:border-slate-800 border-slate-200 dark:bg-slate-900/60 bg-slate-50"
                 >
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-white">
+                      <span className="text-xs font-bold dark:text-white text-slate-900">
                         {rec.employee_name}
                       </span>
                       {isClockedOut ? (
-                        <span className="rounded-full bg-slate-800 text-slate-300 border border-slate-700 text-[9px] px-2 py-0.2 font-semibold">
+                        <span className="rounded-full dark:bg-slate-800 bg-slate-200 dark:text-slate-300 text-slate-700 border dark:border-slate-700 border-slate-300 text-[9px] px-2 py-0.2 font-semibold">
                           🏁 Shift Done
                         </span>
                       ) : (
-                        <span className="rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] px-2 py-0.2 font-bold">
+                        <span className="rounded-full dark:bg-emerald-500/20 bg-emerald-100 dark:text-emerald-300 text-emerald-800 border dark:border-emerald-500/30 border-emerald-300 text-[9px] px-2 py-0.2 font-bold">
                           🟢 In Shift
                         </span>
                       )}
                     </div>
-                    <p className="text-[10px] text-slate-400 font-mono">
+                    <p className="text-[10px] dark:text-slate-400 text-slate-600 font-mono">
                       {rec.punch_in} {rec.punch_out ? `→ ${rec.punch_out}` : ""} • {staffTxCount} bills handled
                     </p>
                   </div>
 
                   <div className="text-right">
-                    <div className="font-mono text-sm font-black text-emerald-400">
+                    <div className="font-mono text-sm font-black dark:text-emerald-400 text-emerald-700">
                       ₹{staffCash.toLocaleString("en-IN")}
                     </div>
-                    <span className="text-[9.5px] text-slate-400">
+                    <span className="text-[9.5px] dark:text-slate-400 text-slate-600">
                       Drawer Cash
                     </span>
                   </div>
@@ -431,34 +433,34 @@ export default function OwnerMobileSnapshot({
       </div>
 
       {/* 5. SECTION 4: TODAY'S KHATA DUES (1-Tap WhatsApp Reminder) */}
-      <div className="rounded-2xl border border-slate-800 bg-[#0e1626] p-4 shadow-md space-y-3">
-        <div className="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
+      <div className="rounded-2xl border dark:border-slate-800 border-slate-200 dark:bg-[#0e1626] bg-white p-4 shadow-md space-y-3">
+        <div className="flex items-center justify-between border-b dark:border-slate-800/80 border-slate-200 pb-2.5">
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/30">
+            <div className="flex h-7 w-7 items-center justify-center rounded-xl dark:bg-amber-500/15 bg-amber-100 dark:text-amber-400 text-amber-700 border dark:border-amber-500/30 border-amber-300">
               <Clock3 size={14} />
             </div>
             <div>
-              <h2 className="text-xs font-bold text-white tracking-wide">
+              <h2 className="text-xs font-bold dark:text-white text-slate-900 tracking-wide">
                 4. Customer Khata Dues
               </h2>
-              <p className="text-[10px] text-slate-400">
+              <p className="text-[10px] dark:text-slate-400 text-slate-600">
                 1-tap WhatsApp payment reminder
               </p>
             </div>
           </div>
           <Link
             href="/dashboard/khata"
-            className="text-[11px] font-semibold text-amber-400 hover:text-amber-300"
+            className="text-[11px] font-semibold dark:text-amber-400 text-amber-700 hover:underline"
           >
             All Dues ({allPendingKhata.length}) &rarr;
           </Link>
         </div>
 
         {todayKhataDues.length === 0 ? (
-          <div className="rounded-xl border border-slate-850 bg-slate-900/40 p-4 text-center">
-            <CheckCircle2 size={18} className="mx-auto text-emerald-400 mb-1" />
-            <p className="text-xs font-bold text-white">Zero customer dues today!</p>
-            <p className="text-[10px] text-slate-400 mt-0.5">
+          <div className="rounded-xl border dark:border-slate-850 border-slate-200 dark:bg-slate-900/40 bg-slate-50 p-4 text-center">
+            <CheckCircle2 size={18} className="mx-auto dark:text-emerald-400 text-emerald-600 mb-1" />
+            <p className="text-xs font-bold dark:text-white text-slate-900">Zero customer dues today!</p>
+            <p className="text-[10px] dark:text-slate-400 text-slate-600 mt-0.5">
               All transactions for this date have been settled in Cash or UPI.
             </p>
           </div>
@@ -467,26 +469,26 @@ export default function OwnerMobileSnapshot({
             {todayKhataDues.map((tx) => (
               <div
                 key={tx.id}
-                className="flex items-center justify-between p-3 rounded-xl border border-amber-500/30 bg-amber-950/15"
+                className="flex items-center justify-between p-3 rounded-xl border dark:border-amber-500/30 border-amber-300 dark:bg-amber-950/15 bg-amber-50"
               >
                 <div className="space-y-0.5">
-                  <div className="text-xs font-bold text-white">
+                  <div className="text-xs font-bold dark:text-white text-slate-900">
                     {tx.customer_name || "Citizen / Customer"}
                   </div>
-                  <p className="text-[10.5px] text-slate-300 font-medium">
+                  <p className="text-[10.5px] dark:text-slate-300 text-slate-700 font-medium">
                     {tx.title}
                   </p>
-                  <p className="text-[10px] text-amber-400 font-mono">
+                  <p className="text-[10px] dark:text-amber-400 text-amber-800 font-mono">
                     {tx.customer_phone || "No phone recorded"}
                   </p>
                 </div>
 
                 <div className="flex items-center gap-3">
                   <div className="text-right">
-                    <div className="font-mono text-sm font-black text-amber-300">
+                    <div className="font-mono text-sm font-black dark:text-amber-300 text-amber-800">
                       ₹{tx.amount.toLocaleString("en-IN")}
                     </div>
-                    <span className="text-[9px] uppercase font-bold text-amber-500">
+                    <span className="text-[9px] uppercase font-bold dark:text-amber-500 text-amber-700">
                       Pending
                     </span>
                   </div>

@@ -48,6 +48,7 @@ import {
   DEFAULT_SERVICE_CHARGES,
   TransactionType,
   PaymentMethod,
+  PaymentSplit,
   AccountCategory,
   getTodayDateString,
   getAccountTransactions,
@@ -126,9 +127,11 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
   const [centerProfile, setCenterProfile] = useState<{
     name: string;
     phone: string;
+    centerCode: string;
   }>({
     name: "DenBooks 360",
     phone: "",
+    centerCode: "",
   });
 
   // Owner Mobile Snapshot vs Detailed Desktop Tables
@@ -145,7 +148,7 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  const showMobileSnapshot = viewMode === "snapshot" || (viewMode === "auto" && isMobileScreen);
+  const showMobileSnapshot = subTab === "daybook" && (viewMode === "snapshot" || (viewMode === "auto" && isMobileScreen));
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -153,9 +156,12 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
         const stored = localStorage.getItem("denbooks_current_tenant");
         if (stored) {
           const parsed = JSON.parse(stored);
+          const cleanCenterCode = parsed.centerCode === "KNR059" ? "" : (parsed.centerCode || "");
+          const cleanPhone = parsed.phone === "9876543210" ? "" : (parsed.phone || "");
           setCenterProfile({
             name: parsed.name || "DenBooks 360",
-            phone: parsed.phone || "",
+            phone: cleanPhone,
+            centerCode: cleanCenterCode,
           });
         }
       } catch {}
@@ -171,6 +177,10 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
   const [invRefId, setInvRefId] = useState("");
   const [invPaymentMethod, setInvPaymentMethod] = useState<PaymentMethod>("Cash");
   const [invIsCredit, setInvIsCredit] = useState(false);
+  const [isSplitMode, setIsSplitMode] = useState(true);
+  const [invCashAmount, setInvCashAmount] = useState<string>("");
+  const [invUpiAmount, setInvUpiAmount] = useState<string>("");
+  const [invCreditAmount, setInvCreditAmount] = useState<string>("0");
   const [savingInvoice, setSavingInvoice] = useState(false);
   const [adminInvAutoPrint, setAdminInvAutoPrint] = useState(false);
 
@@ -564,6 +574,73 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
     return 0;
   }, [invMode, invGovtFee, invServiceCharge, invCart, invCustomItem, invCustomRate, invCustomQty, invCustomAmount]);
 
+  // Split payment allocated values & helpers
+  const allocatedCash = parseFloat(invCashAmount) || 0;
+  const allocatedUpi = parseFloat(invUpiAmount) || 0;
+  const allocatedCredit = parseFloat(invCreditAmount) || 0;
+  const totalAllocated = allocatedCash + allocatedUpi + allocatedCredit;
+  const allocationRemaining = invTotalAmount - totalAllocated;
+  const isCreditActive = invIsCredit || (isSplitMode && allocatedCredit > 0);
+
+  // Auto-sync payment allocation when total invoice amount changes
+  useEffect(() => {
+    const c = parseFloat(invCashAmount) || 0;
+    const u = parseFloat(invUpiAmount) || 0;
+    const k = parseFloat(invCreditAmount) || 0;
+
+    // If only one allocation is active (or all empty), keep it synced to the new total
+    if (k > 0 && c === 0 && u === 0) {
+      setInvCreditAmount(String(invTotalAmount));
+    } else if (u > 0 && c === 0 && k === 0) {
+      setInvUpiAmount(String(invTotalAmount));
+    } else if (c > 0 && u === 0 && k === 0) {
+      setInvCashAmount(String(invTotalAmount));
+    } else if (c === 0 && u === 0 && k === 0) {
+      setInvCashAmount(String(invTotalAmount));
+    }
+  }, [invTotalAmount]);
+
+  function handleSetAllCash() {
+    setIsSplitMode(true);
+    setInvPaymentMethod("Cash");
+    setInvIsCredit(false);
+    setInvCashAmount(String(invTotalAmount));
+    setInvUpiAmount("0");
+    setInvCreditAmount("0");
+  }
+
+  function handleSetAllUpi() {
+    setIsSplitMode(true);
+    setInvPaymentMethod("UPI");
+    setInvIsCredit(false);
+    setInvCashAmount("0");
+    setInvUpiAmount(String(invTotalAmount));
+    setInvCreditAmount("0");
+  }
+
+  function handleSetAllBank() {
+    setIsSplitMode(true);
+    setInvPaymentMethod("Bank Transfer");
+    setInvIsCredit(false);
+    setInvCashAmount("0");
+    setInvUpiAmount(String(invTotalAmount));
+    setInvCreditAmount("0");
+  }
+
+  function handleSetAllCredit() {
+    setIsSplitMode(true);
+    setInvPaymentMethod("Cash");
+    setInvIsCredit(true);
+    setInvCashAmount("0");
+    setInvUpiAmount("0");
+    setInvCreditAmount(String(invTotalAmount));
+  }
+
+  function handleToggleSplitMode() {
+    // Keep split mode always on as requested
+    setIsSplitMode(true);
+  }
+
   function openInvoiceModal(mode: "citizen" | "counter" | "custom" = "citizen") {
     setInvMode(mode);
     setInvDate(selectedDate || getTodayDateString());
@@ -572,13 +649,16 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
     setInvRefId(`INV-${Date.now().toString().slice(-6)}`);
     setInvPaymentMethod("Cash");
     setInvIsCredit(false);
+    setIsSplitMode(true);
 
     const services = getServiceChargesMaster();
+    let initialTotal = 100;
     if (services.length > 0) {
       setInvServiceId(services[0].id);
       setInvServiceName(services[0].serviceName);
       setInvServiceCategory(services[0].category);
       setInvServiceCharge(String(services[0].defaultCharge));
+      initialTotal = services[0].defaultCharge;
     } else {
       setInvServiceId("custom");
       setInvServiceName("");
@@ -593,6 +673,11 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
     setInvCustomItem("");
     setInvCustomRate("");
     setInvCustomQty("1");
+
+    // Initialize 100% Balanced to Cash always
+    setInvCashAmount(String(initialTotal));
+    setInvUpiAmount("0");
+    setInvCreditAmount("0");
 
     setInvCustomTitle("");
     setInvCustomAmount("");
@@ -707,18 +792,65 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
       serviceCharge = invTotalAmount;
     }
 
-    // Credit (Khata) transactions strictly require Customer Name & valid Mobile Phone for WhatsApp reminders
-    if (invIsCredit) {
-      const trimmedName = invCustomerName.trim();
-      if (!trimmedName || trimmedName.toLowerCase() === "walk-in customer" || trimmedName.toLowerCase() === "walk-in") {
-        alert("Customer Name is required for Credit (Khata) transactions so customer accounts and WhatsApp payment reminders can be tracked.");
+    let paymentMethodToSave: PaymentMethod = invPaymentMethod;
+    let isSettledToSave = !invIsCredit;
+    let paymentSplitToSave: PaymentSplit | undefined = undefined;
+
+    if (isSplitMode) {
+      if (Math.abs(totalAllocated - invTotalAmount) > 0.01) {
+        alert(
+          `Payment breakdown (₹${totalAllocated.toFixed(2)}) does not match Total Payable (₹${invTotalAmount.toFixed(2)}). Please allocate remaining ₹${allocationRemaining.toFixed(2)} to Cash, UPI, or Khata.`
+        );
         return;
       }
-      const cleanPhone = invCustomerPhone.trim().replace(/\D/g, "");
-      if (cleanPhone.length < 10) {
-        alert("A valid 10-digit Customer Mobile Phone number is required for Credit (Khata) transactions to send WhatsApp payment reminders.");
-        return;
+
+      if (allocatedCredit > 0) {
+        const trimmedName = invCustomerName.trim();
+        if (!trimmedName || trimmedName.toLowerCase() === "walk-in customer" || trimmedName.toLowerCase() === "walk-in") {
+          alert("Customer Name is required when Khata Due is included in payment allocation so customer accounts and WhatsApp payment reminders can be tracked.");
+          return;
+        }
+        const cleanPhone = invCustomerPhone.trim().replace(/\D/g, "");
+        if (cleanPhone.length < 10) {
+          alert("A valid 10-digit Customer Mobile Phone number is required when Khata Due is included in payment allocation to send WhatsApp payment reminders.");
+          return;
+        }
       }
+
+      paymentSplitToSave = {
+        cash: allocatedCash,
+        upi: allocatedUpi,
+        credit: allocatedCredit,
+      };
+      paymentMethodToSave =
+        allocatedCredit > 0 && allocatedCash === 0 && allocatedUpi === 0
+          ? "Cash"
+          : allocatedUpi > 0 && allocatedCash === 0 && allocatedCredit === 0
+          ? "UPI"
+          : "Cash";
+      isSettledToSave = allocatedCredit <= 0;
+    } else {
+      // Credit (Khata) transactions strictly require Customer Name & valid Mobile Phone for WhatsApp reminders
+      if (invIsCredit) {
+        const trimmedName = invCustomerName.trim();
+        if (!trimmedName || trimmedName.toLowerCase() === "walk-in customer" || trimmedName.toLowerCase() === "walk-in") {
+          alert("Customer Name is required for Credit (Khata) transactions so customer accounts and WhatsApp payment reminders can be tracked.");
+          return;
+        }
+        const cleanPhone = invCustomerPhone.trim().replace(/\D/g, "");
+        if (cleanPhone.length < 10) {
+          alert("A valid 10-digit Customer Mobile Phone number is required for Credit (Khata) transactions to send WhatsApp payment reminders.");
+          return;
+        }
+      }
+
+      paymentSplitToSave = invIsCredit
+        ? { cash: 0, upi: 0, credit: invTotalAmount }
+        : invPaymentMethod === "UPI"
+        ? { cash: 0, upi: invTotalAmount, credit: 0 }
+        : { cash: invTotalAmount, upi: 0, credit: 0 };
+      paymentMethodToSave = invPaymentMethod;
+      isSettledToSave = !invIsCredit;
     }
 
     setSavingInvoice(true);
@@ -732,11 +864,12 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
         amount: invTotalAmount,
         govt_fee: govtFee,
         service_charge: serviceCharge,
-        payment_method: invPaymentMethod,
+        payment_method: paymentMethodToSave,
         reference_id: invRefId.trim() || `INV-${Date.now().toString().slice(-6)}`,
         customer_name: invCustomerName.trim() || "Walk-in Customer",
         customer_phone: invCustomerPhone.trim() || undefined,
-        is_settled: !invIsCredit,
+        is_settled: isSettledToSave,
+        payment_split: paymentSplitToSave,
         wallet_name: walletName,
         employee_id: "emp-owner",
         employee_name: "Admin (Owner)",
@@ -1543,35 +1676,37 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
           </button>
         </div>
 
-        {/* View Mode Toggle Pill (Mobile Snapshot vs Detailed Desktop Tables) */}
-        <div className="flex items-center gap-1 rounded-xl border border-slate-750 bg-slate-900/90 p-1 text-xs">
-          <button
-            type="button"
-            onClick={() => setViewMode("snapshot")}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-bold transition text-xs cursor-pointer ${
-              showMobileSnapshot
-                ? "bg-cyan-500 text-slate-950 shadow-sm"
-                : "text-slate-400 hover:text-white"
-            }`}
-            title="Owner Evening Mobile Snapshot"
-          >
-            <Smartphone size={13} />
-            <span>Snapshot</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode("desktop")}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-bold transition text-xs cursor-pointer ${
-              !showMobileSnapshot
-                ? "bg-cyan-500 text-slate-950 shadow-sm"
-                : "text-slate-400 hover:text-white"
-            }`}
-            title="Full Detailed Desktop Ledger & Tables"
-          >
-            <Monitor size={13} />
-            <span>Tables</span>
-          </button>
-        </div>
+        {/* View Mode Toggle Pill (Mobile Snapshot vs Detailed Desktop Tables) - Daybook only */}
+        {subTab === "daybook" && (
+          <div className="flex items-center gap-1 rounded-xl border border-slate-750 bg-slate-900/90 p-1 text-xs">
+            <button
+              type="button"
+              onClick={() => setViewMode("snapshot")}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-bold transition text-xs cursor-pointer ${
+                showMobileSnapshot
+                  ? "bg-cyan-500 text-slate-950 shadow-sm"
+                  : "text-slate-400 hover:text-white"
+              }`}
+              title="Owner Evening Mobile Snapshot"
+            >
+              <Smartphone size={13} />
+              <span>Snapshot</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("desktop")}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-bold transition text-xs cursor-pointer ${
+                !showMobileSnapshot
+                  ? "bg-cyan-500 text-slate-950 shadow-sm"
+                  : "text-slate-400 hover:text-white"
+              }`}
+              title="Full Detailed Desktop Ledger & Tables"
+            >
+              <Monitor size={13} />
+              <span>Tables</span>
+            </button>
+          </div>
+        )}
 
         {/* Primary Actions & Utilities Cluster */}
         <div className="flex flex-wrap items-center gap-2">
@@ -1650,7 +1785,7 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
           wallets={wallets}
           transactions={transactions}
           selectedDate={selectedDate}
-          centerCode="KNR059"
+          centerCode={centerProfile.centerCode || ""}
           centerName={centerProfile.name}
           onSwitchToDesktop={() => setViewMode("desktop")}
           onOpenInvoiceModal={() => openInvoiceModal()}
@@ -1662,19 +1797,19 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
       {!hideHeaderWidgets && (
         <div className="grid gap-3.5 lg:grid-cols-12">
         {/* Left: Compact Portal Advance Wallets (5 cols) */}
-        <div className="lg:col-span-5 rounded-2xl border border-slate-800/90 bg-[#0c1322] p-3.5 flex flex-col justify-between shadow-lg">
-          <div className="flex items-center justify-between border-b border-slate-800/80 pb-2 mb-2.5">
+        <div className="lg:col-span-5 rounded-2xl border border-slate-200 dark:border-slate-800/90 bg-white dark:bg-[#0c1322] p-3.5 flex flex-col justify-between shadow-lg">
+          <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 pb-2 mb-2.5">
             <div className="flex items-center gap-2">
-              <div className="flex h-6 w-6 items-center justify-center rounded-lg border border-cyan-400/30 bg-cyan-400/10 text-cyan-300">
+              <div className="flex h-6 w-6 items-center justify-center rounded-lg border border-cyan-400/30 bg-cyan-400/10 text-cyan-600 dark:text-cyan-300">
                 <Landmark size={13} />
               </div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-200">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
                 Bank & Portal Accounts
               </h3>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] text-slate-400">Total:</span>
-              <span className="font-mono text-xs font-black text-cyan-300 bg-cyan-950/60 border border-cyan-500/30 px-2 py-0.5 rounded-md">
+              <span className="text-[10px] text-slate-500 dark:text-slate-400">Total:</span>
+              <span className="font-mono text-xs font-black text-cyan-700 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-950/60 border border-cyan-200 dark:border-cyan-500/30 px-2 py-0.5 rounded-md">
                 ₹ {wallets.reduce((s, w) => s + w.balance, 0).toLocaleString("en-IN")}
               </span>
             </div>
@@ -1687,13 +1822,13 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
               return (
                 <div
                   key={wallet.id}
-                  className="rounded-xl border border-slate-800/90 bg-[#0e1625] p-2.5 flex items-center justify-between hover:border-slate-700 transition"
+                  className="rounded-xl border border-slate-200 dark:border-slate-800/90 bg-slate-50/70 dark:bg-[#0e1625] p-2.5 flex items-center justify-between hover:border-slate-300 dark:hover:border-slate-700 transition"
                 >
                   <div className="min-w-0 pr-1">
-                    <p className="text-[11px] font-bold text-slate-300 truncate" title={wallet.name}>
+                    <p className="text-[11px] font-bold text-slate-700 dark:text-slate-300 truncate" title={wallet.name}>
                       {wallet.name}
                     </p>
-                    <p className="font-mono text-sm font-black text-white mt-0.5">
+                    <p className="font-mono text-sm font-black text-slate-900 dark:text-white mt-0.5">
                       ₹ {wallet.balance.toLocaleString("en-IN")}
                     </p>
                   </div>
@@ -1703,7 +1838,7 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
                       setTargetWallet(wallet);
                       setShowTopupModal(true);
                     }}
-                    className="shrink-0 rounded-lg border border-slate-700 bg-slate-800 px-2 py-1 text-[11px] font-bold text-cyan-300 hover:border-cyan-400 hover:bg-cyan-500/10 transition"
+                    className="shrink-0 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-1 text-[11px] font-bold text-cyan-600 dark:text-cyan-300 hover:border-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-500/10 transition"
                     title="Deposit / Top-up Bank Account"
                   >
                     +Top-up
@@ -1717,96 +1852,98 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
         {/* Right: Compact 5-Metric Financial Strip (7 cols) */}
         <div className="lg:col-span-7 grid grid-cols-2 sm:grid-cols-5 gap-2.5">
           {/* Cash in Drawer */}
-          <div className="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-[#0e1625] to-[#0f231e] p-3 flex flex-col justify-between shadow-sm">
+          <div className="rounded-2xl border border-emerald-300 dark:border-emerald-500/30 bg-emerald-50/80 dark:bg-gradient-to-br dark:from-[#0e1625] dark:to-[#0f231e] p-3 flex flex-col justify-between shadow-sm">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-400">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-700 dark:text-emerald-400">
                 Cash In Drawer
               </span>
-              <div className="rounded-lg bg-emerald-500/15 p-1 text-emerald-300">
+              <div className="rounded-lg bg-emerald-500/15 p-1 text-emerald-700 dark:text-emerald-300">
                 <IndianRupee size={12} />
               </div>
             </div>
-            <p className="text-xl font-black text-white font-mono mt-1">
+            <p className="text-xl font-black text-emerald-950 dark:text-white font-mono mt-1">
               ₹ {summary.cashInHand.toFixed(0)}
             </p>
-            <p className="text-[9.5px] text-slate-400 truncate">Physical drawer</p>
+            <p className="text-[9.5px] text-emerald-700/80 dark:text-slate-400 truncate">Physical drawer</p>
           </div>
 
           {/* UPI / Bank In */}
-          <div className="rounded-2xl border border-cyan-500/30 bg-gradient-to-br from-[#0e1625] to-[#102336] p-3 flex flex-col justify-between shadow-sm">
+          <div className="rounded-2xl border border-cyan-300 dark:border-cyan-500/30 bg-cyan-50/80 dark:bg-gradient-to-br dark:from-[#0e1625] dark:to-[#102336] p-3 flex flex-col justify-between shadow-sm">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] uppercase font-bold tracking-wider text-cyan-400">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-cyan-700 dark:text-cyan-400">
                 UPI / Bank In
               </span>
-              <div className="rounded-lg bg-cyan-500/15 p-1 text-cyan-300">
+              <div className="rounded-lg bg-cyan-500/15 p-1 text-cyan-700 dark:text-cyan-300">
                 <CreditCard size={12} />
               </div>
             </div>
-            <p className="text-xl font-black text-white font-mono mt-1">
+            <p className="text-xl font-black text-cyan-950 dark:text-white font-mono mt-1">
               ₹ {summary.upiReceived.toFixed(0)}
             </p>
-            <p className="text-[9.5px] text-slate-400 truncate">GPay / PhonePe</p>
+            <p className="text-[9.5px] text-cyan-700/80 dark:text-slate-400 truncate">GPay / PhonePe</p>
           </div>
 
           {/* Real Shop Revenue */}
-          <div className="rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-[#0e1625] to-[#171a35] p-3 flex flex-col justify-between shadow-sm">
+          <div className="rounded-2xl border border-indigo-300 dark:border-indigo-500/30 bg-indigo-50/80 dark:bg-gradient-to-br dark:from-[#0e1625] dark:to-[#171a35] p-3 flex flex-col justify-between shadow-sm">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] uppercase font-bold tracking-wider text-indigo-400">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-indigo-700 dark:text-indigo-400">
                 Shop Revenue
               </span>
-              <div className="rounded-lg bg-indigo-500/15 p-1 text-indigo-300">
+              <div className="rounded-lg bg-indigo-500/15 p-1 text-indigo-700 dark:text-indigo-300">
                 <Sparkles size={12} />
               </div>
             </div>
-            <p className="text-xl font-black text-white font-mono mt-1">
+            <p className="text-xl font-black text-indigo-950 dark:text-white font-mono mt-1">
               ₹ {summary.realShopRevenue.toFixed(0)}
             </p>
-            <p className="text-[9.5px] text-slate-400 truncate">Services + Xerox</p>
+            <p className="text-[9.5px] text-indigo-700/80 dark:text-slate-400 truncate">Services + Xerox</p>
           </div>
 
           {/* Net Profit */}
           <div className={`rounded-2xl border p-3 flex flex-col justify-between shadow-sm ${
             summary.netShopProfit >= 0
-              ? "border-teal-500/30 bg-gradient-to-br from-[#0e1625] to-[#0d2a29]"
-              : "border-red-500/30 bg-gradient-to-br from-[#0e1625] to-[#2a0d0d]"
+              ? "border-teal-300 dark:border-teal-500/30 bg-teal-50/80 dark:bg-gradient-to-br dark:from-[#0e1625] dark:to-[#0d2a29]"
+              : "border-red-300 dark:border-red-500/30 bg-red-50/80 dark:bg-gradient-to-br dark:from-[#0e1625] dark:to-[#2a0d0d]"
           }`}>
             <div className="flex items-center justify-between">
               <span className={`text-[10px] uppercase font-bold tracking-wider ${
-                summary.netShopProfit >= 0 ? "text-teal-400" : "text-red-400"
+                summary.netShopProfit >= 0 ? "text-teal-700 dark:text-teal-400" : "text-red-700 dark:text-red-400"
               }`}>
                 Net Profit
               </span>
               <div className={`rounded-lg p-1 ${
-                summary.netShopProfit >= 0 ? "bg-teal-500/15 text-teal-300" : "bg-red-500/15 text-red-300"
+                summary.netShopProfit >= 0 ? "bg-teal-500/15 text-teal-700 dark:text-teal-300" : "bg-red-500/15 text-red-700 dark:text-red-300"
               }`}>
                 {summary.netShopProfit >= 0 ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
               </div>
             </div>
-            <p className="text-xl font-black text-white font-mono mt-1">
+            <p className={`text-xl font-black font-mono mt-1 ${
+              summary.netShopProfit >= 0 ? "text-teal-950 dark:text-white" : "text-red-950 dark:text-white"
+            }`}>
               ₹ {summary.netShopProfit.toFixed(0)}
             </p>
-            <p className="text-[9.5px] text-slate-400 truncate">After ₹{summary.totalExpense.toFixed(0)} exp</p>
+            <p className="text-[9.5px] text-slate-600 dark:text-slate-400 truncate">After ₹{summary.totalExpense.toFixed(0)} exp</p>
           </div>
 
           {/* Customer Khata */}
           <Link
             href="/dashboard/khata"
-            className="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-[#0e1625] to-[#291e10] p-3 flex flex-col justify-between cursor-pointer hover:border-amber-400/60 transition group shadow-sm col-span-2 sm:col-span-1"
+            className="rounded-2xl border border-amber-300 dark:border-amber-500/30 bg-amber-50/80 dark:bg-gradient-to-br dark:from-[#0e1625] dark:to-[#291e10] p-3 flex flex-col justify-between cursor-pointer hover:border-amber-400/60 transition group shadow-sm col-span-2 sm:col-span-1"
           >
             <div className="flex items-center justify-between">
-              <span className="text-[10px] uppercase font-bold tracking-wider text-amber-400">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-amber-700 dark:text-amber-400">
                 Customer Dues
               </span>
-              <div className="rounded-lg bg-amber-500/15 p-1 text-amber-300 group-hover:scale-110 transition">
+              <div className="rounded-lg bg-amber-500/15 p-1 text-amber-700 dark:text-amber-300 group-hover:scale-110 transition">
                 <Clock3 size={12} />
               </div>
             </div>
-            <p className="text-xl font-black text-amber-300 font-mono mt-1">
+            <p className="text-xl font-black text-amber-900 dark:text-amber-300 font-mono mt-1">
               ₹ {khataList.reduce((sum, k) => sum + k.amount, 0).toFixed(0)}
             </p>
-            <p className="text-[9.5px] text-amber-400/80 flex items-center justify-between">
+            <p className="text-[9.5px] text-amber-700 dark:text-amber-400/80 flex items-center justify-between">
               <span>{khataList.length} dues</span>
-              <span className="underline group-hover:text-white">View &rarr;</span>
+              <span className="underline group-hover:text-amber-950 dark:group-hover:text-white">View &rarr;</span>
             </p>
           </Link>
         </div>
@@ -1819,40 +1956,40 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
       {subTab === "daybook" && (
         <div className="space-y-4">
           {/* Filters Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-800 bg-[#0e1625] p-3.5">
-            <div className="flex flex-1 items-center gap-2 max-w-sm rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-1.5 text-xs text-white">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0e1625] p-3.5 shadow-sm">
+            <div className="flex flex-1 items-center gap-2 max-w-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/80 px-3 py-1.5 text-xs text-slate-800 dark:text-white">
               <Search size={14} className="text-slate-400" />
               <input
                 type="text"
                 placeholder="Search title, customer, ref ID..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-transparent outline-none placeholder:text-slate-500"
+                className="w-full bg-transparent outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500"
               />
             </div>
 
             <div className="flex flex-wrap items-center gap-2 text-xs">
               {/* Staff / Operator Filter Dropdown */}
-              <div className="flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-900/80 px-2.5 py-1 text-xs">
-                <Users size={13} className="text-cyan-400" />
-                <span className="text-slate-400 font-medium">Operator:</span>
+              <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/80 px-2.5 py-1 text-xs">
+                <Users size={13} className="text-cyan-600 dark:text-cyan-400" />
+                <span className="text-slate-500 dark:text-slate-400 font-medium">Operator:</span>
                 <select
                   value={staffFilter}
                   onChange={(e) => setStaffFilter(e.target.value)}
-                  className="bg-transparent text-slate-200 outline-none cursor-pointer font-bold pr-1 text-xs"
+                  className="bg-transparent text-slate-800 dark:text-slate-200 outline-none cursor-pointer font-bold pr-1 text-xs"
                 >
-                  <option value="all" className="bg-slate-900 text-slate-200">
+                  <option value="all" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">
                     All Staff (Center-wide)
                   </option>
                   {employees.map((emp) => (
-                    <option key={emp.id} value={emp.id} className="bg-slate-900 text-slate-200">
+                    <option key={emp.id} value={emp.id} className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">
                       {emp.name} ({emp.role})
                     </option>
                   ))}
                 </select>
               </div>
 
-              <div className="flex items-center gap-1 rounded-xl border border-slate-700 bg-slate-900/80 p-1">
+              <div className="flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/80 p-1">
                 {(["all", "income", "expense", "portal_topup"] as const).map((t) => (
                   <button
                     key={t}
@@ -1860,8 +1997,8 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
                     onClick={() => setFilterType(t)}
                     className={`rounded-lg px-2.5 py-1 font-semibold capitalize transition ${
                       filterType === t
-                        ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30"
-                        : "text-slate-400 hover:text-white"
+                        ? "bg-cyan-50 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-300 dark:border-cyan-500/30"
+                        : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                     }`}
                   >
                     {t === "portal_topup" ? "Topup" : t}
@@ -1869,7 +2006,7 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
                 ))}
               </div>
 
-              <div className="flex items-center gap-1 rounded-xl border border-slate-700 bg-slate-900/80 p-1">
+              <div className="flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/80 p-1">
                 {(["all", "Cash", "UPI"] as const).map((m) => (
                   <button
                     key={m}
@@ -1877,8 +2014,8 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
                     onClick={() => setFilterMethod(m)}
                     className={`rounded-lg px-2.5 py-1 font-semibold transition ${
                       filterMethod === m
-                        ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                        : "text-slate-400 hover:text-white"
+                        ? "bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/30"
+                        : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                     }`}
                   >
                     {m}
@@ -1889,10 +2026,10 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
           </div>
 
           {/* Transactions List */}
-          <div className="overflow-hidden rounded-2xl border border-slate-800 bg-[#0e1625]">
+          <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0e1625] shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="border-b border-slate-800 bg-slate-900/60 uppercase tracking-wider text-slate-400 font-bold">
+                <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 uppercase tracking-wider text-slate-600 dark:text-slate-400 font-bold">
                   <tr>
                     <th className="px-4 py-3">Time</th>
                     <th className="px-4 py-3">Particulars / Customer</th>
@@ -1904,7 +2041,7 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
                     <th className="px-4 py-3 text-center">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60 font-medium">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
                   {filteredDaybookTx.length === 0 ? (
                     <tr>
                       <td colSpan={8} className="px-4 py-12 text-center text-slate-500">
@@ -1913,18 +2050,18 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
                     </tr>
                   ) : (
                     filteredDaybookTx.map((tx) => (
-                      <tr key={tx.id} className="hover:bg-slate-800/40 transition">
-                        <td className="px-4 py-3.5 font-mono text-xs text-slate-300 whitespace-nowrap">
+                      <tr key={tx.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
+                        <td className="px-4 py-3.5 font-mono text-xs text-slate-600 dark:text-slate-300 whitespace-nowrap">
                           {new Date(tx.created_at).toLocaleTimeString("en-IN", {
                             hour: "2-digit",
                             minute: "2-digit",
                           })}
                         </td>
                         <td className="px-4 py-3.5">
-                          <p className="font-bold text-white text-sm leading-snug">{tx.title}</p>
-                          <div className="flex items-center gap-2 mt-1 text-xs text-slate-400 flex-wrap">
+                          <p className="font-bold text-slate-900 dark:text-white text-sm leading-snug">{tx.title}</p>
+                          <div className="flex items-center gap-2 mt-1 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
                             {tx.employee_name && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10.5px] font-bold bg-slate-800 text-cyan-300 border border-slate-700">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10.5px] font-bold bg-slate-100 dark:bg-slate-800 text-cyan-700 dark:text-cyan-300 border border-slate-200 dark:border-slate-700">
                                 👤 {tx.employee_name}
                               </span>
                             )}
@@ -1934,7 +2071,7 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
                               </span>
                             )}
                             {tx.reference_id && (
-                              <span className="font-mono text-cyan-300/90 bg-cyan-950/50 px-2 py-0.5 rounded border border-cyan-800/60">
+                              <span className="font-mono text-cyan-800 dark:text-cyan-300/90 bg-cyan-50 dark:bg-cyan-950/50 px-2 py-0.5 rounded border border-cyan-200 dark:border-cyan-800/60">
                                 {tx.reference_id}
                               </span>
                             )}
@@ -1944,10 +2081,10 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
                           <span
                             className={`inline-block rounded-md px-2.5 py-1 text-xs font-bold ${
                               tx.type === "income"
-                                ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30"
+                                ? "bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/30"
                                 : tx.type === "expense"
-                                ? "bg-red-500/15 text-red-300 border border-red-500/30"
-                                : "bg-sky-500/15 text-sky-300 border border-sky-500/30"
+                                ? "bg-red-50 dark:bg-red-500/15 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-500/30"
+                                : "bg-sky-50 dark:bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-300 dark:border-sky-500/30"
                             }`}
                           >
                             {tx.category}
@@ -1957,31 +2094,31 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
                           <span
                             className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${
                               tx.payment_method === "Cash"
-                                ? "bg-slate-800 text-slate-300 border border-slate-700"
-                                : "bg-cyan-950/50 text-cyan-300 border border-cyan-800/50"
+                                ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                                : "bg-cyan-50 dark:bg-cyan-950/50 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800/50"
                             }`}
                           >
                             {tx.payment_method === "Cash" ? "💵 Cash" : "📱 UPI"}
                           </span>
                           {!tx.is_settled && (
-                            <span className="ml-1.5 rounded bg-amber-500/20 text-amber-300 px-2 py-0.5 text-xs font-bold">
+                            <span className="ml-1.5 rounded bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 px-2 py-0.5 text-xs font-bold border border-amber-300 dark:border-amber-500/30">
                               DUE
                             </span>
                           )}
                         </td>
-                        <td className="px-4 py-3.5 text-right text-slate-300 font-mono text-xs">
+                        <td className="px-4 py-3.5 text-right text-slate-700 dark:text-slate-300 font-mono text-xs">
                           {tx.govt_fee ? `₹${tx.govt_fee}` : "—"}
                         </td>
-                        <td className="px-4 py-3.5 text-right font-mono text-cyan-300 font-bold text-xs">
+                        <td className="px-4 py-3.5 text-right font-mono text-cyan-700 dark:text-cyan-300 font-bold text-xs">
                           {tx.service_charge ? `₹${tx.service_charge}` : (tx.type === "income" ? `₹${tx.amount}` : "—")}
                         </td>
                         <td
                           className={`px-4 py-3.5 text-right font-bold text-sm font-mono whitespace-nowrap ${
                             tx.type === "expense"
-                              ? "text-red-400"
+                              ? "text-red-600 dark:text-red-400"
                               : tx.type === "portal_topup"
-                              ? "text-sky-300"
-                              : "text-emerald-400"
+                              ? "text-sky-600 dark:text-sky-300"
+                              : "text-emerald-600 dark:text-emerald-400"
                           }`}
                         >
                           {tx.type === "expense" ? "-" : "+"} ₹{tx.amount}
@@ -2501,15 +2638,17 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
               </button>
             </div>
 
-            {/* Scrollable Form Body */}
+            {/* Form wrapping scrollable body and permanent sticky footer */}
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 handleSaveInvoice(adminInvAutoPrint);
               }}
-              className="flex-1 overflow-y-auto p-6 space-y-4"
+              className="flex-1 flex flex-col min-h-0 overflow-hidden"
             >
-              {/* TAB 1: CITIZEN PORTAL SERVICE */}
+              {/* Scrollable Form Body */}
+              <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-3.5">
+                {/* TAB 1: CITIZEN PORTAL SERVICE */}
               {invMode === "citizen" && (
                 <div className="space-y-3.5 rounded-xl border border-slate-800 bg-[#0e1625] p-4">
                   <div className="flex items-center justify-between border-b border-slate-800 pb-2">
@@ -2824,7 +2963,7 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
                   <div>
                     <label className="text-[11px] font-semibold text-slate-300 block mb-1">
                       Customer Name{" "}
-                      {invIsCredit ? (
+                      {isCreditActive ? (
                         <span className="text-amber-400 font-bold">* (Required for Khata)</span>
                       ) : (
                         <span className="text-slate-500">(Optional)</span>
@@ -2832,11 +2971,11 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
                     </label>
                     <input
                       type="text"
-                      placeholder={invIsCredit ? "Customer Full Name *" : "Walk-in Customer"}
+                      placeholder={isCreditActive ? "Customer Full Name *" : "Walk-in Customer"}
                       value={invCustomerName}
                       onChange={(e) => setInvCustomerName(e.target.value)}
                       className={`w-full rounded-xl border bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400 ${
-                        invIsCredit && (!invCustomerName.trim() || invCustomerName.trim().toLowerCase() === "walk-in customer")
+                        isCreditActive && (!invCustomerName.trim() || invCustomerName.trim().toLowerCase() === "walk-in customer")
                           ? "border-amber-500/70"
                           : "border-slate-700"
                       }`}
@@ -2846,7 +2985,7 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
                   <div>
                     <label className="text-[11px] font-semibold text-slate-300 block mb-1">
                       Phone Number{" "}
-                      {invIsCredit ? (
+                      {isCreditActive ? (
                         <span className="text-amber-400 font-bold">* (WhatsApp Required)</span>
                       ) : (
                         <span className="text-slate-500">(Optional)</span>
@@ -2854,11 +2993,11 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
                     </label>
                     <input
                       type="tel"
-                      placeholder={invIsCredit ? "10-digit mobile number *" : "e.g. 9876543210"}
+                      placeholder={isCreditActive ? "10-digit mobile number *" : "10-digit mobile (optional)"}
                       value={invCustomerPhone}
                       onChange={(e) => setInvCustomerPhone(e.target.value)}
                       className={`w-full rounded-xl border bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400 ${
-                        invIsCredit && (!invCustomerPhone.trim() || invCustomerPhone.trim().replace(/\D/g, "").length < 10)
+                        isCreditActive && (!invCustomerPhone.trim() || invCustomerPhone.trim().replace(/\D/g, "").length < 10)
                           ? "border-amber-500/70"
                           : "border-slate-700"
                       }`}
@@ -2878,64 +3017,129 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
                   </div>
                 </div>
 
-                {invIsCredit && (
+                {isCreditActive && (
                   <div className="flex items-center gap-2 rounded-lg bg-amber-500/10 border border-amber-500/30 p-2.5 text-xs text-amber-300">
                     <MessageCircle size={14} className="shrink-0 text-emerald-400" />
-                    <span>Customer Name & 10-digit mobile number are required for Credit (Khata) to track customer debt and send WhatsApp payment reminders.</span>
+                    <span>Customer Name & 10-digit mobile number are required for Khata / Credit to track ledger debt and send WhatsApp payment reminders.</span>
                   </div>
                 )}
 
-                <div className="grid gap-3 sm:grid-cols-2 pt-1">
-                  <div>
-                    <label className="text-[11px] font-semibold text-slate-300 block mb-1.5">
-                      Payment Mode
-                    </label>
-                    <div className="grid grid-cols-3 gap-1.5">
-                      {(["Cash", "UPI", "Bank Transfer"] as PaymentMethod[]).map((m) => (
+                {/* PAYMENT METHOD & SETTLEMENT CONTROLS */}
+                <div className="space-y-2 pt-2 border-t border-slate-800">
+                  {/* Multi / Split Payment Allocation Grid - ALWAYS ACTIVE */}
+                  <div className="space-y-2.5 rounded-xl border border-cyan-500/30 bg-slate-900/60 p-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pb-1 border-b border-slate-800">
+                      <span className="text-[11px] font-bold text-cyan-300 flex items-center gap-1.5">
+                        <Zap size={13} className="text-cyan-400 fill-cyan-400" />
+                        <span>Payment Settlement Breakdown (₹{invTotalAmount.toFixed(2)})</span>
+                      </span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <button
-                          key={m}
                           type="button"
-                          onClick={() => setInvPaymentMethod(m)}
-                          className={`rounded-lg py-2 text-xs font-bold border transition ${
-                            invPaymentMethod === m
-                              ? "bg-cyan-500/20 text-cyan-300 border-cyan-400/40"
-                              : "bg-slate-900 border-slate-700 text-slate-400 hover:text-white"
-                          }`}
+                          onClick={handleSetAllCash}
+                          className="rounded-lg bg-slate-800 hover:bg-slate-750 border border-slate-700 px-2 py-0.5 text-[10px] font-bold text-slate-200 transition"
                         >
-                          {m === "Cash" ? "💵 Cash" : m === "UPI" ? "📱 UPI" : "🏦 Bank"}
+                          💵 All Cash
                         </button>
-                      ))}
+                        <button
+                          type="button"
+                          onClick={handleSetAllUpi}
+                          className="rounded-lg bg-cyan-950/50 hover:bg-cyan-900/50 border border-cyan-500/40 px-2 py-0.5 text-[10px] font-bold text-cyan-300 transition"
+                        >
+                          📱 All UPI
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSetAllCredit}
+                          className="rounded-lg bg-amber-950/50 hover:bg-amber-900/50 border border-amber-500/40 px-2 py-0.5 text-[10px] font-bold text-amber-300 transition"
+                        >
+                          ⏳ All Khata
+                        </button>
+                      </div>
                     </div>
-                  </div>
 
-                  <div>
-                    <label className="text-[11px] font-semibold text-slate-300 block mb-1.5">
-                      Payment Status
-                    </label>
-                    <div className="grid grid-cols-2 gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => setInvIsCredit(false)}
-                        className={`rounded-lg py-2 text-xs font-bold border transition ${
-                          !invIsCredit
-                            ? "bg-emerald-500/20 text-emerald-300 border-emerald-400/40"
-                            : "bg-slate-900 border-slate-700 text-slate-400"
-                        }`}
-                      >
-                        ✅ Paid / Settled
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setInvIsCredit(true)}
-                        className={`rounded-lg py-2 text-xs font-bold border transition ${
-                          invIsCredit
-                            ? "bg-amber-500/20 text-amber-300 border-amber-400/40"
-                            : "bg-slate-900 border-slate-700 text-slate-400"
-                        }`}
-                      >
-                        ⏳ Due / Khata (Udhar)
-                      </button>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                      {/* Cash Amount Input */}
+                      <div className="rounded-xl border border-slate-700 bg-slate-950 p-2.5">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[11px] font-bold text-slate-200">💵 Cash Paid</span>
+                          <span className="text-[10px] text-slate-500">Cash Drawer</span>
+                        </div>
+                        <input
+                          type="number"
+                          min="0"
+                          step="any"
+                          placeholder="0"
+                          value={invCashAmount}
+                          onChange={(e) => setInvCashAmount(e.target.value)}
+                          className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs font-mono font-bold text-white outline-none focus:border-cyan-400"
+                        />
+                      </div>
+
+                      {/* UPI Amount Input */}
+                      <div className="rounded-xl border border-cyan-500/30 bg-cyan-950/20 p-2.5">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[11px] font-bold text-cyan-300">📱 UPI / QR</span>
+                          <span className="text-[10px] text-cyan-400/80">Online Bank</span>
+                        </div>
+                        <input
+                          type="number"
+                          min="0"
+                          step="any"
+                          placeholder="0"
+                          value={invUpiAmount}
+                          onChange={(e) => setInvUpiAmount(e.target.value)}
+                          className="w-full rounded-lg border border-cyan-500/40 bg-slate-900 px-2.5 py-1.5 text-xs font-mono font-bold text-cyan-300 outline-none focus:border-cyan-400"
+                        />
+                      </div>
+
+                      {/* Khata / Credit Due Amount Input */}
+                      <div className="rounded-xl border border-amber-500/30 bg-amber-950/20 p-2.5">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[11px] font-bold text-amber-300">⏳ Khata / Credit</span>
+                          <span className="text-[10px] text-amber-400/80">Due Balance</span>
+                        </div>
+                        <input
+                          type="number"
+                          min="0"
+                          step="any"
+                          placeholder="0"
+                          value={invCreditAmount}
+                          onChange={(e) => setInvCreditAmount(e.target.value)}
+                          className="w-full rounded-lg border border-amber-500/40 bg-slate-900 px-2.5 py-1.5 text-xs font-mono font-bold text-amber-300 outline-none focus:border-amber-400"
+                        />
+                      </div>
                     </div>
+
+                    {/* Split Allocation Balance Indicator */}
+                    {Math.abs(allocationRemaining) < 0.01 ? (
+                      <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-300 flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <CheckCircle2 size={13} className="text-emerald-400" />
+                          <span>Exact invoice amount allocated: <strong>₹{totalAllocated.toFixed(2)}</strong></span>
+                        </div>
+                        <span className="font-mono text-[11px] font-bold text-emerald-400">100% Balanced</span>
+                      </div>
+                    ) : allocationRemaining > 0.01 ? (
+                      <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-300 flex items-center justify-between">
+                        <span>⚠️ <strong>₹{allocationRemaining.toFixed(2)}</strong> remaining to allocate</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const rem = Math.max(0, allocationRemaining);
+                            setInvCashAmount(String(allocatedCash + rem));
+                          }}
+                          className="rounded bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold hover:bg-amber-500/30 transition text-amber-200"
+                        >
+                          + Add to Cash
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-xs text-red-300 flex items-center justify-between">
+                        <span>⚠️ Over-allocated by <strong>₹{(-allocationRemaining).toFixed(2)}</strong>! Please adjust amounts.</span>
+                        <span className="font-mono text-[11px] font-bold">Exceeds Total</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -2947,46 +3151,51 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
                     Total Invoice Amount
                   </span>
                   <p className="text-[11px] text-slate-400">
-                    {invPaymentMethod} • {invIsCredit ? "Pending Credit" : "Instant Settle"}
+                    {isSplitMode
+                      ? `Multi-Pay Split: Cash ₹${allocatedCash.toFixed(2)} + UPI ₹${allocatedUpi.toFixed(2)}${
+                          allocatedCredit > 0 ? ` + Khata ₹${allocatedCredit.toFixed(2)}` : ""
+                        }`
+                      : `${invPaymentMethod} • ${invIsCredit ? "Pending Khata Credit" : "Instant Settle"}`}
                   </p>
                 </div>
                 <div className="font-mono text-2xl font-black text-emerald-300">
                   ₹ {invTotalAmount.toFixed(2)}
                 </div>
               </div>
+            </div>
 
-              {/* Modal Buttons */}
-              <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-800">
-                <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-300 font-medium select-none">
-                  <input
-                    type="checkbox"
-                    checked={adminInvAutoPrint}
-                    onChange={(e) => setAdminInvAutoPrint(e.target.checked)}
-                    className="h-4 w-4 rounded border-slate-700 bg-slate-900 text-cyan-400 focus:ring-cyan-400 cursor-pointer"
-                  />
-                  <Printer size={14} className="text-cyan-400" />
-                  <span>Auto-print receipt slip upon saving</span>
-                </label>
+            {/* Permanent Sticky Modal Footer - ALWAYS VISIBLE */}
+            <div className="shrink-0 border-t border-slate-800 bg-[#0e1625] px-6 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg">
+              <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-300 font-medium select-none">
+                <input
+                  type="checkbox"
+                  checked={adminInvAutoPrint}
+                  onChange={(e) => setAdminInvAutoPrint(e.target.checked)}
+                  className="h-4 w-4 rounded border-slate-700 bg-slate-900 text-cyan-400 focus:ring-cyan-400 cursor-pointer"
+                />
+                <Printer size={14} className="text-cyan-400" />
+                <span>Auto-print receipt slip</span>
+              </label>
 
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <button
-                    type="button"
-                    onClick={() => setShowInvoiceModal(false)}
-                    className="rounded-xl border border-slate-700 px-4 py-2.5 text-xs text-slate-400 hover:text-white transition"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={savingInvoice}
-                    className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 py-2.5 px-6 text-xs font-bold text-slate-950 hover:brightness-110 transition shadow-md shadow-cyan-500/20"
-                  >
-                    {savingInvoice ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
-                    <span>Save & Record Invoice (₹{invTotalAmount.toFixed(0)})</span>
-                  </button>
-                </div>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => setShowInvoiceModal(false)}
+                  className="rounded-xl border border-slate-700 px-4 py-2.5 text-xs text-slate-400 hover:text-white transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingInvoice}
+                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-400 to-teal-400 py-2.5 px-6 text-xs font-black text-slate-950 hover:brightness-110 active:scale-95 transition shadow-md shadow-cyan-400/20"
+                >
+                  {savingInvoice ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                  <span>Save & Record Invoice (₹{invTotalAmount.toFixed(0)})</span>
+                </button>
               </div>
-            </form>
+            </div>
+          </form>
           </div>
         </div>
       )}

@@ -301,7 +301,7 @@ export default function SignupPage() {
                 <input
                   type="tel"
                   required
-                  placeholder="e.g. 9876543210"
+                  placeholder="10-digit mobile number"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   className={`w-full rounded-xl border pl-10 pr-4 py-2.5 text-xs outline-none focus:border-cyan-400 transition ${

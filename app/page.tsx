@@ -103,7 +103,7 @@ export default function LandingPage() {
     },
     {
       q: "Does DenBooks work with my existing 58mm or 80mm thermal receipt printer?",
-      a: "Yes! DenBooks generates instant thermal receipts in both 58mm and 80mm roll formats, as well as A4/A5 slips. No specialized printer drivers or proprietary hardware are required. It works over standard browser print dialogs via USB, Bluetooth, or Wi-Fi printers (TVS, Epson, NGX, POSIFLEX, etc.).",
+      a: "Yes! DenBooks generates instant thermal receipts in both 58mm and 80mm roll formats, as well as A4/A5 slips. No specialized printer drivers or proprietary hardware are required. It works seamlessly over standard browser printing with all popular Indian POS brands: TVS (RP 3200, RP 3150), Epson (TM-T82, TM-T88), NGX, Everycom, Posiflex, Rugtek, WeP, and all generic ESC/POS USB, Bluetooth, or Wi-Fi thermal printers.",
     },
     {
       q: "Can my counter clerks use it without seeing my center's total bank balance or net profit?",
@@ -274,7 +274,13 @@ export default function LandingPage() {
             }`}
           >
             Separate Government Wallet Fees from{" "}
-            <span className="bg-gradient-to-r from-cyan-500 via-teal-400 to-emerald-500 bg-clip-text text-transparent">
+            <span
+              className={
+                isDark
+                  ? "bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400 bg-clip-text text-transparent"
+                  : "bg-gradient-to-r from-cyan-700 via-teal-700 to-emerald-700 bg-clip-text text-transparent font-black"
+              }
+            >
               Real Shop Profit.
             </span>
           </h1>
@@ -308,6 +314,11 @@ export default function LandingPage() {
               <span>Explore Live Sandbox (No Signup)</span>
             </Link>
           </div>
+
+          {/* Friction Reducer */}
+          <p className={`mt-3 text-xs font-semibold ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+            ⚡ No Credit Card Required • Instant Setup • Works on Any PC
+          </p>
 
           {/* Trust Highlights */}
           <div
@@ -414,11 +425,11 @@ export default function LandingPage() {
             </p>
           </div>
 
-          {/* Interactive Navigation Tabs */}
-          <div className="flex flex-wrap items-center justify-center gap-2 mb-8">
+          {/* Interactive Navigation Tabs (Horizontally scrollable pill menu on mobile) */}
+          <div className="flex overflow-x-auto no-scrollbar sm:flex-wrap items-center sm:justify-center gap-2 mb-8 pb-2 sm:pb-0 px-1 sm:px-0">
             <button
               onClick={() => setActiveTab("isolation")}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+              className={`shrink-0 whitespace-nowrap flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                 activeTab === "isolation"
                   ? "bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-400/20 font-black"
                   : isDark
@@ -431,7 +442,7 @@ export default function LandingPage() {
             </button>
             <button
               onClick={() => setActiveTab("thermal")}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+              className={`shrink-0 whitespace-nowrap flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                 activeTab === "thermal"
                   ? "bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-400/20 font-black"
                   : isDark
@@ -444,7 +455,7 @@ export default function LandingPage() {
             </button>
             <button
               onClick={() => setActiveTab("drawer")}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+              className={`shrink-0 whitespace-nowrap flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                 activeTab === "drawer"
                   ? "bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-400/20 font-black"
                   : isDark
@@ -457,7 +468,7 @@ export default function LandingPage() {
             </button>
             <button
               onClick={() => setActiveTab("khata")}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+              className={`shrink-0 whitespace-nowrap flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                 activeTab === "khata"
                   ? "bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-400/20 font-black"
                   : isDark
@@ -496,66 +507,81 @@ export default function LandingPage() {
                     >
                       Select Citizen Service:
                     </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                       <button
                         onClick={() => setSelectedService("passport")}
-                        className={`p-2.5 rounded-xl text-left border text-xs font-bold transition cursor-pointer ${
+                        className={`p-3 rounded-xl text-left border text-xs font-bold transition-all cursor-pointer relative ${
                           selectedService === "passport"
                             ? isDark
-                              ? "bg-cyan-950/80 border-cyan-400 text-cyan-300"
-                              : "bg-cyan-50 border-cyan-500 text-cyan-900"
+                              ? "bg-cyan-950/90 border-cyan-400 text-cyan-300 ring-2 ring-cyan-400/30 shadow-md"
+                              : "bg-cyan-50 border-cyan-500 text-cyan-950 ring-2 ring-cyan-400/40 shadow-sm"
                             : isDark
-                            ? "bg-slate-900/80 border-slate-800 text-slate-400 hover:border-slate-700"
-                            : "bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300"
+                            ? "bg-slate-900/80 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200"
+                            : "bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300 hover:text-slate-900"
                         }`}
                       >
-                        <p className={`font-bold ${isDark ? "text-white" : "text-slate-900"}`}>Passport Application</p>
-                        <p className={`text-[10px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>₹1,500 Govt + ₹250 Shop</p>
+                        <div className="flex items-center justify-between">
+                          <p className={`font-bold ${isDark ? "text-white" : "text-slate-900"}`}>✈️ Passport Application</p>
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold">+₹250 Margin</span>
+                        </div>
+                        <p className={`text-[10.5px] mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>₹1,500 Govt Wallet • ₹250 Shop Fee</p>
                       </button>
+
                       <button
                         onClick={() => setSelectedService("sarathi")}
-                        className={`p-2.5 rounded-xl text-left border text-xs font-bold transition cursor-pointer ${
+                        className={`p-3 rounded-xl text-left border text-xs font-bold transition-all cursor-pointer relative ${
                           selectedService === "sarathi"
                             ? isDark
-                              ? "bg-cyan-950/80 border-cyan-400 text-cyan-300"
-                              : "bg-cyan-50 border-cyan-500 text-cyan-900"
+                              ? "bg-cyan-950/90 border-cyan-400 text-cyan-300 ring-2 ring-cyan-400/30 shadow-md"
+                              : "bg-cyan-50 border-cyan-500 text-cyan-950 ring-2 ring-cyan-400/40 shadow-sm"
                             : isDark
-                            ? "bg-slate-900/80 border-slate-800 text-slate-400 hover:border-slate-700"
-                            : "bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300"
+                            ? "bg-slate-900/80 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200"
+                            : "bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300 hover:text-slate-900"
                         }`}
                       >
-                        <p className={`font-bold ${isDark ? "text-white" : "text-slate-900"}`}>Sarathi Driving Licence</p>
-                        <p className={`text-[10px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>₹750 Govt + ₹200 Shop</p>
+                        <div className="flex items-center justify-between">
+                          <p className={`font-bold ${isDark ? "text-white" : "text-slate-900"}`}>🚗 Driving Licence (Sarathi)</p>
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold">+₹200 Margin</span>
+                        </div>
+                        <p className={`text-[10.5px] mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>₹750 Govt Wallet • ₹200 Shop Fee</p>
                       </button>
-                      <button
-                        onClick={() => setSelectedService("edistrict")}
-                        className={`p-2.5 rounded-xl text-left border text-xs font-bold transition cursor-pointer ${
-                          selectedService === "edistrict"
-                            ? isDark
-                              ? "bg-cyan-950/80 border-cyan-400 text-cyan-300"
-                              : "bg-cyan-50 border-cyan-500 text-cyan-900"
-                            : isDark
-                            ? "bg-slate-900/80 border-slate-800 text-slate-400 hover:border-slate-700"
-                            : "bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300"
-                        }`}
-                      >
-                        <p className={`font-bold ${isDark ? "text-white" : "text-slate-900"}`}>Income Certificate</p>
-                        <p className={`text-[10px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>₹50 Govt + ₹100 Shop</p>
-                      </button>
+
                       <button
                         onClick={() => setSelectedService("kseb")}
-                        className={`p-2.5 rounded-xl text-left border text-xs font-bold transition cursor-pointer ${
+                        className={`p-3 rounded-xl text-left border text-xs font-bold transition-all cursor-pointer relative ${
                           selectedService === "kseb"
                             ? isDark
-                              ? "bg-cyan-950/80 border-cyan-400 text-cyan-300"
-                              : "bg-cyan-50 border-cyan-500 text-cyan-900"
+                              ? "bg-cyan-950/90 border-cyan-400 text-cyan-300 ring-2 ring-cyan-400/30 shadow-md"
+                              : "bg-cyan-50 border-cyan-500 text-cyan-950 ring-2 ring-cyan-400/40 shadow-sm"
                             : isDark
-                            ? "bg-slate-900/80 border-slate-800 text-slate-400 hover:border-slate-700"
-                            : "bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300"
+                            ? "bg-slate-900/80 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200"
+                            : "bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300 hover:text-slate-900"
                         }`}
                       >
-                        <p className={`font-bold ${isDark ? "text-white" : "text-slate-900"}`}>Electricity Bill BBPS</p>
-                        <p className={`text-[10px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>₹2,100 Govt + ₹30 Shop</p>
+                        <div className="flex items-center justify-between">
+                          <p className={`font-bold ${isDark ? "text-white" : "text-slate-900"}`}>💡 Electricity Bill (BBPS)</p>
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold">+₹30 Margin</span>
+                        </div>
+                        <p className={`text-[10.5px] mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>₹2,100 Govt Wallet • ₹30 Shop Fee</p>
+                      </button>
+
+                      <button
+                        onClick={() => setSelectedService("edistrict")}
+                        className={`p-3 rounded-xl text-left border text-xs font-bold transition-all cursor-pointer relative ${
+                          selectedService === "edistrict"
+                            ? isDark
+                              ? "bg-cyan-950/90 border-cyan-400 text-cyan-300 ring-2 ring-cyan-400/30 shadow-md"
+                              : "bg-cyan-50 border-cyan-500 text-cyan-950 ring-2 ring-cyan-400/40 shadow-sm"
+                            : isDark
+                            ? "bg-slate-900/80 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200"
+                            : "bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300 hover:text-slate-900"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <p className={`font-bold ${isDark ? "text-white" : "text-slate-900"}`}>📜 Income / Caste Certificate</p>
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold">+₹100 Margin</span>
+                        </div>
+                        <p className={`text-[10.5px] mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>₹50 Govt Wallet • ₹100 Shop Fee</p>
                       </button>
                     </div>
                   </div>
@@ -1136,115 +1162,115 @@ export default function LandingPage() {
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {/* Feature 1 */}
             <div
-              className={`rounded-3xl border p-6 transition-all ${
+              className={`rounded-3xl border p-6 sm:p-7 transition-all ${
                 isDark
-                  ? "border-slate-800 bg-[#0e1625] hover:border-slate-700"
-                  : "border-slate-200 bg-white shadow-md shadow-slate-100 hover:border-cyan-400"
+                  ? "border-slate-700/70 bg-[#0e1625] hover:border-cyan-400/60 hover:shadow-lg hover:shadow-cyan-500/5"
+                  : "border-slate-200 bg-white shadow-md shadow-slate-100 hover:border-cyan-400 hover:shadow-cyan-500/10"
               }`}
             >
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-500/10 text-cyan-500 border border-cyan-500/20 mb-4">
                 <Wallet size={22} />
               </div>
-              <h3 className={`text-base font-bold ${isDark ? "text-white" : "text-slate-950"}`}>
+              <h3 className={`text-base sm:text-lg font-bold ${isDark ? "text-white" : "text-slate-950"}`}>
                 Portal Advance Wallets
               </h3>
-              <p className={`mt-2 text-xs leading-relaxed ${isDark ? "text-slate-400" : "text-slate-600"}`}>
-                Track running balances for CSC Digital Seva, e-District, UTIITSL/NSDL, and Utility wallets. Top-up history and low-balance warnings ensure no citizen application stalls.
+              <p className={`mt-2.5 text-xs sm:text-[13px] leading-relaxed ${isDark ? "text-slate-300" : "text-slate-600"}`}>
+                Real-time tracking for <b>CSC Digital Seva, e-District, UTIITSL/NSDL & BBPS</b> wallets. Includes top-up history and <b>visual low-balance warnings</b> so customer applications never fail mid-way.
               </p>
             </div>
 
             {/* Feature 2 */}
             <div
-              className={`rounded-3xl border p-6 transition-all ${
+              className={`rounded-3xl border p-6 sm:p-7 transition-all ${
                 isDark
-                  ? "border-slate-800 bg-[#0e1625] hover:border-slate-700"
-                  : "border-slate-200 bg-white shadow-md shadow-slate-100 hover:border-cyan-400"
+                  ? "border-slate-700/70 bg-[#0e1625] hover:border-cyan-400/60 hover:shadow-lg hover:shadow-cyan-500/5"
+                  : "border-slate-200 bg-white shadow-md shadow-slate-100 hover:border-cyan-400 hover:shadow-cyan-500/10"
               }`}
             >
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-teal-500/10 text-teal-500 border border-teal-500/20 mb-4">
                 <Printer size={22} />
               </div>
-              <h3 className={`text-base font-bold ${isDark ? "text-white" : "text-slate-950"}`}>
+              <h3 className={`text-base sm:text-lg font-bold ${isDark ? "text-white" : "text-slate-950"}`}>
                 Thermal Receipt Printing
               </h3>
-              <p className={`mt-2 text-xs leading-relaxed ${isDark ? "text-slate-400" : "text-slate-600"}`}>
-                Print 58mm, 80mm, and A4 slip formats for Xerox copies, online form applications, and passport submissions. Includes tracking QR code so citizens can check status online.
+              <p className={`mt-2.5 text-xs sm:text-[13px] leading-relaxed ${isDark ? "text-slate-300" : "text-slate-600"}`}>
+                Instant <b>58mm/80mm USB & Bluetooth</b> printing. Supports <b>regional languages (Malayalam, Hindi, Tamil & English)</b> with automatic <b>status tracking QR codes</b> on every customer slip.
               </p>
             </div>
 
             {/* Feature 3 */}
             <div
-              className={`rounded-3xl border p-6 transition-all ${
+              className={`rounded-3xl border p-6 sm:p-7 transition-all ${
                 isDark
-                  ? "border-slate-800 bg-[#0e1625] hover:border-slate-700"
-                  : "border-slate-200 bg-white shadow-md shadow-slate-100 hover:border-cyan-400"
+                  ? "border-slate-700/70 bg-[#0e1625] hover:border-cyan-400/60 hover:shadow-lg hover:shadow-cyan-500/5"
+                  : "border-slate-200 bg-white shadow-md shadow-slate-100 hover:border-cyan-400 hover:shadow-cyan-500/10"
               }`}
             >
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 mb-4">
                 <TrendingUp size={22} />
               </div>
-              <h3 className={`text-base font-bold ${isDark ? "text-white" : "text-slate-950"}`}>
+              <h3 className={`text-base sm:text-lg font-bold ${isDark ? "text-white" : "text-slate-950"}`}>
                 Govt Fee vs. Real Shop Profit
               </h3>
-              <p className={`mt-2 text-xs leading-relaxed ${isDark ? "text-slate-400" : "text-slate-600"}`}>
-                Separates pass-through government wallet deductions from actual Xerox and processing charges. Accurately calculates real daily net profit after paper and electricity expenses.
+              <p className={`mt-2.5 text-xs sm:text-[13px] leading-relaxed ${isDark ? "text-slate-300" : "text-slate-600"}`}>
+                Automatic <b>pass-through fee isolation</b> separates government wallet deductions from shop charges. Accurately calculates your <b>true take-home profit</b> after paper, power, and petty shop costs.
               </p>
             </div>
 
             {/* Feature 4 */}
             <div
-              className={`rounded-3xl border p-6 transition-all ${
+              className={`rounded-3xl border p-6 sm:p-7 transition-all ${
                 isDark
-                  ? "border-slate-800 bg-[#0e1625] hover:border-slate-700"
-                  : "border-slate-200 bg-white shadow-md shadow-slate-100 hover:border-cyan-400"
+                  ? "border-slate-700/70 bg-[#0e1625] hover:border-cyan-400/60 hover:shadow-lg hover:shadow-cyan-500/5"
+                  : "border-slate-200 bg-white shadow-md shadow-slate-100 hover:border-cyan-400 hover:shadow-cyan-500/10"
               }`}
             >
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-500 border border-indigo-500/20 mb-4">
                 <Users size={22} />
               </div>
-              <h3 className={`text-base font-bold ${isDark ? "text-white" : "text-slate-950"}`}>
+              <h3 className={`text-base sm:text-lg font-bold ${isDark ? "text-white" : "text-slate-950"}`}>
                 Multi-Staff & Shift Drawers
               </h3>
-              <p className={`mt-2 text-xs leading-relaxed ${isDark ? "text-slate-400" : "text-slate-600"}`}>
-                Give operators their own 4-digit PIN login. Each clerk runs an isolated Front Desk counter and produces a shift closing tally to reconcile physical cash before going home.
+              <p className={`mt-2.5 text-xs sm:text-[13px] leading-relaxed ${isDark ? "text-slate-300" : "text-slate-600"}`}>
+                Secure <b>operator PIN logins</b> with an isolated Front Desk counter. Generates an <b>end-of-shift drawer reconciliation slip</b> comparing counted cash against system records to eliminate till shortages.
               </p>
             </div>
 
             {/* Feature 5 */}
             <div
-              className={`rounded-3xl border p-6 transition-all ${
+              className={`rounded-3xl border p-6 sm:p-7 transition-all ${
                 isDark
-                  ? "border-slate-800 bg-[#0e1625] hover:border-slate-700"
-                  : "border-slate-200 bg-white shadow-md shadow-slate-100 hover:border-cyan-400"
+                  ? "border-slate-700/70 bg-[#0e1625] hover:border-cyan-400/60 hover:shadow-lg hover:shadow-cyan-500/5"
+                  : "border-slate-200 bg-white shadow-md shadow-slate-100 hover:border-cyan-400 hover:shadow-cyan-500/10"
               }`}
             >
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-500 border border-amber-500/20 mb-4">
                 <Clock3 size={22} />
               </div>
-              <h3 className={`text-base font-bold ${isDark ? "text-white" : "text-slate-950"}`}>
+              <h3 className={`text-base sm:text-lg font-bold ${isDark ? "text-white" : "text-slate-950"}`}>
                 Customer Khata (Credit / Udhar)
               </h3>
-              <p className={`mt-2 text-xs leading-relaxed ${isDark ? "text-slate-400" : "text-slate-600"}`}>
-                Never lose track of pending customer dues. Track outstanding balances by customer name and phone, send 1-click WhatsApp payment reminders, and mark settled with a single tap.
+              <p className={`mt-2.5 text-xs sm:text-[13px] leading-relaxed ${isDark ? "text-slate-300" : "text-slate-600"}`}>
+                Stop losing money on citizen credit. Send <b>one-click WhatsApp balance alerts</b> formatted in <b>regional languages</b> with your center's <b>direct UPI payment QR</b> for instant settlement.
               </p>
             </div>
 
             {/* Feature 6 */}
             <div
-              className={`rounded-3xl border p-6 transition-all ${
+              className={`rounded-3xl border p-6 sm:p-7 transition-all ${
                 isDark
-                  ? "border-slate-800 bg-[#0e1625] hover:border-slate-700"
-                  : "border-slate-200 bg-white shadow-md shadow-slate-100 hover:border-cyan-400"
+                  ? "border-slate-700/70 bg-[#0e1625] hover:border-cyan-400/60 hover:shadow-lg hover:shadow-cyan-500/5"
+                  : "border-slate-200 bg-white shadow-md shadow-slate-100 hover:border-cyan-400 hover:shadow-cyan-500/10"
               }`}
             >
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-pink-500/10 text-pink-500 border border-pink-500/20 mb-4">
                 <Zap size={22} />
               </div>
-              <h3 className={`text-base font-bold ${isDark ? "text-white" : "text-slate-950"}`}>
+              <h3 className={`text-base sm:text-lg font-bold ${isDark ? "text-white" : "text-slate-950"}`}>
                 FCFS Queue Tokens
               </h3>
-              <p className={`mt-2 text-xs leading-relaxed ${isDark ? "text-slate-400" : "text-slate-600"}`}>
-                Manage morning crowds fairly with sequential first-come-first-serve tokens. Print queue slips, call the next citizen, and convert tokens into billing invoices instantly.
+              <p className={`mt-2.5 text-xs sm:text-[13px] leading-relaxed ${isDark ? "text-slate-300" : "text-slate-600"}`}>
+                Fairly manage rush hours with <b>sequential FCFS queue tokens</b>. Issue printed tokens, call the next citizen to your counter, and <b>convert tokens into billing invoices with one tap</b>.
               </p>
             </div>
           </div>
@@ -1340,15 +1366,21 @@ export default function LandingPage() {
                   <span className={`text-4xl font-black ${isDark ? "text-white" : "text-slate-950"}`}>
                     {billingCycle === "monthly" ? "₹199" : "₹125"}
                   </span>
-                  <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>/ month</span>
+                  <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                    {billingCycle === "monthly" ? "/ month" : "/ month (effective)"}
+                  </span>
                 </div>
-                <p className="text-[11px] text-cyan-500 font-semibold mt-1">
+                <p className="text-[11.5px] text-cyan-500 font-bold mt-1.5">
                   {billingCycle === "monthly"
                     ? "Billed monthly • Cancel anytime"
-                    : "₹1,499 billed annually (Save 37%)"}
+                    : "₹1,499 billed annually • Save ₹889 (37% OFF)"}
                 </p>
 
                 <ul className={`mt-6 space-y-3 text-xs ${isDark ? "text-slate-300" : "text-slate-700"}`}>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 size={14} className="text-cyan-500 shrink-0" />
+                    <span><b>1 Active Staff Terminal</b> (Single Operator)</span>
+                  </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 size={14} className="text-cyan-500 shrink-0" />
                     <span><b>Single Counter POS</b> & Daybook</span>
@@ -1393,7 +1425,7 @@ export default function LandingPage() {
               }`}
             >
               <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-cyan-400 px-4 py-1 text-[10px] font-black uppercase tracking-wider text-slate-950 shadow-md">
-                {billingCycle === "annual" ? "Most Popular • Save 52%" : "Most Popular"}
+                {billingCycle === "annual" ? "Most Popular • Save 40%" : "Most Popular"}
               </div>
 
               <div>
@@ -1405,14 +1437,16 @@ export default function LandingPage() {
                 </p>
                 <div className="mt-6 flex items-baseline gap-1">
                   <span className={`text-4xl font-black ${isDark ? "text-white" : "text-slate-950"}`}>
-                    {billingCycle === "monthly" ? "₹349" : "₹166"}
+                    {billingCycle === "monthly" ? "₹349" : "₹208"}
                   </span>
-                  <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>/ month</span>
+                  <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                    {billingCycle === "monthly" ? "/ month" : "/ month (effective)"}
+                  </span>
                 </div>
-                <p className="text-[11px] text-emerald-500 font-semibold mt-1">
+                <p className="text-[11.5px] text-emerald-500 font-bold mt-1.5">
                   {billingCycle === "monthly"
                     ? "Billed monthly • Full multi-operator suite"
-                    : "₹1,999 billed annually (Save 52% / Best Value)"}
+                    : "₹2,499 billed annually • Save ₹1,689 (40% OFF / Best Value)"}
                 </p>
 
                 <ul className={`mt-6 space-y-3 text-xs ${isDark ? "text-slate-200" : "text-slate-800"}`}>
@@ -1449,9 +1483,9 @@ export default function LandingPage() {
 
               <Link
                 href="/signup?plan=pro"
-                className="mt-8 block text-center rounded-xl bg-gradient-to-r from-cyan-400 to-teal-400 py-3 text-xs font-black text-slate-950 hover:brightness-110 transition shadow-lg shadow-cyan-400/25"
+                className="mt-8 block text-center rounded-xl bg-cyan-400 hover:bg-cyan-300 py-3.5 text-sm font-black text-slate-950 transition-all shadow-xl shadow-cyan-400/35 hover:scale-[1.02] active:scale-95 ring-2 ring-cyan-300/40"
               >
-                Claim 14-Day Free Trial
+                Start 14-Day Free Trial — Pro Hub
               </Link>
             </div>
 
@@ -1474,12 +1508,14 @@ export default function LandingPage() {
                   <span className={`text-4xl font-black ${isDark ? "text-white" : "text-slate-950"}`}>
                     {billingCycle === "monthly" ? "₹699" : "₹416"}
                   </span>
-                  <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>/ month</span>
+                  <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                    {billingCycle === "monthly" ? "/ month" : "/ month (effective)"}
+                  </span>
                 </div>
-                <p className={`text-[11px] font-semibold mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                <p className={`text-[11.5px] font-bold mt-1.5 ${isDark ? "text-cyan-400" : "text-cyan-700"}`}>
                   {billingCycle === "monthly"
                     ? "Billed monthly • Up to 5 Center Locations"
-                    : "₹4,999 billed annually (Save 40%)"}
+                    : "₹4,999 billed annually • Save ₹3,389 (40% OFF)"}
                 </p>
 
                 <ul className={`mt-6 space-y-3 text-xs ${isDark ? "text-slate-300" : "text-slate-700"}`}>
@@ -1625,6 +1661,11 @@ export default function LandingPage() {
               <span>Try Sandbox Demo</span>
             </Link>
           </div>
+
+          {/* Friction Reducer */}
+          <p className={`mt-4 text-xs font-semibold ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+            ⚡ No Credit Card Required • Instant Setup • Works on Any PC
+          </p>
         </div>
       </section>
 

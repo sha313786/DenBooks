@@ -33,6 +33,7 @@ import {
   Eye,
   EyeOff,
   Copy,
+  Trash2,
 } from "lucide-react";
 import {
   TenantSubscription,
@@ -48,6 +49,10 @@ import {
   getSuperAdminConfig,
   saveSuperAdminConfig,
   getDaysRemaining,
+  deleteTenantSubscription,
+  purgeAllSampleTenants,
+  generateUpiUri,
+  generateQrCodeImageUrl,
 } from "@/lib/services/subscription.service";
 
 export default function SuperAdminPage() {
@@ -72,11 +77,37 @@ export default function SuperAdminPage() {
   // Config Form State
   const [configUpiId, setConfigUpiId] = useState("");
   const [configPayee, setConfigPayee] = useState("");
-  const [configMonthly, setConfigMonthly] = useState("499");
-  const [configYearly, setConfigYearly] = useState("3999");
+  const [configStarterMonthly, setConfigStarterMonthly] = useState("199");
+  const [configStarterYearly, setConfigStarterYearly] = useState("1499");
+  const [configProMonthly, setConfigProMonthly] = useState("349");
+  const [configProYearly, setConfigProYearly] = useState("2499");
+  const [configMultiMonthly, setConfigMultiMonthly] = useState("699");
+  const [configMultiYearly, setConfigMultiYearly] = useState("4999");
   const [configWa, setConfigWa] = useState("");
   const [configPin, setConfigPin] = useState("9999");
+  const [savedSettingsSuccess, setSavedSettingsSuccess] = useState(false);
   const [copiedUtr, setCopiedUtr] = useState<string | null>(null);
+
+  // Usability & Validation State
+  const [showTestQr, setShowTestQr] = useState(false);
+  const [testQrAmount, setTestAmount] = useState(1);
+  const [upiValidationError, setUpiValidationError] = useState("");
+
+  // Helpers
+  function calculateDiscount(monthlyStr: string, yearlyStr: string) {
+    const m = Number(monthlyStr) || 0;
+    const y = Number(yearlyStr) || 0;
+    if (m <= 0 || y <= 0) return { percent: 0, effectiveMo: 0, savedYr: 0 };
+    const annualAtMonthlyRate = m * 12;
+    const savedYr = annualAtMonthlyRate - y;
+    const percent = Math.round((savedYr / annualAtMonthlyRate) * 100);
+    const effectiveMo = Math.round(y / 12);
+    return { percent, effectiveMo, savedYr };
+  }
+
+  function validateUpiFormat(upi: string): boolean {
+    return /^[a-zA-Z0-9.\-_]{2,64}@[a-zA-Z0-9.\-_]{2,64}$/.test(upi.trim());
+  }
 
   // Check saved session auth
   useEffect(() => {
@@ -90,9 +121,18 @@ export default function SuperAdminPage() {
     setConfig(currentCfg);
     setConfigUpiId(currentCfg.upi_id);
     setConfigPayee(currentCfg.payee_name);
-    setConfigMonthly(String(currentCfg.monthly_price));
-    setConfigYearly(String(currentCfg.yearly_price));
-    setConfigWa(currentCfg.whatsapp_number);
+    setConfigStarterMonthly(String(currentCfg.starter_monthly_price || 199));
+    setConfigStarterYearly(String(currentCfg.starter_yearly_price || 1499));
+    setConfigProMonthly(String(currentCfg.pro_monthly_price || 349));
+    setConfigProYearly(String(currentCfg.pro_yearly_price || 2499));
+    setConfigMultiMonthly(String(currentCfg.multi_monthly_price || 699));
+    setConfigMultiYearly(String(currentCfg.multi_yearly_price || 4999));
+    
+    // Clean raw phone to 10 digits for locked +91 prefix
+    const rawWa = currentCfg.whatsapp_number || "";
+    const cleanWaDigits = rawWa.replace(/^\+?91/, "").replace(/\D/g, "").slice(0, 10);
+    setConfigWa(cleanWaDigits);
+
     setConfigPin(currentCfg.master_pin);
   }, []);
 
@@ -100,6 +140,7 @@ export default function SuperAdminPage() {
   async function loadData() {
     setLoading(true);
     try {
+      purgeAllSampleTenants();
       const [tList, sList] = await Promise.all([
         getAllTenantsSubscription(),
         getAllPaymentSubmissions(),
@@ -180,18 +221,56 @@ export default function SuperAdminPage() {
     loadData();
   }
 
+  async function handleDeleteTenant(tenant: TenantSubscription) {
+    if (typeof window !== "undefined") {
+      const confirmDelete = window.confirm(
+        `Are you sure you want to permanently delete/remove center "${tenant.shop_name}"?`
+      );
+      if (!confirmDelete) return;
+    }
+    await deleteTenantSubscription(tenant.id);
+    notify(`Center "${tenant.shop_name}" removed.`);
+    loadData();
+  }
+
   function handleSaveSettings(e: React.FormEvent) {
     e.preventDefault();
+    const cleanUpi = configUpiId.trim();
+    if (!validateUpiFormat(cleanUpi)) {
+      setUpiValidationError("UPI ID must follow username@bank or merchant@upi format (e.g. yourname@ybl or shop@okaxis).");
+      notify("Please enter a valid official receiving UPI ID format.");
+      return;
+    }
+    setUpiValidationError("");
+
+    const starterMo = Number(configStarterMonthly) || 199;
+    const starterYr = Number(configStarterYearly) || 1499;
+    const proMo = Number(configProMonthly) || 349;
+    const proYr = Number(configProYearly) || 2499;
+    const multiMo = Number(configMultiMonthly) || 699;
+    const multiYr = Number(configMultiYearly) || 4999;
+
+    const cleanDigits = configWa.replace(/\D/g, "").slice(0, 10);
+    const formattedWa = cleanDigits ? `+91${cleanDigits}` : "";
+
     const updated = saveSuperAdminConfig({
-      upi_id: configUpiId.trim() || "denbooks@upi",
+      upi_id: cleanUpi,
       payee_name: configPayee.trim() || "DenBooks 360",
-      monthly_price: Number(configMonthly) || 499,
-      yearly_price: Number(configYearly) || 3999,
-      whatsapp_number: configWa.trim() || "+919876543210",
+      starter_monthly_price: starterMo,
+      starter_yearly_price: starterYr,
+      pro_monthly_price: proMo,
+      pro_yearly_price: proYr,
+      multi_monthly_price: multiMo,
+      multi_yearly_price: multiYr,
+      monthly_price: starterMo,
+      yearly_price: starterYr,
+      whatsapp_number: formattedWa,
       master_pin: configPin.trim() || "9999",
     });
     setConfig(updated);
+    setSavedSettingsSuccess(true);
     notify("Super Admin payment and master settings updated successfully!");
+    setTimeout(() => setSavedSettingsSuccess(false), 5000);
   }
 
   function copyText(txt: string, id: string) {
@@ -654,8 +733,16 @@ export default function SuperAdminPage() {
                 <tbody className="divide-y divide-slate-800/80">
                   {filteredTenants.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
-                        No centers matched your criteria.
+                      <td colSpan={6} className="px-4 py-12 text-center">
+                        <div className="max-w-md mx-auto space-y-2">
+                          <div className="mx-auto w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400">
+                            <Building size={20} />
+                          </div>
+                          <p className="text-sm font-bold text-slate-200">No Centers Registered</p>
+                          <p className="text-xs text-slate-500">
+                            Sample and demo centers have been removed. When centers sign up, their real subscriptions, live activity, and access controls will appear here.
+                          </p>
+                        </div>
                       </td>
                     </tr>
                   ) : (
@@ -750,7 +837,7 @@ export default function SuperAdminPage() {
                             <button
                               type="button"
                               onClick={() => handleExtendTenant(t.id, 30, "monthly")}
-                              className="rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-2 py-1 text-[11px] font-bold text-cyan-300 hover:bg-cyan-500/20 transition"
+                              className="rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-2 py-1 text-[11px] font-bold text-cyan-300 hover:bg-cyan-500/20 transition cursor-pointer"
                               title="Add 30 days subscription and unlock"
                             >
                               +30 Days
@@ -759,7 +846,7 @@ export default function SuperAdminPage() {
                             <button
                               type="button"
                               onClick={() => handleExtendTenant(t.id, 365, "yearly")}
-                              className="rounded-lg border border-purple-500/40 bg-purple-500/10 px-2 py-1 text-[11px] font-bold text-purple-300 hover:bg-purple-500/20 transition"
+                              className="rounded-lg border border-purple-500/40 bg-purple-500/10 px-2 py-1 text-[11px] font-bold text-purple-300 hover:bg-purple-500/20 transition cursor-pointer"
                               title="Add 365 days annual subscription and unlock"
                             >
                               +1 Year
@@ -768,10 +855,19 @@ export default function SuperAdminPage() {
                             <button
                               type="button"
                               onClick={() => handleExtendTenant(t.id, 7, t.plan)}
-                              className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-[11px] font-bold text-amber-300 hover:bg-amber-500/20 transition"
+                              className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-[11px] font-bold text-amber-300 hover:bg-amber-500/20 transition cursor-pointer"
                               title="Add 7 days trial grace period"
                             >
                               +7d Trial
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteTenant(t)}
+                              className="inline-flex items-center justify-center rounded-lg border border-rose-500/40 bg-rose-500/10 p-1.5 text-rose-400 hover:bg-rose-500/20 hover:text-rose-300 transition align-middle cursor-pointer"
+                              title="Delete / Remove center"
+                            >
+                              <Trash2 size={12} />
                             </button>
                           </td>
                         </tr>
@@ -785,124 +881,399 @@ export default function SuperAdminPage() {
         )}
 
         {/* TAB 3: PAYMENT & PRICING CONFIG */}
-        {activeTab === "settings" && (
-          <div className="max-w-2xl mx-auto rounded-3xl border border-slate-800 bg-[#0c1424] p-6 shadow-xl space-y-6">
-            <div>
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
-                <Sliders size={18} className="text-cyan-400" />
-                <span>Super Admin UPI & Pricing Configuration</span>
-              </h2>
-              <p className="text-xs text-slate-400 mt-1">
-                Configure your official UPI ID for QR code generation and manage prices charged to centers.
-              </p>
-            </div>
+        {activeTab === "settings" && (() => {
+          const starterDiscount = calculateDiscount(configStarterMonthly, configStarterYearly);
+          const proDiscount = calculateDiscount(configProMonthly, configProYearly);
+          const multiDiscount = calculateDiscount(configMultiMonthly, configMultiYearly);
 
-            <form onSubmit={handleSaveSettings} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          const testUpiUri = generateUpiUri({
+            upiId: configUpiId.trim() || "denbooks@upi",
+            payeeName: configPayee.trim() || "DenBooks 360",
+            amount: testQrAmount,
+            note: "DenBooks Test Verification",
+          });
+          const testQrImg = generateQrCodeImageUrl(testUpiUri, 220);
+
+          return (
+            <div className="max-w-2xl mx-auto rounded-3xl border border-slate-800 bg-[#0c1424] p-6 shadow-xl space-y-6">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1.5">
-                    Official UPI ID (GPay / PhonePe / BHIM) *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={configUpiId}
-                    onChange={(e) => setConfigUpiId(e.target.value)}
-                    placeholder="e.g. denbooks@upi or 9876543210@paytm"
-                    className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2.5 text-xs text-cyan-300 font-mono font-bold focus:border-cyan-400 outline-none"
-                  />
-                  <p className="text-[10px] text-slate-500 mt-1">Where center owners transfer subscription fees</p>
+                  <h2 className="text-base font-bold text-white flex items-center gap-2">
+                    <Sliders size={18} className="text-cyan-400" />
+                    <span>Super Admin UPI & Pricing Configuration</span>
+                  </h2>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Configure your official UPI ID for QR code generation and manage prices charged to centers.
+                  </p>
                 </div>
 
-                <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1.5">
-                    Official Payee Name (Shown in UPI apps) *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={configPayee}
-                    onChange={(e) => setConfigPayee(e.target.value)}
-                    placeholder="e.g. DenBooks 360"
-                    className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2.5 text-xs text-white focus:border-cyan-400 outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1.5">
-                    Monthly Plan Fee (₹ / month) *
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    min="1"
-                    value={configMonthly}
-                    onChange={(e) => setConfigMonthly(e.target.value)}
-                    placeholder="499"
-                    className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2.5 text-xs font-mono font-bold text-emerald-400 focus:border-cyan-400 outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1.5">
-                    Yearly Plan Fee (₹ / year) *
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    min="1"
-                    value={configYearly}
-                    onChange={(e) => setConfigYearly(e.target.value)}
-                    placeholder="3999"
-                    className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2.5 text-xs font-mono font-bold text-purple-400 focus:border-cyan-400 outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1.5">
-                    WhatsApp Support Number (For UTR Proofs) *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={configWa}
-                    onChange={(e) => setConfigWa(e.target.value)}
-                    placeholder="+919876543210"
-                    className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2.5 text-xs text-white font-mono focus:border-cyan-400 outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1.5">
-                    Master Admin PIN / Passcode *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={configPin}
-                    onChange={(e) => setConfigPin(e.target.value)}
-                    placeholder="9999"
-                    className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2.5 text-xs text-amber-300 font-mono font-bold focus:border-cyan-400 outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-2">
+                {/* Test QR Toggle Button */}
                 <button
-                  type="submit"
-                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-cyan-400 py-2.5 text-xs font-bold text-slate-950 hover:bg-cyan-300 transition shadow-md shadow-cyan-400/20"
+                  type="button"
+                  onClick={() => setShowTestQr(!showTestQr)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
+                    showTestQr
+                      ? "bg-cyan-400 text-slate-950 border-cyan-400 font-black shadow-md shadow-cyan-400/20"
+                      : "bg-slate-900 border-slate-700 text-cyan-300 hover:border-cyan-400 hover:bg-slate-800"
+                  }`}
                 >
-                  <CheckCircle2 size={16} />
-                  <span>Save Configuration</span>
+                  <QrCode size={14} />
+                  <span>{showTestQr ? "Close Test QR" : "Test UPI QR"}</span>
                 </button>
               </div>
-            </form>
-          </div>
-        )}
+
+              {/* Inline Test QR Modal / Preview Card */}
+              {showTestQr && (
+                <div className="rounded-2xl border border-cyan-500/40 bg-slate-950 p-4 shadow-xl space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="text-xs font-bold text-white">Live Phone Scanner Test</span>
+                    </div>
+                    <span className="text-[10px] text-cyan-400 font-mono font-bold">
+                      Scan to verify payee name on your phone
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-center gap-4">
+                    <div className="bg-white p-2.5 rounded-xl shadow-lg shrink-0">
+                      <img
+                        src={testQrImg}
+                        alt="Test UPI QR"
+                        className="h-32 w-32 object-contain"
+                      />
+                    </div>
+                    <div className="space-y-2 text-xs flex-1 w-full text-left">
+                      <div>
+                        <p className="text-[10px] text-slate-400 uppercase font-semibold">Testing Target:</p>
+                        <p className="font-mono text-cyan-300 font-bold">{configUpiId || "denbooks@upi"}</p>
+                        <p className="text-slate-300 font-semibold">{configPayee || "DenBooks 360"}</p>
+                      </div>
+
+                      <div>
+                        <p className="text-[10px] text-slate-400 uppercase font-semibold mb-1">Select Test Amount:</p>
+                        <div className="flex gap-2">
+                          {[1, 199, 2499].map((amt) => (
+                            <button
+                              key={amt}
+                              type="button"
+                              onClick={() => setTestAmount(amt)}
+                              className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold border transition cursor-pointer ${
+                                testQrAmount === amt
+                                  ? "bg-cyan-500/20 text-cyan-300 border-cyan-400"
+                                  : "bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200"
+                              }`}
+                            >
+                              ₹{amt}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <p className="text-[10px] text-slate-500 leading-relaxed">
+                        Open Google Pay, PhonePe, or Paytm on your phone, scan this QR, and check what registered name appears on the payment screen.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <form onSubmit={handleSaveSettings} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-300 block mb-1.5">
+                      Official UPI ID (GPay / PhonePe / BHIM) *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={configUpiId}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setConfigUpiId(val);
+                        if (val.trim() && !validateUpiFormat(val)) {
+                          setUpiValidationError("Format must be name@bank (missing @ or bank handle)");
+                        } else {
+                          setUpiValidationError("");
+                        }
+                      }}
+                      placeholder="e.g. srbtrollersyt@ybl or merchant@upi"
+                      className={`w-full rounded-xl border px-3.5 py-2.5 text-xs text-cyan-300 font-mono font-bold focus:border-cyan-400 outline-none ${
+                        upiValidationError ? "border-rose-500 bg-rose-950/20" : "border-slate-700 bg-slate-900"
+                      }`}
+                    />
+                    {upiValidationError ? (
+                      <p className="text-[10px] text-rose-400 font-semibold mt-1 flex items-center gap-1">
+                        <AlertTriangle size={10} /> {upiValidationError}
+                      </p>
+                    ) : (
+                      <p className="text-[10px] text-slate-500 mt-1">Where center owners transfer subscription fees</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-slate-300 block mb-1.5">
+                      Official Payee Name (Shown in UPI apps) *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={configPayee}
+                      onChange={(e) => setConfigPayee(e.target.value)}
+                      placeholder="e.g. DenBooks 360"
+                      className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2.5 text-xs text-white focus:border-cyan-400 outline-none"
+                    />
+                    <p className="text-[10px] text-slate-500 mt-1">Displayed as the transaction receiver name</p>
+                  </div>
+                </div>
+
+                {/* Bank / VPA Name Match Warning Notice */}
+                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-[11px] text-amber-200/90 flex items-start gap-2.5 shadow-sm">
+                  <AlertTriangle size={15} className="text-amber-400 shrink-0 mt-0.5" />
+                  <div className="leading-relaxed">
+                    <strong className="text-amber-300 font-bold">Bank / VPA Name Match Tip:</strong> Ensure your Payee Name (e.g. <strong>{configPayee || "DenBooks 360"}</strong>) matches or closely aligns with the legal account name registered to <strong>{configUpiId || "your UPI ID"}</strong>. When users scan and pay with GPay or PhonePe, the bank's registered legal account name will be displayed.
+                  </div>
+                </div>
+
+                {/* 3 Tier Pricing Cards */}
+                <div className="space-y-3 pt-1">
+                  <label className="text-xs font-bold text-slate-200 block uppercase tracking-wider">
+                    Official Tier Subscription Rates
+                  </label>
+
+                  {/* Tier 1: Single Counter (Starter) */}
+                  <div className="p-3.5 rounded-2xl border border-slate-800 bg-slate-900/60 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black text-cyan-300">1. Single Counter (Starter Plan)</span>
+                      <span className="text-[10px] text-slate-400 font-medium">Solo Operators &bull; 1 Staff Counter</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[11px] text-slate-400 block mb-1">Monthly Fee (₹ / mo) *</label>
+                        <div className="relative flex items-center">
+                          <span className="absolute left-3 text-slate-500 font-bold text-xs select-none pointer-events-none">₹</span>
+                          <input
+                            type="number"
+                            required
+                            min="1"
+                            value={configStarterMonthly}
+                            onChange={(e) => setConfigStarterMonthly(e.target.value)}
+                            className="w-full rounded-xl border border-slate-700 bg-slate-950 pl-7 pr-3 py-2 text-xs font-mono font-bold text-cyan-400 focus:border-cyan-400 outline-none"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-[11px] text-slate-400 block mb-1">Annual Fee (₹ / yr) *</label>
+                        <div className="relative flex items-center">
+                          <span className="absolute left-3 text-slate-500 font-bold text-xs select-none pointer-events-none">₹</span>
+                          <input
+                            type="number"
+                            required
+                            min="1"
+                            value={configStarterYearly}
+                            onChange={(e) => setConfigStarterYearly(e.target.value)}
+                            className="w-full rounded-xl border border-slate-700 bg-slate-950 pl-7 pr-3 py-2 text-xs font-mono font-bold text-cyan-400 focus:border-cyan-400 outline-none"
+                          />
+                        </div>
+                        {/* Dynamic Discount Badge */}
+                        {starterDiscount.percent > 0 ? (
+                          <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+                            <span className="inline-flex items-center gap-1 rounded-md bg-cyan-500/20 border border-cyan-500/40 px-1.5 py-0.5 text-[10px] font-bold text-cyan-300">
+                              <Sparkles size={10} /> Save {starterDiscount.percent}%
+                            </span>
+                            <span className="text-[10px] text-slate-400">
+                              (₹{starterDiscount.effectiveMo}/mo &bull; Save ₹{starterDiscount.savedYr}/yr)
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-slate-500 mt-1 block">No annual discount</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Tier 2: Pro Center Hub */}
+                  <div className="p-3.5 rounded-2xl border border-cyan-500/30 bg-cyan-950/10 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-black text-emerald-300">2. Pro Center Hub</span>
+                        <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold uppercase">Most Popular</span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 font-medium">Multi-Staff &bull; Cash Drawer Handover</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[11px] text-slate-400 block mb-1">Monthly Fee (₹ / mo) *</label>
+                        <div className="relative flex items-center">
+                          <span className="absolute left-3 text-slate-500 font-bold text-xs select-none pointer-events-none">₹</span>
+                          <input
+                            type="number"
+                            required
+                            min="1"
+                            value={configProMonthly}
+                            onChange={(e) => setConfigProMonthly(e.target.value)}
+                            className="w-full rounded-xl border border-slate-700 bg-slate-950 pl-7 pr-3 py-2 text-xs font-mono font-bold text-emerald-400 focus:border-cyan-400 outline-none"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-[11px] text-slate-400 block mb-1">Annual Fee (₹ / yr) *</label>
+                        <div className="relative flex items-center">
+                          <span className="absolute left-3 text-slate-500 font-bold text-xs select-none pointer-events-none">₹</span>
+                          <input
+                            type="number"
+                            required
+                            min="1"
+                            value={configProYearly}
+                            onChange={(e) => setConfigProYearly(e.target.value)}
+                            className="w-full rounded-xl border border-slate-700 bg-slate-950 pl-7 pr-3 py-2 text-xs font-mono font-bold text-emerald-400 focus:border-cyan-400 outline-none"
+                          />
+                        </div>
+                        {/* Dynamic Discount Badge with Steep Discount Advisory */}
+                        {proDiscount.percent > 0 ? (
+                          <div className="mt-1.5 space-y-1">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold ${
+                                proDiscount.percent > 50
+                                  ? "bg-amber-500/20 border border-amber-500/40 text-amber-300"
+                                  : "bg-emerald-500/20 border border-emerald-500/40 text-emerald-300"
+                              }`}>
+                                <Sparkles size={10} /> Save {proDiscount.percent}%
+                              </span>
+                              <span className="text-[10px] text-slate-400">
+                                (₹{proDiscount.effectiveMo}/mo &bull; Save ₹{proDiscount.savedYr}/yr)
+                              </span>
+                            </div>
+                            {proDiscount.percent > 50 && (
+                              <p className="text-[10px] text-amber-400 font-medium leading-tight">
+                                ⚠️ Steep discount ({proDiscount.percent}%). Consider ₹2,499 – ₹2,999 to preserve healthy 30–40% margins.
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-slate-500 mt-1 block">No annual discount</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Tier 3: Multi-Branch Network */}
+                  <div className="p-3.5 rounded-2xl border border-purple-500/30 bg-purple-950/10 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black text-purple-300">3. Multi-Branch Network</span>
+                      <span className="text-[10px] text-slate-400 font-medium">Up to 5 Centers &bull; Enterprise</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[11px] text-slate-400 block mb-1">Monthly Fee (₹ / mo) *</label>
+                        <div className="relative flex items-center">
+                          <span className="absolute left-3 text-slate-500 font-bold text-xs select-none pointer-events-none">₹</span>
+                          <input
+                            type="number"
+                            required
+                            min="1"
+                            value={configMultiMonthly}
+                            onChange={(e) => setConfigMultiMonthly(e.target.value)}
+                            className="w-full rounded-xl border border-slate-700 bg-slate-950 pl-7 pr-3 py-2 text-xs font-mono font-bold text-purple-400 focus:border-cyan-400 outline-none"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-[11px] text-slate-400 block mb-1">Annual Fee (₹ / yr) *</label>
+                        <div className="relative flex items-center">
+                          <span className="absolute left-3 text-slate-500 font-bold text-xs select-none pointer-events-none">₹</span>
+                          <input
+                            type="number"
+                            required
+                            min="1"
+                            value={configMultiYearly}
+                            onChange={(e) => setConfigMultiYearly(e.target.value)}
+                            className="w-full rounded-xl border border-slate-700 bg-slate-950 pl-7 pr-3 py-2 text-xs font-mono font-bold text-purple-400 focus:border-cyan-400 outline-none"
+                          />
+                        </div>
+                        {/* Dynamic Discount Badge */}
+                        {multiDiscount.percent > 0 ? (
+                          <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+                            <span className="inline-flex items-center gap-1 rounded-md bg-purple-500/20 border border-purple-500/40 px-1.5 py-0.5 text-[10px] font-bold text-purple-300">
+                              <Sparkles size={10} /> Save {multiDiscount.percent}%
+                            </span>
+                            <span className="text-[10px] text-slate-400">
+                              (₹{multiDiscount.effectiveMo}/mo &bull; Save ₹{multiDiscount.savedYr}/yr)
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-slate-500 mt-1 block">No annual discount</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-300 block mb-1.5">
+                      WhatsApp Support Number (Optional)
+                    </label>
+                    <div className="flex items-center">
+                      <span className="rounded-l-xl border border-r-0 border-slate-700 bg-slate-800 px-3 py-2.5 text-xs font-mono font-bold text-cyan-400 select-none">
+                        +91
+                      </span>
+                      <input
+                        type="tel"
+                        maxLength={10}
+                        value={configWa}
+                        onChange={(e) => setConfigWa(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                        placeholder="7012584152"
+                        className="w-full rounded-r-xl border border-slate-700 bg-slate-900 px-3.5 py-2.5 text-xs text-white font-mono focus:border-cyan-400 outline-none"
+                      />
+                    </div>
+                    <p className="text-[10px] text-slate-500 mt-1">
+                      {configWa.length === 10 ? (
+                        <span className="text-emerald-400 font-mono">
+                          Deep link: https://wa.me/91{configWa}
+                        </span>
+                      ) : (
+                        "Enter 10-digit mobile number for WhatsApp verification links"
+                      )}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-slate-300 block mb-1.5">
+                      Master Admin PIN / Passcode *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={configPin}
+                      onChange={(e) => setConfigPin(e.target.value)}
+                      placeholder="9999"
+                      className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2.5 text-xs text-amber-300 font-mono font-bold focus:border-cyan-400 outline-none"
+                    />
+                    <p className="text-[10px] text-slate-500 mt-1">Passcode for instant bypass activation</p>
+                  </div>
+                </div>
+
+                {savedSettingsSuccess && (
+                  <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-3 text-xs font-bold text-emerald-300 flex items-center gap-2 shadow-sm">
+                    <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+                    <span>Configuration saved successfully! Receiving UPI ID is set to {configUpiId}. Dynamic QR codes and payment links have been updated across the entire platform.</span>
+                  </div>
+                )}
+
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-cyan-400 py-2.5 text-xs font-bold text-slate-950 hover:bg-cyan-300 transition shadow-md shadow-cyan-400/20 cursor-pointer"
+                  >
+                    <CheckCircle2 size={16} />
+                    <span>Save Configuration</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          );
+        })()}
       </main>
     </div>
   );
