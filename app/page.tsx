@@ -301,7 +301,18 @@ export default function LandingPage() {
               }`}
             >
               <Play size={14} className="text-cyan-500 fill-cyan-500" />
-              <span>Explore Live Sandbox (No Signup)</span>
+              <span>Explore Sandbox</span>
+            </Link>
+            <Link
+              href="/promo"
+              className={`inline-flex items-center gap-2 rounded-xl border px-5 py-3.5 text-sm font-bold transition shadow-xs ${
+                isDark
+                  ? "border-cyan-500/40 bg-cyan-950/30 text-cyan-300 hover:border-cyan-400 hover:bg-cyan-950/50"
+                  : "border-cyan-300 bg-cyan-50 text-cyan-800 hover:border-cyan-400 hover:bg-cyan-100"
+              }`}
+            >
+              <Sparkles size={14} className="text-cyan-400" />
+              <span>Watch 36s Promo Reel</span>
             </Link>
           </div>
 
