@@ -2578,9 +2578,9 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
             if (e.target === e.currentTarget) setShowInvoiceModal(false);
           }}
         >
-          <div className="w-full max-w-2xl overflow-hidden rounded-2xl border border-slate-700 bg-[#121c2d] shadow-2xl flex flex-col max-h-[92vh]">
+          <div className="w-full max-w-4xl lg:max-w-5xl overflow-hidden rounded-2xl border border-slate-700/80 bg-[#0c1424] shadow-2xl flex flex-col max-h-[94vh]">
             {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-slate-800 bg-[#162236] px-6 py-3.5">
+            <div className="flex items-center justify-between border-b border-slate-800 bg-[#141f33] px-5 sm:px-6 py-3.5">
               <div className="flex items-center gap-3">
                 <div className="rounded-xl border border-cyan-500/30 bg-cyan-500/15 p-2 text-cyan-300">
                   <Receipt size={18} />
@@ -2595,50 +2595,50 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
               <button
                 type="button"
                 onClick={() => setShowInvoiceModal(false)}
-                className="text-slate-400 hover:text-white"
+                className="rounded-lg p-1 text-slate-400 hover:text-white hover:bg-slate-800 transition"
               >
                 <X size={18} />
               </button>
             </div>
 
             {/* Mode Switcher Tabs */}
-            <div className="flex items-center gap-1.5 border-b border-slate-800 bg-[#0e1625] px-6 py-2.5">
+            <div className="flex items-center gap-2 border-b border-slate-800 bg-[#090f1a] px-5 sm:px-6 py-2.5 overflow-x-auto">
               <button
                 type="button"
                 onClick={() => setInvMode("citizen")}
-                className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition ${
+                className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
                   invMode === "citizen"
-                    ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
-                    : "text-slate-400 hover:text-white"
+                    ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm"
+                    : "text-slate-400 hover:text-white hover:bg-slate-800/50"
                 }`}
               >
-                🏛️ Citizen / Portal Service
+                <span>🏛️ Citizen / Portal Service</span>
               </button>
               <button
                 type="button"
                 onClick={() => setInvMode("counter")}
-                className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition ${
+                className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
                   invMode === "counter"
-                    ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
-                    : "text-slate-400 hover:text-white"
+                    ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm"
+                    : "text-slate-400 hover:text-white hover:bg-slate-800/50"
                 }`}
               >
-                🖨️ Counter POS & Xerox
+                <span>🖨️ Counter POS & Xerox</span>
               </button>
               <button
                 type="button"
                 onClick={() => setInvMode("custom")}
-                className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition ${
+                className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
                   invMode === "custom"
-                    ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
-                    : "text-slate-400 hover:text-white"
+                    ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm"
+                    : "text-slate-400 hover:text-white hover:bg-slate-800/50"
                 }`}
               >
-                ✍️ Custom Service Bill
+                <span>✍️ Custom Service Bill</span>
               </button>
             </div>
 
-            {/* Form wrapping scrollable body and permanent sticky footer */}
+            {/* Form wrapping 2-column layout */}
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -2646,556 +2646,598 @@ export function AccountsModule({ initialTab, hideHeaderWidgets = false }: Accoun
               }}
               className="flex-1 flex flex-col min-h-0 overflow-hidden"
             >
-              {/* Scrollable Form Body */}
-              <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-3.5">
-                {/* TAB 1: CITIZEN PORTAL SERVICE */}
-              {invMode === "citizen" && (
-                <div className="space-y-3.5 rounded-xl border border-slate-800 bg-[#0e1625] p-4">
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                    <span className="text-xs font-bold uppercase tracking-wider text-cyan-400">
-                      Select Citizen Service Preset
-                    </span>
-                    <span className="text-[11px] text-slate-400">
-                      Loads standard rates automatically
-                    </span>
-                  </div>
+              {/* Scrollable Form Body with 2-Column Grid */}
+              <div className="flex-1 overflow-y-auto p-4 sm:p-5 lg:p-6">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+                  
+                  {/* LEFT COLUMN: Service & Customer Particulars (7 Cols) */}
+                  <div className="lg:col-span-7 space-y-4">
+                    
+                    {/* TAB 1: CITIZEN PORTAL SERVICE */}
+                    {invMode === "citizen" && (
+                      <div className="rounded-xl border border-slate-800 bg-[#10192a] p-4 space-y-3.5 shadow-sm">
+                        <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                          <span className="text-xs font-bold uppercase tracking-wider text-cyan-400">
+                            Citizen Service Details
+                          </span>
+                          <span className="text-[11px] text-slate-400">
+                            Auto-loads official standard rates
+                          </span>
+                        </div>
 
-                  <div>
-                    <label className="text-[11px] font-semibold text-slate-300 block mb-1">
-                      Choose Service or Custom *
-                    </label>
-                    <select
-                      value={invServiceId}
-                      onChange={(e) => handleSelectServicePreset(e.target.value)}
-                      className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400"
-                    >
-                      {serviceCharges.map((sc) => (
-                        <option key={sc.id} value={sc.id}>
-                          {sc.serviceName} ({sc.category}) — Default ₹{sc.defaultCharge}
-                        </option>
-                      ))}
-                      <option value="custom">+ Other / Custom Citizen Service</option>
-                    </select>
-                  </div>
+                        <div>
+                          <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                            Choose Service or Custom *
+                          </label>
+                          <select
+                            value={invServiceId}
+                            onChange={(e) => handleSelectServicePreset(e.target.value)}
+                            className="w-full rounded-xl border border-slate-700 bg-slate-900/90 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400"
+                          >
+                            {serviceCharges.map((sc) => (
+                              <option key={sc.id} value={sc.id}>
+                                {sc.serviceName} ({sc.category}) — Default ₹{sc.defaultCharge}
+                              </option>
+                            ))}
+                            <option value="custom">+ Other / Custom Citizen Service</option>
+                          </select>
+                        </div>
 
-                  {invServiceId === "custom" && (
-                    <div className="grid gap-2.5 sm:grid-cols-2">
-                      <div>
-                        <label className="text-[11px] font-semibold text-slate-300 block mb-1">
-                          Custom Service Name *
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="e.g. Land Revenue Mutation"
-                          value={invServiceName}
-                          onChange={(e) => setInvServiceName(e.target.value)}
-                          className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[11px] font-semibold text-slate-300 block mb-1">
-                          Category
-                        </label>
-                        <select
-                          value={invServiceCategory}
-                          onChange={(e) => setInvServiceCategory(e.target.value)}
-                          className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400"
-                        >
-                          <option value="Govt Portals">Govt Portals</option>
-                          <option value="e-District">e-District</option>
-                          <option value="Utility Bills">Utility Bills</option>
-                          <option value="Transport RTO">Transport RTO</option>
-                          <option value="Election Commission">Election Commission</option>
-                          <option value="Exam Portals">Exam Portals</option>
-                          <option value="Banking / Other">Banking / Other</option>
-                        </select>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    <div>
-                      <label className="text-[11px] font-semibold text-slate-300 block mb-1">
-                        Official / Wallet Fee (₹)
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="any"
-                        placeholder="0"
-                        value={invGovtFee}
-                        onChange={(e) => setInvGovtFee(e.target.value)}
-                        className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-mono font-bold text-slate-300 outline-none focus:border-cyan-400"
-                      />
-                      <span className="text-[10px] text-slate-500 mt-0.5 block">Official portal fee</span>
-                    </div>
-
-                    <div>
-                      <label className="text-[11px] font-semibold text-slate-300 block mb-1">
-                        Shop / Processing Charge (₹) *
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="any"
-                        required
-                        placeholder="100"
-                        value={invServiceCharge}
-                        onChange={(e) => setInvServiceCharge(e.target.value)}
-                        className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-mono font-bold text-cyan-300 outline-none focus:border-cyan-400"
-                      />
-                      <span className="text-[10px] text-slate-500 mt-0.5 block">Processing & shop fee</span>
-                    </div>
-
-                    <div>
-                      <label className="text-[11px] font-semibold text-slate-300 block mb-1">
-                        Deduct Bank / Portal
-                      </label>
-                      <select
-                        value={invWalletId}
-                        onChange={(e) => setInvWalletId(e.target.value)}
-                        className="w-full rounded-xl border border-slate-700 bg-slate-900 px-2.5 py-2 text-xs text-white outline-none focus:border-cyan-400"
-                      >
-                        <option value="">None / External Cash</option>
-                        {wallets.map((w) => (
-                          <option key={w.id} value={w.id}>
-                            {w.name} (Bal: ₹{w.balance})
-                          </option>
-                        ))}
-                      </select>
-                      <span className="text-[10px] text-slate-500 mt-0.5 block">Bank or portal deducted for fee</span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] font-semibold text-slate-300 block mb-1">
-                      Notes / Application Remarks (optional)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Application No. 8923048, Tatkal, or customer instruction"
-                      value={invServiceNotes}
-                      onChange={(e) => setInvServiceNotes(e.target.value)}
-                      className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 2: COUNTER POS & XEROX BILL */}
-              {invMode === "counter" && (
-                <div className="space-y-3.5 rounded-xl border border-slate-800 bg-[#0e1625] p-4">
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                    <span className="text-xs font-bold uppercase tracking-wider text-cyan-400">
-                      Quick Counter Items & Services
-                    </span>
-                    <span className="text-[11px] text-slate-400">Click to add items</span>
-                  </div>
-
-                  {/* Clickable Chips */}
-                  <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto pr-1">
-                    {products.map((prod) => (
-                      <button
-                        key={prod.id}
-                        type="button"
-                        onClick={() => addInvProduct(prod)}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1 text-xs text-slate-200 hover:border-cyan-400/50 hover:bg-slate-800 transition"
-                      >
-                        <span className="font-medium">{prod.name}</span>
-                        <span className="font-mono font-bold text-emerald-400">₹{prod.rate}</span>
-                        <span className="rounded bg-cyan-500/20 px-1 text-[10px] font-bold text-cyan-300">+</span>
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Selected Cart Items */}
-                  {invCart.length > 0 && (
-                    <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-2.5 space-y-1.5">
-                      <div className="text-[11px] font-semibold text-slate-400 uppercase">Selected Bill Items</div>
-                      {invCart.map((item) => (
-                        <div
-                          key={item.product.id}
-                          className="flex items-center justify-between rounded-lg bg-slate-900 px-3 py-1.5 text-xs text-white"
-                        >
-                          <div className="flex-1">
-                            <span className="font-bold">{item.product.name}</span>
-                            <span className="text-slate-400 ml-2">₹{item.product.rate} / {item.product.unit}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-1 bg-slate-800 rounded px-1.5 py-0.5">
-                              <button
-                                type="button"
-                                onClick={() => updateInvQty(item.product.id, -1)}
-                                className="font-bold text-slate-400 hover:text-white px-1"
-                              >
-                                -
-                              </button>
-                              <span className="font-bold font-mono px-1">{item.qty}</span>
-                              <button
-                                type="button"
-                                onClick={() => updateInvQty(item.product.id, 1)}
-                                className="font-bold text-slate-400 hover:text-white px-1"
-                              >
-                                +
-                              </button>
+                        {invServiceId === "custom" && (
+                          <div className="grid gap-2.5 sm:grid-cols-2">
+                            <div>
+                              <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                                Custom Service Name *
+                              </label>
+                              <input
+                                type="text"
+                                required
+                                placeholder="e.g. Land Revenue Mutation"
+                                value={invServiceName}
+                                onChange={(e) => setInvServiceName(e.target.value)}
+                                className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400"
+                              />
                             </div>
-                            <span className="font-mono font-bold text-emerald-400 w-16 text-right">
-                              ₹{(item.product.rate * item.qty).toFixed(0)}
-                            </span>
+                            <div>
+                              <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                                Category
+                              </label>
+                              <select
+                                value={invServiceCategory}
+                                onChange={(e) => setInvServiceCategory(e.target.value)}
+                                className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400"
+                              >
+                                <option value="Govt Portals">Govt Portals</option>
+                                <option value="e-District">e-District</option>
+                                <option value="Utility Bills">Utility Bills</option>
+                                <option value="Transport RTO">Transport RTO</option>
+                                <option value="Election Commission">Election Commission</option>
+                                <option value="Exam Portals">Exam Portals</option>
+                                <option value="Banking / Other">Banking / Other</option>
+                              </select>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="grid gap-3 sm:grid-cols-3">
+                          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-2.5">
+                            <label className="text-[10px] font-semibold uppercase text-slate-400 block mb-1">
+                              Official / Wallet Fee (₹)
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              step="any"
+                              placeholder="0"
+                              value={invGovtFee}
+                              onChange={(e) => setInvGovtFee(e.target.value)}
+                              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs font-mono font-bold text-slate-200 outline-none focus:border-cyan-400"
+                            />
+                            <span className="text-[10px] text-slate-500 mt-1 block">Govt portal fee</span>
+                          </div>
+
+                          <div className="rounded-xl border border-cyan-500/30 bg-cyan-950/15 p-2.5">
+                            <label className="text-[10px] font-semibold uppercase text-cyan-300 block mb-1">
+                              Shop Charge (₹) *
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              step="any"
+                              required
+                              placeholder="100"
+                              value={invServiceCharge}
+                              onChange={(e) => setInvServiceCharge(e.target.value)}
+                              className="w-full rounded-lg border border-cyan-500/40 bg-slate-950 px-2.5 py-1.5 text-xs font-mono font-bold text-cyan-300 outline-none focus:border-cyan-400"
+                            />
+                            <span className="text-[10px] text-cyan-400/70 mt-1 block">Center processing fee</span>
+                          </div>
+
+                          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-2.5">
+                            <label className="text-[10px] font-semibold uppercase text-slate-400 block mb-1">
+                              Deduct Bank / Portal
+                            </label>
+                            <select
+                              value={invWalletId}
+                              onChange={(e) => setInvWalletId(e.target.value)}
+                              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-xs text-white outline-none focus:border-cyan-400"
+                            >
+                              <option value="">None / External Cash</option>
+                              {wallets.map((w) => (
+                                <option key={w.id} value={w.id}>
+                                  {w.name} (₹{w.balance})
+                                </option>
+                              ))}
+                            </select>
+                            <span className="text-[10px] text-slate-500 mt-1 block">Portal fee source</span>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
 
-                  {/* Custom item row */}
-                  <div className="grid gap-2 sm:grid-cols-3 pt-1">
-                    <input
-                      type="text"
-                      placeholder="Custom Item (e.g. Spiral Binding)"
-                      value={invCustomItem}
-                      onChange={(e) => setInvCustomItem(e.target.value)}
-                      className="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-white outline-none focus:border-cyan-400"
-                    />
-                    <input
-                      type="number"
-                      min="0"
-                      step="any"
-                      placeholder="Rate ₹"
-                      value={invCustomRate}
-                      onChange={(e) => setInvCustomRate(e.target.value)}
-                      className="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-white outline-none focus:border-cyan-400"
-                    />
-                    <input
-                      type="number"
-                      min="1"
-                      placeholder="Qty"
-                      value={invCustomQty}
-                      onChange={(e) => setInvCustomQty(e.target.value)}
-                      className="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-white outline-none focus:border-cyan-400"
-                    />
-                  </div>
-                </div>
-              )}
+                        <div>
+                          <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                            Notes / Application Remarks (optional)
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Application No. 8923048, Tatkal, or remarks"
+                            value={invServiceNotes}
+                            onChange={(e) => setInvServiceNotes(e.target.value)}
+                            className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400"
+                          />
+                        </div>
+                      </div>
+                    )}
 
-              {/* TAB 3: CUSTOM INVOICE BILL */}
-              {invMode === "custom" && (
-                <div className="space-y-3.5 rounded-xl border border-slate-800 bg-[#0e1625] p-4">
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                    <span className="text-xs font-bold uppercase tracking-wider text-cyan-400">
-                      Direct Custom Bill
-                    </span>
-                    <span className="text-[11px] text-slate-400">Any specialized work or service</span>
-                  </div>
+                    {/* TAB 2: COUNTER POS & XEROX BILL */}
+                    {invMode === "counter" && (
+                      <div className="rounded-xl border border-slate-800 bg-[#10192a] p-4 space-y-3.5 shadow-sm">
+                        <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                          <span className="text-xs font-bold uppercase tracking-wider text-cyan-400">
+                            Quick Counter Items & Services
+                          </span>
+                          <span className="text-[11px] text-slate-400">Click to add items</span>
+                        </div>
 
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div>
-                      <label className="text-[11px] font-semibold text-slate-300 block mb-1">
-                        Invoice Particular / Title *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="e.g. Malayalam DTP & Legal Agreement Typing"
-                        value={invCustomTitle}
-                        onChange={(e) => setInvCustomTitle(e.target.value)}
-                        className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400"
-                      />
-                    </div>
+                        {/* Clickable Chips */}
+                        <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto pr-1">
+                          {products.map((prod) => (
+                            <button
+                              key={prod.id}
+                              type="button"
+                              onClick={() => addInvProduct(prod)}
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1 text-xs text-slate-200 hover:border-cyan-400/50 hover:bg-slate-800 transition"
+                            >
+                              <span className="font-medium">{prod.name}</span>
+                              <span className="font-mono font-bold text-emerald-400">₹{prod.rate}</span>
+                              <span className="rounded bg-cyan-500/20 px-1 text-[10px] font-bold text-cyan-300">+</span>
+                            </button>
+                          ))}
+                        </div>
 
-                    <div>
-                      <label className="text-[11px] font-semibold text-slate-300 block mb-1">
-                        Bill Amount (₹) *
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        step="any"
-                        required
-                        placeholder="e.g. 350"
-                        value={invCustomAmount}
-                        onChange={(e) => setInvCustomAmount(e.target.value)}
-                        className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-mono font-bold text-emerald-400 outline-none focus:border-cyan-400"
-                      />
-                    </div>
-                  </div>
+                        {/* Selected Cart Items */}
+                        {invCart.length > 0 && (
+                          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-2.5 space-y-1.5">
+                            <div className="text-[11px] font-semibold text-slate-400 uppercase">Selected Bill Items</div>
+                            {invCart.map((item) => (
+                              <div
+                                key={item.product.id}
+                                className="flex items-center justify-between rounded-lg bg-slate-900 px-3 py-1.5 text-xs text-white"
+                              >
+                                <div className="flex-1">
+                                  <span className="font-bold">{item.product.name}</span>
+                                  <span className="text-slate-400 ml-2">₹{item.product.rate} / {item.product.unit}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-1 bg-slate-800 rounded px-1.5 py-0.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => updateInvQty(item.product.id, -1)}
+                                      className="font-bold text-slate-400 hover:text-white px-1"
+                                    >
+                                      -
+                                    </button>
+                                    <span className="font-bold font-mono px-1">{item.qty}</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => updateInvQty(item.product.id, 1)}
+                                      className="font-bold text-slate-400 hover:text-white px-1"
+                                    >
+                                      +
+                                    </button>
+                                  </div>
+                                  <span className="font-mono font-bold text-emerald-400 w-16 text-right">
+                                    ₹{(item.product.rate * item.qty).toFixed(0)}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
 
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div>
-                      <label className="text-[11px] font-semibold text-slate-300 block mb-1">
-                        Category
-                      </label>
-                      <select
-                        value={invCustomCategory}
-                        onChange={(e) => setInvCustomCategory(e.target.value as AccountCategory)}
-                        className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400"
-                      >
-                        <option value="Service Request">Service Request</option>
-                        <option value="Counter Sale">Counter Sale</option>
-                        <option value="Other Income">Other Income</option>
-                      </select>
-                    </div>
+                        {/* Custom item row */}
+                        <div className="grid gap-2 sm:grid-cols-3 pt-1">
+                          <input
+                            type="text"
+                            placeholder="Custom Item (e.g. Spiral Binding)"
+                            value={invCustomItem}
+                            onChange={(e) => setInvCustomItem(e.target.value)}
+                            className="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-white outline-none focus:border-cyan-400"
+                          />
+                          <input
+                            type="number"
+                            min="0"
+                            step="any"
+                            placeholder="Rate ₹"
+                            value={invCustomRate}
+                            onChange={(e) => setInvCustomRate(e.target.value)}
+                            className="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-white outline-none focus:border-cyan-400"
+                          />
+                          <input
+                            type="number"
+                            min="1"
+                            placeholder="Qty"
+                            value={invCustomQty}
+                            onChange={(e) => setInvCustomQty(e.target.value)}
+                            className="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs text-white outline-none focus:border-cyan-400"
+                          />
+                        </div>
+                      </div>
+                    )}
 
-                    <div>
-                      <label className="text-[11px] font-semibold text-slate-300 block mb-1">
-                        Additional Notes / Description
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Stamp paper 5 pages printout included"
-                        value={invCustomNotes}
-                        onChange={(e) => setInvCustomNotes(e.target.value)}
-                        className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
+                    {/* TAB 3: CUSTOM INVOICE BILL */}
+                    {invMode === "custom" && (
+                      <div className="rounded-xl border border-slate-800 bg-[#10192a] p-4 space-y-3.5 shadow-sm">
+                        <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                          <span className="text-xs font-bold uppercase tracking-wider text-cyan-400">
+                            Direct Custom Bill
+                          </span>
+                          <span className="text-[11px] text-slate-400">Any specialized work or service</span>
+                        </div>
 
-              {/* COMMON CUSTOMER & PAYMENT DETAILS */}
-              <div className="rounded-xl border border-slate-800 bg-[#0e1625] p-4 space-y-3.5">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-300 block border-b border-slate-800 pb-2">
-                  Customer & Payment Settlement
-                </span>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <div>
+                            <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                              Invoice Particular / Title *
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              placeholder="e.g. Malayalam DTP & Legal Agreement"
+                              value={invCustomTitle}
+                              onChange={(e) => setInvCustomTitle(e.target.value)}
+                              className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400"
+                            />
+                          </div>
 
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <div>
-                    <label className="text-[11px] font-semibold text-slate-300 block mb-1">
-                      Customer Name{" "}
-                      {isCreditActive ? (
-                        <span className="text-amber-400 font-bold">* (Required for Khata)</span>
-                      ) : (
-                        <span className="text-slate-500">(Optional)</span>
+                          <div>
+                            <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                              Bill Amount (₹) *
+                            </label>
+                            <input
+                              type="number"
+                              min="1"
+                              step="any"
+                              required
+                              placeholder="e.g. 350"
+                              value={invCustomAmount}
+                              onChange={(e) => setInvCustomAmount(e.target.value)}
+                              className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-mono font-bold text-emerald-400 outline-none focus:border-cyan-400"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <div>
+                            <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                              Category
+                            </label>
+                            <select
+                              value={invCustomCategory}
+                              onChange={(e) => setInvCustomCategory(e.target.value as AccountCategory)}
+                              className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400"
+                            >
+                              <option value="Service Request">Service Request</option>
+                              <option value="Counter Sale">Counter Sale</option>
+                              <option value="Other Income">Other Income</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                              Additional Description
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="e.g. Stamp paper 5 pages printout included"
+                              value={invCustomNotes}
+                              onChange={(e) => setInvCustomNotes(e.target.value)}
+                              className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* CUSTOMER INFORMATION CARD */}
+                    <div className="rounded-xl border border-slate-800 bg-[#10192a] p-4 space-y-3 shadow-sm">
+                      <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                          Customer Information
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setInvCustomerName("Walk-in Customer")}
+                            className="text-[10px] text-cyan-400 hover:underline"
+                          >
+                            Set Walk-in
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="grid gap-3 sm:grid-cols-3">
+                        <div>
+                          <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                            Customer Name{" "}
+                            {isCreditActive ? (
+                              <span className="text-amber-400 font-bold">*</span>
+                            ) : (
+                              <span className="text-slate-500">(Optional)</span>
+                            )}
+                          </label>
+                          <input
+                            type="text"
+                            placeholder={isCreditActive ? "Full Name *" : "Walk-in Customer"}
+                            value={invCustomerName}
+                            onChange={(e) => setInvCustomerName(e.target.value)}
+                            className={`w-full rounded-xl border bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400 ${
+                              isCreditActive && (!invCustomerName.trim() || invCustomerName.trim().toLowerCase() === "walk-in customer")
+                                ? "border-amber-500/70"
+                                : "border-slate-700"
+                            }`}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                            Mobile Number{" "}
+                            {isCreditActive ? (
+                              <span className="text-amber-400 font-bold">*</span>
+                            ) : (
+                              <span className="text-slate-500">(Optional)</span>
+                            )}
+                          </label>
+                          <input
+                            type="tel"
+                            placeholder={isCreditActive ? "10-digit mobile *" : "10-digit mobile"}
+                            value={invCustomerPhone}
+                            onChange={(e) => setInvCustomerPhone(e.target.value)}
+                            className={`w-full rounded-xl border bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400 ${
+                              isCreditActive && (!invCustomerPhone.trim() || invCustomerPhone.trim().replace(/\D/g, "").length < 10)
+                                ? "border-amber-500/70"
+                                : "border-slate-700"
+                            }`}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                            Invoice # / Ref ID
+                          </label>
+                          <input
+                            type="text"
+                            value={invRefId}
+                            onChange={(e) => setInvRefId(e.target.value)}
+                            className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-mono text-cyan-300 outline-none focus:border-cyan-400"
+                          />
+                        </div>
+                      </div>
+
+                      {isCreditActive && (
+                        <div className="flex items-center gap-2 rounded-lg bg-amber-500/10 border border-amber-500/30 p-2 text-xs text-amber-300">
+                          <MessageCircle size={14} className="shrink-0 text-emerald-400" />
+                          <span>Name & 10-digit mobile required for Khata credit ledger & WhatsApp reminders.</span>
+                        </div>
                       )}
-                    </label>
-                    <input
-                      type="text"
-                      placeholder={isCreditActive ? "Customer Full Name *" : "Walk-in Customer"}
-                      value={invCustomerName}
-                      onChange={(e) => setInvCustomerName(e.target.value)}
-                      className={`w-full rounded-xl border bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400 ${
-                        isCreditActive && (!invCustomerName.trim() || invCustomerName.trim().toLowerCase() === "walk-in customer")
-                          ? "border-amber-500/70"
-                          : "border-slate-700"
-                      }`}
-                    />
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="text-[11px] font-semibold text-slate-300 block mb-1">
-                      Phone Number{" "}
-                      {isCreditActive ? (
-                        <span className="text-amber-400 font-bold">* (WhatsApp Required)</span>
-                      ) : (
-                        <span className="text-slate-500">(Optional)</span>
-                      )}
-                    </label>
-                    <input
-                      type="tel"
-                      placeholder={isCreditActive ? "10-digit mobile number *" : "10-digit mobile (optional)"}
-                      value={invCustomerPhone}
-                      onChange={(e) => setInvCustomerPhone(e.target.value)}
-                      className={`w-full rounded-xl border bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400 ${
-                        isCreditActive && (!invCustomerPhone.trim() || invCustomerPhone.trim().replace(/\D/g, "").length < 10)
-                          ? "border-amber-500/70"
-                          : "border-slate-700"
-                      }`}
-                    />
-                  </div>
+                  {/* RIGHT COLUMN: Checkout & Payment Settlement Terminal (5 Cols) */}
+                  <div className="lg:col-span-5 space-y-4">
+                    
+                    {/* Big Total Payable Banner */}
+                    <div className="rounded-2xl border border-cyan-500/30 bg-gradient-to-br from-cyan-950/40 via-slate-900 to-teal-950/40 p-4 shadow-lg">
+                      <div className="flex items-center justify-between pb-1">
+                        <span className="text-xs uppercase font-bold text-cyan-300 tracking-wider">
+                          Total Payable
+                        </span>
+                        <span className="font-mono text-2xl font-black text-emerald-300">
+                          ₹ {invTotalAmount.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+                        {invMode === "citizen" ? (
+                          <>
+                            <span>Govt Fee: <strong className="text-slate-300">₹{parseFloat(invGovtFee) || 0}</strong></span>
+                            <span>Shop Fee: <strong className="text-cyan-300">₹{parseFloat(invServiceCharge) || 0}</strong></span>
+                          </>
+                        ) : (
+                          <span>Mode: <strong className="text-cyan-300 uppercase">{invMode} Bill</strong></span>
+                        )}
+                      </div>
+                    </div>
 
-                  <div>
-                    <label className="text-[11px] font-semibold text-slate-300 block mb-1">
-                      Invoice # / Ref ID
-                    </label>
-                    <input
-                      type="text"
-                      value={invRefId}
-                      onChange={(e) => setInvRefId(e.target.value)}
-                      className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-mono text-cyan-300 outline-none focus:border-cyan-400"
-                    />
-                  </div>
-                </div>
+                    {/* 1-Click Quick Settle Payment Selector */}
+                    <div className="rounded-2xl border border-slate-800 bg-[#10192a] p-4 space-y-3.5 shadow-sm">
+                      <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                          <Zap size={14} className="text-cyan-400 fill-cyan-400" />
+                          <span>1-Click Payment Settle</span>
+                        </span>
+                        <span className="text-[10px] font-mono text-slate-400">Quick mode</span>
+                      </div>
 
-                {isCreditActive && (
-                  <div className="flex items-center gap-2 rounded-lg bg-amber-500/10 border border-amber-500/30 p-2.5 text-xs text-amber-300">
-                    <MessageCircle size={14} className="shrink-0 text-emerald-400" />
-                    <span>Customer Name & 10-digit mobile number are required for Khata / Credit to track ledger debt and send WhatsApp payment reminders.</span>
-                  </div>
-                )}
-
-                {/* PAYMENT METHOD & SETTLEMENT CONTROLS */}
-                <div className="space-y-2 pt-2 border-t border-slate-800">
-                  {/* Multi / Split Payment Allocation Grid - ALWAYS ACTIVE */}
-                  <div className="space-y-2.5 rounded-xl border border-cyan-500/30 bg-slate-900/60 p-3">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pb-1 border-b border-slate-800">
-                      <span className="text-[11px] font-bold text-cyan-300 flex items-center gap-1.5">
-                        <Zap size={13} className="text-cyan-400 fill-cyan-400" />
-                        <span>Payment Settlement Breakdown (₹{invTotalAmount.toFixed(2)})</span>
-                      </span>
-                      <div className="flex items-center gap-1.5 flex-wrap">
+                      {/* 3 Main 1-Click Cards */}
+                      <div className="grid grid-cols-3 gap-2">
                         <button
                           type="button"
                           onClick={handleSetAllCash}
-                          className="rounded-lg bg-slate-800 hover:bg-slate-750 border border-slate-700 px-2 py-0.5 text-[10px] font-bold text-slate-200 transition"
+                          className={`rounded-xl p-2.5 text-center border transition flex flex-col items-center justify-center gap-1 ${
+                            allocatedCash === invTotalAmount && allocatedUpi === 0 && allocatedCredit === 0 && invTotalAmount > 0
+                              ? "border-emerald-400 bg-emerald-500/20 text-emerald-300 shadow-md ring-1 ring-emerald-400"
+                              : "border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-600 hover:bg-slate-800"
+                          }`}
                         >
-                          💵 All Cash
+                          <span className="text-base">💵</span>
+                          <span className="text-xs font-bold">Cash</span>
+                          <span className="text-[9px] text-slate-400">Cash Drawer</span>
                         </button>
+
                         <button
                           type="button"
                           onClick={handleSetAllUpi}
-                          className="rounded-lg bg-cyan-950/50 hover:bg-cyan-900/50 border border-cyan-500/40 px-2 py-0.5 text-[10px] font-bold text-cyan-300 transition"
+                          className={`rounded-xl p-2.5 text-center border transition flex flex-col items-center justify-center gap-1 ${
+                            allocatedUpi === invTotalAmount && allocatedCash === 0 && allocatedCredit === 0 && invTotalAmount > 0
+                              ? "border-cyan-400 bg-cyan-500/20 text-cyan-300 shadow-md ring-1 ring-cyan-400"
+                              : "border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-600 hover:bg-slate-800"
+                          }`}
                         >
-                          📱 All UPI
+                          <span className="text-base">📱</span>
+                          <span className="text-xs font-bold">UPI / QR</span>
+                          <span className="text-[9px] text-slate-400">Online Bank</span>
                         </button>
+
                         <button
                           type="button"
                           onClick={handleSetAllCredit}
-                          className="rounded-lg bg-amber-950/50 hover:bg-amber-900/50 border border-amber-500/40 px-2 py-0.5 text-[10px] font-bold text-amber-300 transition"
+                          className={`rounded-xl p-2.5 text-center border transition flex flex-col items-center justify-center gap-1 ${
+                            allocatedCredit === invTotalAmount && allocatedCash === 0 && allocatedUpi === 0 && invTotalAmount > 0
+                              ? "border-amber-400 bg-amber-500/20 text-amber-300 shadow-md ring-1 ring-amber-400"
+                              : "border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-600 hover:bg-slate-800"
+                          }`}
                         >
-                          ⏳ All Khata
+                          <span className="text-base">⏳</span>
+                          <span className="text-xs font-bold">Khata</span>
+                          <span className="text-[9px] text-slate-400">Due Credit</span>
                         </button>
                       </div>
+
+                      {/* Multi-Pay / Split Allocation Inputs */}
+                      <div className="pt-2 border-t border-slate-800 space-y-2">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="font-semibold text-slate-300">Custom Split Allocation:</span>
+                          <span className="text-slate-500 text-[10px]">Type to split across modes</span>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2">
+                          <div>
+                            <span className="text-[10px] text-slate-400 block mb-0.5">Cash (₹)</span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="any"
+                              placeholder="0"
+                              value={invCashAmount}
+                              onChange={(e) => setInvCashAmount(e.target.value)}
+                              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-xs font-mono font-bold text-white outline-none focus:border-cyan-400"
+                            />
+                          </div>
+
+                          <div>
+                            <span className="text-[10px] text-cyan-400/80 block mb-0.5">UPI / QR (₹)</span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="any"
+                              placeholder="0"
+                              value={invUpiAmount}
+                              onChange={(e) => setInvUpiAmount(e.target.value)}
+                              className="w-full rounded-lg border border-cyan-500/40 bg-slate-950 px-2 py-1 text-xs font-mono font-bold text-cyan-300 outline-none focus:border-cyan-400"
+                            />
+                          </div>
+
+                          <div>
+                            <span className="text-[10px] text-amber-400/80 block mb-0.5">Khata (₹)</span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="any"
+                              placeholder="0"
+                              value={invCreditAmount}
+                              onChange={(e) => setInvCreditAmount(e.target.value)}
+                              className="w-full rounded-lg border border-amber-500/40 bg-slate-950 px-2 py-1 text-xs font-mono font-bold text-amber-300 outline-none focus:border-amber-400"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Balance Check Indicator */}
+                        {Math.abs(allocationRemaining) < 0.01 ? (
+                          <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-300 flex items-center justify-between">
+                            <div className="flex items-center gap-1.5">
+                              <CheckCircle2 size={13} className="text-emerald-400" />
+                              <span>Paid: <strong>₹{totalAllocated.toFixed(2)}</strong></span>
+                            </div>
+                            <span className="font-mono text-[11px] font-bold text-emerald-400">100% Balanced</span>
+                          </div>
+                        ) : allocationRemaining > 0.01 ? (
+                          <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-300 flex items-center justify-between">
+                            <span>⚠️ <strong>₹{allocationRemaining.toFixed(2)}</strong> remaining</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const rem = Math.max(0, allocationRemaining);
+                                setInvCashAmount(String(allocatedCash + rem));
+                              }}
+                              className="rounded bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold hover:bg-amber-500/30 transition text-amber-200"
+                            >
+                              + Add to Cash
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-xs text-red-300 flex items-center justify-between">
+                            <span>⚠️ Over-allocated by <strong>₹{(-allocationRemaining).toFixed(2)}</strong></span>
+                            <span className="font-mono text-[10px] font-bold">Exceeds Total</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                      {/* Cash Amount Input */}
-                      <div className="rounded-xl border border-slate-700 bg-slate-950 p-2.5">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-[11px] font-bold text-slate-200">💵 Cash Paid</span>
-                          <span className="text-[10px] text-slate-500">Cash Drawer</span>
-                        </div>
+                    {/* Auto-print & Primary Action inside Checkout column */}
+                    <div className="rounded-2xl border border-slate-800 bg-[#10192a] p-4 space-y-3">
+                      <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-300 font-medium select-none">
                         <input
-                          type="number"
-                          min="0"
-                          step="any"
-                          placeholder="0"
-                          value={invCashAmount}
-                          onChange={(e) => setInvCashAmount(e.target.value)}
-                          className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs font-mono font-bold text-white outline-none focus:border-cyan-400"
+                          type="checkbox"
+                          checked={adminInvAutoPrint}
+                          onChange={(e) => setAdminInvAutoPrint(e.target.checked)}
+                          className="h-4 w-4 rounded border-slate-700 bg-slate-900 text-cyan-400 focus:ring-cyan-400 cursor-pointer"
                         />
-                      </div>
+                        <Printer size={15} className="text-cyan-400" />
+                        <span>Auto-print thermal receipt slip (58mm/80mm)</span>
+                      </label>
 
-                      {/* UPI Amount Input */}
-                      <div className="rounded-xl border border-cyan-500/30 bg-cyan-950/20 p-2.5">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-[11px] font-bold text-cyan-300">📱 UPI / QR</span>
-                          <span className="text-[10px] text-cyan-400/80">Online Bank</span>
-                        </div>
-                        <input
-                          type="number"
-                          min="0"
-                          step="any"
-                          placeholder="0"
-                          value={invUpiAmount}
-                          onChange={(e) => setInvUpiAmount(e.target.value)}
-                          className="w-full rounded-lg border border-cyan-500/40 bg-slate-900 px-2.5 py-1.5 text-xs font-mono font-bold text-cyan-300 outline-none focus:border-cyan-400"
-                        />
-                      </div>
-
-                      {/* Khata / Credit Due Amount Input */}
-                      <div className="rounded-xl border border-amber-500/30 bg-amber-950/20 p-2.5">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-[11px] font-bold text-amber-300">⏳ Khata / Credit</span>
-                          <span className="text-[10px] text-amber-400/80">Due Balance</span>
-                        </div>
-                        <input
-                          type="number"
-                          min="0"
-                          step="any"
-                          placeholder="0"
-                          value={invCreditAmount}
-                          onChange={(e) => setInvCreditAmount(e.target.value)}
-                          className="w-full rounded-lg border border-amber-500/40 bg-slate-900 px-2.5 py-1.5 text-xs font-mono font-bold text-amber-300 outline-none focus:border-amber-400"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Split Allocation Balance Indicator */}
-                    {Math.abs(allocationRemaining) < 0.01 ? (
-                      <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-300 flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
-                          <CheckCircle2 size={13} className="text-emerald-400" />
-                          <span>Exact invoice amount allocated: <strong>₹{totalAllocated.toFixed(2)}</strong></span>
-                        </div>
-                        <span className="font-mono text-[11px] font-bold text-emerald-400">100% Balanced</span>
-                      </div>
-                    ) : allocationRemaining > 0.01 ? (
-                      <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-300 flex items-center justify-between">
-                        <span>⚠️ <strong>₹{allocationRemaining.toFixed(2)}</strong> remaining to allocate</span>
+                      <div className="flex items-center gap-2 pt-1">
                         <button
                           type="button"
-                          onClick={() => {
-                            const rem = Math.max(0, allocationRemaining);
-                            setInvCashAmount(String(allocatedCash + rem));
-                          }}
-                          className="rounded bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold hover:bg-amber-500/30 transition text-amber-200"
+                          onClick={() => setShowInvoiceModal(false)}
+                          className="rounded-xl border border-slate-700 px-4 py-2.5 text-xs text-slate-400 hover:text-white hover:bg-slate-800 transition"
                         >
-                          + Add to Cash
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={savingInvoice}
+                          className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-400 to-teal-400 py-3 px-4 text-xs font-black text-slate-950 hover:brightness-110 active:scale-95 transition shadow-lg shadow-cyan-400/25"
+                        >
+                          {savingInvoice ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={15} />}
+                          <span>Save & Record Invoice (₹{invTotalAmount.toFixed(0)})</span>
                         </button>
                       </div>
-                    ) : (
-                      <div className="rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-xs text-red-300 flex items-center justify-between">
-                        <span>⚠️ Over-allocated by <strong>₹{(-allocationRemaining).toFixed(2)}</strong>! Please adjust amounts.</span>
-                        <span className="font-mono text-[11px] font-bold">Exceeds Total</span>
-                      </div>
-                    )}
+                    </div>
+
                   </div>
                 </div>
               </div>
-
-              {/* Total Summary Banner */}
-              <div className="flex items-center justify-between rounded-xl border border-cyan-500/30 bg-gradient-to-r from-cyan-950/40 to-teal-950/40 p-4">
-                <div>
-                  <span className="text-xs uppercase font-bold text-cyan-300 tracking-wider">
-                    Total Invoice Amount
-                  </span>
-                  <p className="text-[11px] text-slate-400">
-                    {isSplitMode
-                      ? `Multi-Pay Split: Cash ₹${allocatedCash.toFixed(2)} + UPI ₹${allocatedUpi.toFixed(2)}${
-                          allocatedCredit > 0 ? ` + Khata ₹${allocatedCredit.toFixed(2)}` : ""
-                        }`
-                      : `${invPaymentMethod} • ${invIsCredit ? "Pending Khata Credit" : "Instant Settle"}`}
-                  </p>
-                </div>
-                <div className="font-mono text-2xl font-black text-emerald-300">
-                  ₹ {invTotalAmount.toFixed(2)}
-                </div>
-              </div>
-            </div>
-
-            {/* Permanent Sticky Modal Footer - ALWAYS VISIBLE */}
-            <div className="shrink-0 border-t border-slate-800 bg-[#0e1625] px-6 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg">
-              <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-300 font-medium select-none">
-                <input
-                  type="checkbox"
-                  checked={adminInvAutoPrint}
-                  onChange={(e) => setAdminInvAutoPrint(e.target.checked)}
-                  className="h-4 w-4 rounded border-slate-700 bg-slate-900 text-cyan-400 focus:ring-cyan-400 cursor-pointer"
-                />
-                <Printer size={14} className="text-cyan-400" />
-                <span>Auto-print receipt slip</span>
-              </label>
-
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                <button
-                  type="button"
-                  onClick={() => setShowInvoiceModal(false)}
-                  className="rounded-xl border border-slate-700 px-4 py-2.5 text-xs text-slate-400 hover:text-white transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={savingInvoice}
-                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-400 to-teal-400 py-2.5 px-6 text-xs font-black text-slate-950 hover:brightness-110 active:scale-95 transition shadow-md shadow-cyan-400/20"
-                >
-                  {savingInvoice ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
-                  <span>Save & Record Invoice (₹{invTotalAmount.toFixed(0)})</span>
-                </button>
-              </div>
-            </div>
-          </form>
+            </form>
           </div>
         </div>
       )}
